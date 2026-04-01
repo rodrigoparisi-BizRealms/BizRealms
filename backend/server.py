@@ -227,6 +227,14 @@ class AdBoost(BaseModel):
     expires_at: datetime
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class UserCourseComplete(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    course_id: str
+    course_name: str
+    completed_at: datetime = Field(default_factory=datetime.utcnow)
+    earnings_boost: float  # Permanent boost percentage (e.g., 0.1 = 10%)
+
 # ==================== HELPER FUNCTIONS ====================
 
 def hash_password(password: str) -> str:
@@ -1128,6 +1136,158 @@ async def get_current_job(current_user: dict = Depends(get_current_user)):
     del current_job['_id']
     
     return current_job
+
+# COURSES SYSTEM
+@api_router.get("/courses")
+async def get_courses():
+    """Get available courses"""
+    courses = [
+        {
+            "id": "excel-avancado",
+            "name": "Excel Avançado",
+            "description": "Domine planilhas e automação",
+            "cost": 500,
+            "earnings_boost": 0.10,  # 10% permanent boost
+            "skill_boost": {"técnico": 1},
+            "duration": "Instantâneo",
+            "level_required": 1
+        },
+        {
+            "id": "gestao-projetos",
+            "name": "Gestão de Projetos",
+            "description": "Aprenda metodologias ágeis e PMI",
+            "cost": 1200,
+            "earnings_boost": 0.20,  # 20% permanent boost
+            "skill_boost": {"liderança": 2},
+            "duration": "Instantâneo",
+            "level_required": 3
+        },
+        {
+            "id": "ingles-negocios",
+            "name": "Inglês para Negócios",
+            "description": "Comunicação profissional internacional",
+            "cost": 800,
+            "earnings_boost": 0.15,  # 15% permanent boost
+            "skill_boost": {"comunicação": 2},
+            "duration": "Instantâneo",
+            "level_required": 2
+        },
+        {
+            "id": "analise-dados",
+            "name": "Análise de Dados",
+            "description": "Power BI, Python e visualização",
+            "cost": 1500,
+            "earnings_boost": 0.25,  # 25% permanent boost
+            "skill_boost": {"técnico": 2, "financeiro": 1},
+            "duration": "Instantâneo",
+            "level_required": 5
+        },
+        {
+            "id": "negocia cao-vendas",
+            "name": "Negociação e Vendas",
+            "description": "Técnicas avançadas de fechamento",
+            "cost": 600,
+            "earnings_boost": 0.12,  # 12% permanent boost
+            "skill_boost": {"negociação": 2},
+            "duration": "Instantâneo",
+            "level_required": 1
+        },
+        {
+            "id": "lideranca-estrategica",
+            "name": "Liderança Estratégica",
+            "description": "MBA executivo resumido",
+            "cost": 3000,
+            "earnings_boost": 0.40,  # 40% permanent boost
+            "skill_boost": {"liderança": 3, "financeiro": 2},
+            "duration": "Instantâneo",
+            "level_required": 10
+        }
+    ]
+    return courses
+
+@api_router.post("/courses/enroll")
+async def enroll_course(request: CourseEnrollRequest, current_user: dict = Depends(get_current_user)):
+    """Enroll in a course"""
+    # Check if already completed
+    existing = await db.user_courses.find_one({
+        "user_id": current_user['id'],
+        "course_id": request.course_id
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Você já fez este curso!")
+    
+    # Get course details (in real app, this would be from DB)
+    courses_list = [
+        {"id": "excel-avancado", "name": "Excel Avançado", "cost": 500, "earnings_boost": 0.10, "skill_boost": {"técnico": 1}},
+        {"id": "gestao-projetos", "name": "Gestão de Projetos", "cost": 1200, "earnings_boost": 0.20, "skill_boost": {"liderança": 2}},
+        {"id": "ingles-negocios", "name": "Inglês para Negócios", "cost": 800, "earnings_boost": 0.15, "skill_boost": {"comunicação": 2}},
+        {"id": "analise-dados", "name": "Análise de Dados", "cost": 1500, "earnings_boost": 0.25, "skill_boost": {"técnico": 2, "financeiro": 1}},
+        {"id": "negociacao-vendas", "name": "Negociação e Vendas", "cost": 600, "earnings_boost": 0.12, "skill_boost": {"negociação": 2}},
+        {"id": "lideranca-estrategica", "name": "Liderança Estratégica", "cost": 3000, "earnings_boost": 0.40, "skill_boost": {"liderança": 3, "financeiro": 2}}
+    ]
+    
+    course = next((c for c in courses_list if c['id'] == request.course_id), None)
+    if not course:
+        raise HTTPException(status_code=404, detail="Curso não encontrado")
+    
+    # Check if user has enough money
+    if current_user.get('money', 0) < course['cost']:
+        raise HTTPException(status_code=400, detail="Dinheiro insuficiente!")
+    
+    # Deduct cost
+    new_money = current_user.get('money', 0) - course['cost']
+    
+    # Update skills
+    current_skills = current_user.get('skills', {})
+    for skill, boost in course['skill_boost'].items():
+        if skill in current_skills:
+            current_skills[skill] = min(10, current_skills[skill] + boost)
+    
+    # Update user
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {
+            '$set': {
+                'money': new_money,
+                'skills': current_skills
+            }
+        }
+    )
+    
+    # Save course completion
+    course_complete = UserCourseComplete(
+        user_id=current_user['id'],
+        course_id=course['id'],
+        course_name=course['name'],
+        earnings_boost=course['earnings_boost']
+    )
+    await db.user_courses.insert_one(course_complete.dict())
+    
+    return {
+        "message": f"Curso '{course['name']}' concluído!",
+        "cost": course['cost'],
+        "earnings_boost": f"+{course['earnings_boost']*100}%",
+        "skill_boost": course['skill_boost'],
+        "new_money": new_money
+    }
+
+@api_router.get("/courses/my-courses")
+async def get_my_courses(current_user: dict = Depends(get_current_user)):
+    """Get user's completed courses"""
+    courses = await db.user_courses.find({"user_id": current_user['id']}).to_list(100)
+    
+    for course in courses:
+        del course['_id']
+    
+    # Calculate total boost
+    total_boost = sum(c.get('earnings_boost', 0) for c in courses)
+    
+    return {
+        "courses": courses,
+        "total_boost": total_boost,
+        "total_boost_percentage": f"{total_boost * 100}%"
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
