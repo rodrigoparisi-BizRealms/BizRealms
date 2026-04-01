@@ -59,13 +59,19 @@ export default function PersonalitySelection() {
   };
 
   const handleComplete = async () => {
+    if (loading) return; // Prevenir múltiplos cliques
+    
     setLoading(true);
+    console.log('[Personality] Starting profile completion...');
+    
     try {
       // Get stored data
       const avatarColor = await AsyncStorage.getItem('avatar_color') || 'green';
       const avatarIcon = await AsyncStorage.getItem('avatar_icon') || 'person';
       const background = await AsyncStorage.getItem('background') || 'trabalhador';
       const dream = await AsyncStorage.getItem('dream') || 'carreira';
+
+      console.log('[Personality] Sending data:', { avatarColor, avatarIcon, background, dream });
 
       // Send to backend
       const response = await axios.post(
@@ -82,26 +88,39 @@ export default function PersonalitySelection() {
         }
       );
 
+      console.log('[Personality] Profile completed successfully:', response.data);
+
       // Clear temp storage
       await AsyncStorage.multiRemove(['avatar_color', 'avatar_icon', 'background', 'dream']);
+      console.log('[Personality] Temp storage cleared');
 
-      // Refresh user data
+      // Refresh user data - this will update onboarding_completed
+      console.log('[Personality] Refreshing user data...');
       await refreshUser();
+      console.log('[Personality] User data refreshed');
 
-      // Navigate immediately
-      router.replace('/(tabs)/home');
-
-      // Show success toast
-      setTimeout(() => {
-        Alert.alert(
-          'Personagem Criado! 🎉',
-          `Bem-vindo ao Business Empire!\n\nDinheiro inicial: R$ ${response.data.money.toLocaleString('pt-BR')}\n\nComece sua jornada agora!`
-        );
-      }, 500);
+      // Don't navigate here - let index.tsx handle it based on onboarding_completed
+      // The refreshUser above will trigger the useEffect in index.tsx
+      
+      // Show success
+      Alert.alert(
+        'Personagem Criado! 🎉',
+        `Bem-vindo ao Business Empire!\n\nDinheiro inicial: R$ ${response.data.money.toLocaleString('pt-BR')}`,
+        [
+          {
+            text: 'Começar!',
+            onPress: () => {
+              // Force navigation after user confirms
+              router.replace('/(tabs)/home');
+            }
+          }
+        ]
+      );
+      setLoading(false);
     } catch (error: any) {
-      console.error('Error completing profile:', error);
+      console.error('[Personality] Error completing profile:', error);
+      console.error('[Personality] Error details:', error.response?.data);
       Alert.alert('Erro', error.response?.data?.detail || 'Erro ao criar personagem');
-    } finally {
       setLoading(false);
     }
   };
