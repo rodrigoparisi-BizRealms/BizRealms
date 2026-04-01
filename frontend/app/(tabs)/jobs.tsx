@@ -37,29 +37,54 @@ interface CurrentJob {
   last_work_date: string | null;
 }
 
+interface AdBoost {
+  active: boolean;
+  multiplier: number;
+  ads_watched: number;
+  seconds_remaining: number;
+}
+
 export default function Jobs() {
   const { token, refreshUser } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJob, setCurrentJob] = useState<CurrentJob | null>(null);
+  const [adBoost, setAdBoost] = useState<AdBoost>({ active: false, multiplier: 1, ads_watched: 0, seconds_remaining: 0 });
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [watchingAd, setWatchingAd] = useState(false);
+  const [adProgress, setAdProgress] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
+    // Update boost timer every second
+    const interval = setInterval(() => {
+      if (adBoost.active && adBoost.seconds_remaining > 0) {
+        setAdBoost(prev => ({
+          ...prev,
+          seconds_remaining: Math.max(0, prev.seconds_remaining - 1)
+        }));
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
     try {
-      const [jobsRes, currentJobRes] = await Promise.all([
+      const [jobsRes, currentJobRes, boostRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs`),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/current`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/ads/current-boost`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
       setJobs(jobsRes.data);
       setCurrentJob(currentJobRes.data);
+      setAdBoost(boostRes.data);
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
@@ -173,6 +198,58 @@ export default function Jobs() {
     }
   };
 
+  const handleWatchAd = async () => {
+    setWatchingAd(true);
+    setAdProgress(0);
+
+    // Simulate ad watching (30 seconds)
+    const duration = 30000; // 30 seconds
+    const interval = 100; // Update every 100ms
+    const steps = duration / interval;
+    let currentStep = 0;
+
+    const progressInterval = setInterval(() => {
+      currentStep++;
+      setAdProgress((currentStep / steps) * 100);
+
+      if (currentStep >= steps) {
+        clearInterval(progressInterval);
+        completeAdWatch();
+      }
+    }, interval);
+  };
+
+  const completeAdWatch = async () => {
+    try {
+      const response = await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/ads/watch`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Alert.alert(
+        '🎉 Boost Ativado!',
+        `${response.data.message}\n\n` +
+        `📈 Multiplicador: ${response.data.multiplier}x\n` +
+        `💰 Ganho diário: R$ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
+        `⏱️ Duração: ${response.data.seconds_remaining}s`
+      );
+
+      await loadData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao assistir propaganda');
+    } finally {
+      setWatchingAd(false);
+      setAdProgress(0);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const getEducationLabel = (level: number) => {
     const labels = ['Nenhum', 'Ensino Médio', 'Graduação', 'Mestrado', 'Doutorado'];
     return labels[level] || 'Nenhum';
@@ -206,20 +283,67 @@ export default function Jobs() {
               <Ionicons name="briefcase" size={24} color="#4CAF50" />
               <Text style={styles.currentJobTitle}>Emprego Atual</Text>
             </View>
+            
+            {/* Ad Boost Badge */}
+            {adBoost.active && adBoost.multiplier > 1 && (
+              <View style={styles.boostBadge}>
+                <Ionicons name="flash" size={20} color="#FFD700" />
+                <Text style={styles.boostText}>{adBoost.multiplier}x BOOST</Text>
+                <Text style={styles.boostTimer}>{formatTime(adBoost.seconds_remaining)}</Text>
+              </View>
+            )}
+            
             <Text style={styles.currentJobPosition}>{currentJob.position}</Text>
             <Text style={styles.currentJobCompany}>{currentJob.company}</Text>
-            <Text style={styles.currentJobSalary}>
-              R$ {currentJob.salary.toLocaleString('pt-BR')}/mês
-            </Text>
+            
+            <View style={styles.salaryContainer}>
+              <View>
+                <Text style={styles.currentJobSalary}>
+                  R$ {currentJob.salary.toLocaleString('pt-BR')}/mês
+                </Text>
+                <Text style={styles.dailyEarnings}>
+                  R$ {((currentJob.salary / 30) * (adBoost.multiplier || 1)).toFixed(2)}/dia
+                  {adBoost.multiplier > 1 && (
+                    <Text style={styles.boosted}> (BOOSTED!)</Text>
+                  )}
+                </Text>
+              </View>
+            </View>
+            
             <Text style={styles.currentJobDays}>
               📅 {currentJob.days_worked} dias trabalhados
             </Text>
 
             <View style={styles.currentJobActions}>
+              {/* Watch Ad Button */}
+              {!watchingAd && (
+                <TouchableOpacity
+                  style={styles.adButton}
+                  onPress={handleWatchAd}
+                >
+                  <Ionicons name="play-circle" size={20} color="#fff" />
+                  <Text style={styles.adButtonText}>
+                    Assistir Propaganda ({adBoost.multiplier >= 10 ? 'MAX' : `+${adBoost.multiplier > 1 ? 1 : 1}x`})
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Ad Watching Progress */}
+              {watchingAd && (
+                <View style={styles.adWatchingContainer}>
+                  <Text style={styles.adWatchingText}>Assistindo propaganda...</Text>
+                  <View style={styles.progressBarContainer}>
+                    <View style={[styles.progressBarFill, { width: `${adProgress}%` }]} />
+                  </View>
+                  <Text style={styles.progressText}>{Math.round(adProgress)}%</Text>
+                </View>
+              )}
+
+              {/* Collect Earnings Button */}
               <TouchableOpacity
                 style={[styles.workButton, working && styles.workButtonDisabled]}
                 onPress={handleCollectEarnings}
-                disabled={working}
+                disabled={working || watchingAd}
               >
                 <Ionicons name="cash" size={20} color="#fff" />
                 <Text style={styles.workButtonText}>
@@ -230,7 +354,7 @@ export default function Jobs() {
               <View style={styles.infoCard}>
                 <Ionicons name="information-circle" size={16} color="#2196F3" />
                 <Text style={styles.infoText}>
-                  Seus ganhos acumulam automaticamente. Colete a qualquer momento!
+                  Assista propagandas para multiplicar seus ganhos até 10x! Seus ganhos acumulam automaticamente.
                 </Text>
               </View>
 
@@ -435,6 +559,87 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#aaa',
     lineHeight: 16,
+  },
+  boostBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD700',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    gap: 6,
+  },
+  boostText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  boostTimer: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  salaryContainer: {
+    marginBottom: 8,
+  },
+  dailyEarnings: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
+  },
+  boosted: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  adButton: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  adButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  adWatchingContainer: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  adWatchingText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#3a3a3a',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FF6B6B',
+  },
+  progressText: {
+    color: '#888',
+    fontSize: 12,
   },
   sectionTitle: {
     fontSize: 20,
