@@ -14,6 +14,18 @@ import axios from 'axios';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+const getAvatarColor = (color: string) => {
+  const colors: Record<string, string> = {
+    green: '#4CAF50',
+    blue: '#2196F3',
+    purple: '#9C27B0',
+    orange: '#FF9800',
+    red: '#F44336',
+    yellow: '#FFC107',
+  };
+  return colors[color] || '#4CAF50';
+};
+
 export default function Home() {
   const { user, token, refreshUser } = useAuth();
   const [stats, setStats] = useState<any>(null);
@@ -61,11 +73,25 @@ export default function Home() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Olá, {user.name}!</Text>
-            <Text style={styles.location}>
-              <Ionicons name="location" size={16} color="#888" /> {user.location}
-            </Text>
+          <View style={styles.headerLeft}>
+            <View
+              style={[
+                styles.avatar,
+                { backgroundColor: getAvatarColor(user.avatar_color || 'green') },
+              ]}
+            >
+              <Ionicons
+                name={(user.avatar_icon || 'person') as any}
+                size={32}
+                color="#fff"
+              />
+            </View>
+            <View>
+              <Text style={styles.greeting}>Olá, {user.name}!</Text>
+              <Text style={styles.location}>
+                <Ionicons name="location" size={16} color="#888" /> {user.location}
+              </Text>
+            </View>
           </View>
           <View style={styles.levelBadge}>
             <Text style={styles.levelText}>Nível {stats.level}</Text>
@@ -172,6 +198,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   greeting: {
     fontSize: 28,

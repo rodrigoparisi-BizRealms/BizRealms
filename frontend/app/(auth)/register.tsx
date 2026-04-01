@@ -42,7 +42,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(email, password, name);
-      router.replace('/(tabs)/home');
+      router.replace('/(onboarding)/avatar');
     } catch (error: any) {
       Alert.alert('Erro', error.message);
     } finally {

@@ -70,8 +70,21 @@ class User(BaseModel):
     name: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
+    # Character Creation
+    onboarding_completed: bool = False
+    avatar_color: str = "green"  # green, blue, purple, orange, red, yellow
+    avatar_icon: str = "person"  # Ionicons name
+    background: str = ""  # ex-militar, universitário, herdeiro, etc.
+    dream: str = ""  # carreira, empreendedor, investidor, freelancer
+    personality: dict = Field(default_factory=lambda: {
+        "ambição": 5,  # 1-10
+        "risco": 5,    # 1-10 (conservador vs arriscado)
+        "social": 5,   # 1-10 (solitário vs social)
+        "analítico": 5 # 1-10 (intuitivo vs analítico)
+    })
+    
     # Game Stats
-    money: float = 1000.0  # Dinheiro inicial
+    money: float = 1000.0  # Dinheiro inicial (varia por background)
     experience_points: int = 0
     level: int = 1
     location: str = "São Paulo, Brazil"  # Localização padrão
@@ -126,6 +139,27 @@ class CertificationCreate(BaseModel):
     name: str
     issuer: str
     skill_boost: int
+
+class CharacterProfileUpdate(BaseModel):
+    avatar_color: str
+    avatar_icon: str
+    background: str
+    dream: str
+    personality: dict
+
+class BackgroundOption(BaseModel):
+    id: str
+    name: str
+    description: str
+    money_bonus: float
+    skill_bonuses: dict
+    xp_multiplier: float
+
+class DreamOption(BaseModel):
+    id: str
+    name: str
+    description: str
+    suggested_path: str
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -340,6 +374,152 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
         "work_experience_count": total_work_experience,
         "months_experience": months_experience,
         "skills": current_user.get('skills', {})
+    }
+
+# CHARACTER CREATION ROUTES
+@api_router.get("/character/backgrounds")
+async def get_backgrounds():
+    """Get available character backgrounds"""
+    backgrounds = [
+        {
+            "id": "ex-militar",
+            "name": "Ex-Militar",
+            "description": "Disciplina e liderança forjadas no campo de batalha",
+            "money_bonus": -200,  # Começa com R$ 800
+            "skill_bonuses": {"liderança": 2, "negociação": 1},
+            "xp_multiplier": 1.0
+        },
+        {
+            "id": "universitario",
+            "name": "Universitário",
+            "description": "Conhecimento técnico e acadêmico",
+            "money_bonus": -500,  # Começa com R$ 500
+            "skill_bonuses": {"técnico": 2, "comunicação": 1},
+            "xp_multiplier": 1.0
+        },
+        {
+            "id": "herdeiro",
+            "name": "Herdeiro",
+            "description": "Nascido em berço de ouro, mas com muito a provar",
+            "money_bonus": 4000,  # Começa com R$ 5.000
+            "skill_bonuses": {"financeiro": 1},
+            "xp_multiplier": 0.8  # Ganha menos XP de trabalho
+        },
+        {
+            "id": "empreendedor",
+            "name": "Empreendedor",
+            "description": "Visão de negócios e networking",
+            "money_bonus": 1000,  # Começa com R$ 2.000
+            "skill_bonuses": {"negociação": 2, "liderança": 1},
+            "xp_multiplier": 1.0
+        },
+        {
+            "id": "autodidata",
+            "name": "Autodidata",
+            "description": "Aprendeu tudo sozinho, aprende rápido",
+            "money_bonus": -400,  # Começa com R$ 600
+            "skill_bonuses": {"técnico": 1},
+            "xp_multiplier": 1.5  # Ganha 50% mais XP
+        },
+        {
+            "id": "trabalhador",
+            "name": "Trabalhador",
+            "description": "Experiência prática e determinação",
+            "money_bonus": 0,  # Começa com R$ 1.000
+            "skill_bonuses": {"liderança": 1, "comunicação": 1},
+            "xp_multiplier": 1.2  # Ganha 20% mais XP
+        }
+    ]
+    return backgrounds
+
+@api_router.get("/character/dreams")
+async def get_dreams():
+    """Get available character dreams/objectives"""
+    dreams = [
+        {
+            "id": "carreira",
+            "name": "Carreira Corporativa",
+            "description": "Subir a hierarquia em grandes empresas",
+            "suggested_path": "Foque em educação e certificações. Candidate-se a vagas em empresas estabelecidas."
+        },
+        {
+            "id": "empreendedor",
+            "name": "Empreendedor",
+            "description": "Criar e gerenciar seus próprios negócios",
+            "suggested_path": "Acumule capital, faça cursos de gestão e abra sua própria empresa."
+        },
+        {
+            "id": "investidor",
+            "name": "Investidor",
+            "description": "Acumular patrimônio via investimentos",
+            "suggested_path": "Estude o mercado financeiro e comece a investir cedo. Diversifique seu portfólio."
+        },
+        {
+            "id": "freelancer",
+            "name": "Freelancer/Consultor",
+            "description": "Independência profissional e flexibilidade",
+            "suggested_path": "Desenvolva habilidades especializadas e construa um portfólio forte."
+        }
+    ]
+    return dreams
+
+@api_router.post("/character/complete-profile")
+async def complete_character_profile(
+    profile_data: CharacterProfileUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Complete character profile after registration"""
+    
+    # Get background bonuses
+    backgrounds = {
+        "ex-militar": {"money": -200, "skills": {"liderança": 2, "negociação": 1}, "xp": 1.0},
+        "universitario": {"money": -500, "skills": {"técnico": 2, "comunicação": 1}, "xp": 1.0},
+        "herdeiro": {"money": 4000, "skills": {"financeiro": 1}, "xp": 0.8},
+        "empreendedor": {"money": 1000, "skills": {"negociação": 2, "liderança": 1}, "xp": 1.0},
+        "autodidata": {"money": -400, "skills": {"técnico": 1}, "xp": 1.5},
+        "trabalhador": {"money": 0, "skills": {"liderança": 1, "comunicação": 1}, "xp": 1.2}
+    }
+    
+    background_bonus = backgrounds.get(profile_data.background, {"money": 0, "skills": {}, "xp": 1.0})
+    
+    # Calculate new money
+    new_money = 1000.0 + background_bonus["money"]
+    
+    # Update skills
+    current_skills = current_user.get('skills', {
+        "liderança": 1,
+        "comunicação": 1,
+        "técnico": 1,
+        "financeiro": 1,
+        "negociação": 1
+    })
+    
+    for skill, bonus in background_bonus["skills"].items():
+        if skill in current_skills:
+            current_skills[skill] = min(10, current_skills[skill] + bonus)
+    
+    # Update user
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {
+            '$set': {
+                'onboarding_completed': True,
+                'avatar_color': profile_data.avatar_color,
+                'avatar_icon': profile_data.avatar_icon,
+                'background': profile_data.background,
+                'dream': profile_data.dream,
+                'personality': profile_data.personality,
+                'money': new_money,
+                'skills': current_skills
+            }
+        }
+    )
+    
+    return {
+        "message": "Perfil completado com sucesso!",
+        "money": new_money,
+        "skills": current_skills,
+        "xp_multiplier": background_bonus["xp"]
     }
 
 # Include the router in the main app

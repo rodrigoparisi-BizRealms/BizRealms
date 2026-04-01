@@ -10,7 +10,12 @@ export default function Index() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.replace('/(tabs)/home');
+        // Check if onboarding is completed
+        if (user.onboarding_completed) {
+          router.replace('/(tabs)/home');
+        } else {
+          router.replace('/(onboarding)/avatar');
+        }
       } else {
         router.replace('/(auth)/login');
       }
