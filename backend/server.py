@@ -1826,6 +1826,462 @@ async def get_company_detail(company_id: str, current_user: dict = Depends(get_c
         del company['_id']
     return company
 
+# ==================== COMPANIES / ENTREPRENEURSHIP SYSTEM ====================
+
+COMPANY_SEGMENTS = {
+    "restaurante": {"icon": "restaurant", "color": "#FF5722", "label": "Restaurante"},
+    "loja": {"icon": "storefront", "color": "#9C27B0", "label": "Loja/Varejo"},
+    "tecnologia": {"icon": "hardware-chip", "color": "#2196F3", "label": "Tecnologia"},
+    "fabrica": {"icon": "cog", "color": "#607D8B", "label": "Fábrica"},
+    "saude": {"icon": "fitness", "color": "#F44336", "label": "Saúde"},
+    "educacao": {"icon": "school", "color": "#FF9800", "label": "Educação"},
+    "entretenimento": {"icon": "game-controller", "color": "#E91E63", "label": "Entretenimento"},
+    "imobiliaria": {"icon": "home", "color": "#795548", "label": "Imobiliária"},
+    "logistica": {"icon": "bus", "color": "#3F51B5", "label": "Logística"},
+    "agronegocio": {"icon": "leaf", "color": "#4CAF50", "label": "Agronegócio"},
+}
+
+COMPANIES_FOR_SALE = [
+    # Restaurantes
+    {"name": "Lanchonete do Zé", "segment": "restaurante", "price": 15000, "monthly_revenue": 3000, "employees": 5, "description": "Lanchonete de bairro com clientela fiel", "level_required": 1},
+    {"name": "Pizzaria Bella Napoli", "segment": "restaurante", "price": 80000, "monthly_revenue": 12000, "employees": 15, "description": "Pizzaria italiana com forno a lenha", "level_required": 3},
+    {"name": "Rede Burger Premium", "segment": "restaurante", "price": 500000, "monthly_revenue": 65000, "employees": 80, "description": "Rede de hamburguerias com 5 unidades", "level_required": 8},
+    # Lojas
+    {"name": "Bazar Popular", "segment": "loja", "price": 10000, "monthly_revenue": 2000, "employees": 3, "description": "Loja de variedades no centro", "level_required": 1},
+    {"name": "Boutique Fashion", "segment": "loja", "price": 120000, "monthly_revenue": 18000, "employees": 8, "description": "Loja de roupas de grife", "level_required": 4},
+    {"name": "Mega Store Eletrônicos", "segment": "loja", "price": 800000, "monthly_revenue": 90000, "employees": 50, "description": "Loja de eletrônicos e tecnologia", "level_required": 10},
+    # Tecnologia
+    {"name": "Dev Studio Indie", "segment": "tecnologia", "price": 50000, "monthly_revenue": 8000, "employees": 4, "description": "Estúdio de desenvolvimento de apps", "level_required": 2},
+    {"name": "SaaS Analytics Pro", "segment": "tecnologia", "price": 300000, "monthly_revenue": 45000, "employees": 20, "description": "Plataforma SaaS de analytics", "level_required": 6},
+    {"name": "CyberTech Security", "segment": "tecnologia", "price": 1500000, "monthly_revenue": 180000, "employees": 100, "description": "Empresa de cibersegurança corporativa", "level_required": 12},
+    # Fábricas
+    {"name": "Confecção Básica", "segment": "fabrica", "price": 60000, "monthly_revenue": 10000, "employees": 20, "description": "Fábrica de camisetas e uniformes", "level_required": 3},
+    {"name": "Fábrica de Móveis Artesanais", "segment": "fabrica", "price": 250000, "monthly_revenue": 35000, "employees": 40, "description": "Produção de móveis sob medida", "level_required": 5},
+    {"name": "Indústria Metalúrgica", "segment": "fabrica", "price": 2000000, "monthly_revenue": 250000, "employees": 200, "description": "Produção de peças industriais", "level_required": 15},
+    # Saúde
+    {"name": "Farmácia Comunitária", "segment": "saude", "price": 40000, "monthly_revenue": 7000, "employees": 6, "description": "Farmácia de bairro com manipulação", "level_required": 2},
+    {"name": "Clínica Odontológica", "segment": "saude", "price": 200000, "monthly_revenue": 30000, "employees": 12, "description": "Clínica odontológica especializada", "level_required": 5},
+    # Educação
+    {"name": "Escola de Idiomas", "segment": "educacao", "price": 35000, "monthly_revenue": 6000, "employees": 8, "description": "Escola de inglês e espanhol", "level_required": 2},
+    {"name": "Faculdade TechEdu", "segment": "educacao", "price": 1000000, "monthly_revenue": 120000, "employees": 60, "description": "Faculdade de tecnologia EAD", "level_required": 10},
+    # Entretenimento
+    {"name": "Lan House Gamer", "segment": "entretenimento", "price": 25000, "monthly_revenue": 4500, "employees": 3, "description": "Espaço gamer com PCs de alta performance", "level_required": 1},
+    {"name": "Parque Aquático Splash", "segment": "entretenimento", "price": 3000000, "monthly_revenue": 350000, "employees": 150, "description": "Parque aquático com atrações radicais", "level_required": 15},
+    # Imobiliária
+    {"name": "Imobiliária Local", "segment": "imobiliaria", "price": 70000, "monthly_revenue": 11000, "employees": 5, "description": "Imobiliária focada em aluguéis", "level_required": 3},
+    {"name": "Construtora Horizonte", "segment": "imobiliaria", "price": 5000000, "monthly_revenue": 500000, "employees": 300, "description": "Construtora de prédios residenciais", "level_required": 18},
+    # Logística
+    {"name": "Motoboy Express", "segment": "logistica", "price": 20000, "monthly_revenue": 3500, "employees": 10, "description": "Serviço de entregas rápidas", "level_required": 1},
+    {"name": "TransBR Cargas", "segment": "logistica", "price": 600000, "monthly_revenue": 75000, "employees": 45, "description": "Transportadora rodoviária nacional", "level_required": 8},
+    # Agronegócio
+    {"name": "Horta Orgânica", "segment": "agronegocio", "price": 18000, "monthly_revenue": 3200, "employees": 4, "description": "Produção de hortaliças orgânicas", "level_required": 1},
+    {"name": "Fazenda Boi Gordo", "segment": "agronegocio", "price": 2500000, "monthly_revenue": 280000, "employees": 50, "description": "Fazenda de gado de corte premium", "level_required": 12},
+]
+
+class CreateCompanyRequest(BaseModel):
+    name: str
+    segment: str
+
+class MergeCompaniesRequest(BaseModel):
+    company_id_1: str
+    company_id_2: str
+
+async def seed_companies_for_sale():
+    count = await db.companies_for_sale.count_documents({})
+    if count == 0:
+        companies = []
+        for seed in COMPANIES_FOR_SALE:
+            seg = COMPANY_SEGMENTS.get(seed['segment'], {})
+            company = {
+                "id": str(uuid.uuid4()),
+                **seed,
+                "icon": seg.get('icon', 'business'),
+                "color": seg.get('color', '#888'),
+                "created_at": datetime.utcnow(),
+            }
+            companies.append(company)
+        await db.companies_for_sale.insert_many(companies)
+        logger.info(f"Seeded {len(companies)} companies for sale")
+
+@app.on_event("startup")
+async def startup_companies():
+    await seed_companies_for_sale()
+
+@api_router.get("/companies/segments")
+async def get_segments(current_user: dict = Depends(get_current_user)):
+    return COMPANY_SEGMENTS
+
+@api_router.get("/companies/available")
+async def get_companies_available(segment: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query = {}
+    if segment:
+        query['segment'] = segment
+    companies = await db.companies_for_sale.find(query).sort("price", 1).to_list(200)
+    owned_ids = set()
+    owned = await db.user_companies.find({"user_id": current_user['id']}).to_list(200)
+    for o in owned:
+        if o.get('source_company_id'):
+            owned_ids.add(o['source_company_id'])
+    result = []
+    for c in companies:
+        if '_id' in c:
+            del c['_id']
+        c['already_owned'] = c['id'] in owned_ids
+        result.append(c)
+    return result
+
+@api_router.post("/companies/buy")
+async def buy_company(request: dict, current_user: dict = Depends(get_current_user)):
+    company_id = request.get('company_id')
+    company = await db.companies_for_sale.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    user = await db.users.find_one({"id": current_user['id']})
+    if user['money'] < company['price']:
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Necessário: R$ {company['price']:,.2f}")
+    if (user.get('level', 1)) < company.get('level_required', 1):
+        raise HTTPException(status_code=400, detail=f"Nível insuficiente. Requer nível {company['level_required']}")
+    already = await db.user_companies.find_one({"user_id": current_user['id'], "source_company_id": company_id})
+    if already:
+        raise HTTPException(status_code=400, detail="Você já possui esta empresa")
+    new_money = user['money'] - company['price']
+    await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
+    user_company = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "source_company_id": company_id,
+        "name": company['name'],
+        "segment": company['segment'],
+        "icon": company.get('icon', 'business'),
+        "color": company.get('color', '#888'),
+        "monthly_revenue": company['monthly_revenue'],
+        "employees": company['employees'],
+        "description": company['description'],
+        "purchase_price": company['price'],
+        "level": 1,
+        "revenue_multiplier": 1.0,
+        "total_collected": 0,
+        "last_collection": datetime.utcnow(),
+        "ad_boost_expires": None,
+        "purchased_at": datetime.utcnow(),
+    }
+    await db.user_companies.insert_one(user_company)
+    return {
+        "message": f"Parabéns! Você comprou {company['name']}!",
+        "company_name": company['name'],
+        "price": company['price'],
+        "monthly_revenue": company['monthly_revenue'],
+        "new_balance": round(new_money, 2),
+    }
+
+@api_router.post("/companies/create")
+async def create_company(request: CreateCompanyRequest, current_user: dict = Depends(get_current_user)):
+    if request.segment not in COMPANY_SEGMENTS:
+        raise HTTPException(status_code=400, detail="Segmento inválido")
+    user = await db.users.find_one({"id": current_user['id']})
+    creation_cost = 5000
+    if user['money'] < creation_cost:
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Custo de criação: R$ {creation_cost:,.2f}")
+    new_money = user['money'] - creation_cost
+    await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
+    seg = COMPANY_SEGMENTS[request.segment]
+    base_revenue = random.randint(800, 2500)
+    user_company = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "source_company_id": None,
+        "name": request.name,
+        "segment": request.segment,
+        "icon": seg['icon'],
+        "color": seg['color'],
+        "monthly_revenue": base_revenue,
+        "employees": random.randint(1, 5),
+        "description": f"Empresa criada pelo jogador no segmento {seg['label']}",
+        "purchase_price": creation_cost,
+        "level": 1,
+        "revenue_multiplier": 1.0,
+        "total_collected": 0,
+        "last_collection": datetime.utcnow(),
+        "ad_boost_expires": None,
+        "is_custom": True,
+        "purchased_at": datetime.utcnow(),
+    }
+    await db.user_companies.insert_one(user_company)
+    return {
+        "message": f"{request.name} criada com sucesso!",
+        "company": {"name": request.name, "segment": request.segment, "monthly_revenue": base_revenue},
+        "new_balance": round(new_money, 2),
+    }
+
+@api_router.get("/companies/owned")
+async def get_owned_companies(current_user: dict = Depends(get_current_user)):
+    companies = await db.user_companies.find({"user_id": current_user['id']}).to_list(200)
+    now = datetime.utcnow()
+    total_monthly = 0
+    for c in companies:
+        if '_id' in c:
+            del c['_id']
+        boost_active = False
+        if c.get('ad_boost_expires') and c['ad_boost_expires'] > now:
+            boost_active = True
+        c['ad_boost_active'] = boost_active
+        effective_mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
+        c['effective_revenue'] = round(c['monthly_revenue'] * effective_mult)
+        c['effective_multiplier'] = effective_mult
+        if c.get('ad_boost_expires'):
+            c['ad_boost_remaining'] = max(0, int((c['ad_boost_expires'] - now).total_seconds()))
+            c['ad_boost_expires'] = c['ad_boost_expires'].isoformat()
+        else:
+            c['ad_boost_remaining'] = 0
+        if c.get('last_collection'):
+            c['last_collection'] = c['last_collection'].isoformat()
+        if c.get('purchased_at'):
+            c['purchased_at'] = c['purchased_at'].isoformat()
+        total_monthly += c['effective_revenue']
+    return {"companies": companies, "total_monthly_revenue": total_monthly, "count": len(companies)}
+
+@api_router.post("/companies/collect-revenue")
+async def collect_company_revenue(current_user: dict = Depends(get_current_user)):
+    companies = await db.user_companies.find({"user_id": current_user['id']}).to_list(200)
+    if not companies:
+        raise HTTPException(status_code=400, detail="Você não possui empresas")
+    now = datetime.utcnow()
+    total_revenue = 0
+    details = []
+    for c in companies:
+        last = c.get('last_collection', now)
+        if isinstance(last, str):
+            last = datetime.fromisoformat(last.replace('Z', '+00:00'))
+        days = (now - last).total_seconds() / 86400
+        if days < 0.001:
+            continue
+        daily_rev = c['monthly_revenue'] / 30
+        boost_active = c.get('ad_boost_expires') and c['ad_boost_expires'] > now
+        mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
+        rev = daily_rev * days * mult
+        total_revenue += rev
+        await db.user_companies.update_one(
+            {"id": c['id']},
+            {"$set": {"last_collection": now}, "$inc": {"total_collected": rev}}
+        )
+        details.append({"name": c['name'], "revenue": round(rev, 2), "days": round(days, 2)})
+    if total_revenue > 0:
+        user = await db.users.find_one({"id": current_user['id']})
+        new_money = user['money'] + total_revenue
+        xp_gain = int(total_revenue / 10)
+        new_xp = user.get('experience_points', 0) + xp_gain
+        new_level = (new_xp // 1000) + 1
+        await db.users.update_one(
+            {"id": current_user['id']},
+            {"$set": {"money": new_money, "experience_points": new_xp, "level": new_level}}
+        )
+        return {
+            "message": f"Receitas coletadas: R$ {total_revenue:,.2f}",
+            "total_revenue": round(total_revenue, 2),
+            "xp_gained": xp_gain,
+            "details": details,
+            "new_balance": round(new_money, 2),
+        }
+    return {"message": "Nenhuma receita para coletar ainda", "total_revenue": 0, "details": []}
+
+@api_router.post("/companies/ad-boost")
+async def company_ad_boost(current_user: dict = Depends(get_current_user)):
+    companies = await db.user_companies.find({"user_id": current_user['id']}).to_list(200)
+    if not companies:
+        raise HTTPException(status_code=400, detail="Você não possui empresas")
+    expires = datetime.utcnow() + timedelta(hours=6)
+    for c in companies:
+        await db.user_companies.update_one({"id": c['id']}, {"$set": {"ad_boost_expires": expires}})
+    return {
+        "message": "Boost ativado! Rendimentos de TODAS as empresas duplicados por 6 horas!",
+        "boost_duration_hours": 6,
+        "expires_at": expires.isoformat(),
+        "companies_boosted": len(companies),
+    }
+
+@api_router.post("/companies/merge")
+async def merge_companies(request: MergeCompaniesRequest, current_user: dict = Depends(get_current_user)):
+    c1 = await db.user_companies.find_one({"id": request.company_id_1, "user_id": current_user['id']})
+    c2 = await db.user_companies.find_one({"id": request.company_id_2, "user_id": current_user['id']})
+    if not c1 or not c2:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    if c1['segment'] != c2['segment']:
+        raise HTTPException(status_code=400, detail="Só é possível fundir empresas do mesmo segmento")
+    merged_name = f"{c1['name']} & {c2['name']}"
+    merged_revenue = int((c1['monthly_revenue'] + c2['monthly_revenue']) * 1.3)
+    merged_employees = c1['employees'] + c2['employees']
+    new_level = max(c1.get('level', 1), c2.get('level', 1)) + 1
+    await db.user_companies.update_one(
+        {"id": c1['id']},
+        {"$set": {
+            "name": merged_name,
+            "monthly_revenue": merged_revenue,
+            "employees": merged_employees,
+            "level": new_level,
+            "revenue_multiplier": c1.get('revenue_multiplier', 1.0) + 0.2,
+            "description": f"Resultado da fusão de {c1['name']} e {c2['name']}. Nível {new_level}.",
+        }}
+    )
+    await db.user_companies.delete_one({"id": c2['id']})
+    return {
+        "message": f"Fusão concluída! {merged_name} criada com +30% de receita!",
+        "new_company": {"name": merged_name, "monthly_revenue": merged_revenue, "level": new_level},
+    }
+
+# ==================== ASSETS / PATRIMÔNIO SYSTEM ====================
+
+ASSETS_FOR_SALE = [
+    # Veículos
+    {"name": "Moto CG 160", "category": "veiculo", "subcategory": "Motos", "price": 15000, "description": "Moto econômica para o dia a dia", "appreciation": -0.05, "status_boost": 5, "level_required": 1, "icon": "bicycle"},
+    {"name": "Fiat Uno", "category": "veiculo", "subcategory": "Carros", "price": 35000, "description": "Carro popular e econômico", "appreciation": -0.08, "status_boost": 10, "level_required": 1, "icon": "car"},
+    {"name": "Toyota Corolla", "category": "veiculo", "subcategory": "Carros", "price": 120000, "description": "Sedan executivo confortável", "appreciation": -0.06, "status_boost": 25, "level_required": 3, "icon": "car"},
+    {"name": "BMW X5", "category": "veiculo", "subcategory": "SUVs", "price": 450000, "description": "SUV premium de luxo", "appreciation": -0.04, "status_boost": 50, "level_required": 6, "icon": "car-sport"},
+    {"name": "Porsche 911", "category": "veiculo", "subcategory": "Esportivos", "price": 900000, "description": "Esportivo icônico alemão", "appreciation": 0.02, "status_boost": 80, "level_required": 10, "icon": "car-sport"},
+    {"name": "Ferrari F8 Tributo", "category": "veiculo", "subcategory": "Esportivos", "price": 3500000, "description": "Superesportivo italiano", "appreciation": 0.05, "status_boost": 150, "level_required": 15, "icon": "car-sport"},
+    {"name": "Lancha 32 pés", "category": "veiculo", "subcategory": "Náuticos", "price": 600000, "description": "Lancha para passeios no litoral", "appreciation": -0.03, "status_boost": 60, "level_required": 8, "icon": "boat"},
+    {"name": "Iate de Luxo", "category": "veiculo", "subcategory": "Náuticos", "price": 5000000, "description": "Iate com 3 cabines e jacuzzi", "appreciation": 0.01, "status_boost": 200, "level_required": 18, "icon": "boat"},
+    {"name": "Helicóptero Robinson R44", "category": "veiculo", "subcategory": "Aéreos", "price": 2500000, "description": "Helicóptero para deslocamento urbano", "appreciation": -0.02, "status_boost": 120, "level_required": 12, "icon": "airplane"},
+    {"name": "Jato Executivo Phenom 300", "category": "veiculo", "subcategory": "Aéreos", "price": 25000000, "description": "Jato particular para viagens internacionais", "appreciation": 0.01, "status_boost": 500, "level_required": 20, "icon": "airplane"},
+    # Imóveis
+    {"name": "Kitnet Centro", "category": "imovel", "subcategory": "Apartamentos", "price": 80000, "description": "Kitnet de 25m² no centro da cidade", "appreciation": 0.03, "status_boost": 15, "level_required": 1, "icon": "home"},
+    {"name": "Apartamento 2 Quartos", "category": "imovel", "subcategory": "Apartamentos", "price": 250000, "description": "Apartamento de 65m² em bairro residencial", "appreciation": 0.04, "status_boost": 30, "level_required": 3, "icon": "home"},
+    {"name": "Casa 3 Quartos", "category": "imovel", "subcategory": "Casas", "price": 450000, "description": "Casa com quintal em condomínio fechado", "appreciation": 0.05, "status_boost": 50, "level_required": 5, "icon": "home"},
+    {"name": "Cobertura Duplex", "category": "imovel", "subcategory": "Apartamentos", "price": 1200000, "description": "Cobertura de 180m² com terraço e piscina", "appreciation": 0.06, "status_boost": 100, "level_required": 8, "icon": "home"},
+    {"name": "Mansão Alphaville", "category": "imovel", "subcategory": "Casas", "price": 5000000, "description": "Mansão de 500m² com 6 suítes e piscina", "appreciation": 0.07, "status_boost": 250, "level_required": 15, "icon": "home"},
+    {"name": "Penthouse Faria Lima", "category": "imovel", "subcategory": "Apartamentos", "price": 12000000, "description": "Penthouse de 400m² na Faria Lima, SP", "appreciation": 0.08, "status_boost": 400, "level_required": 20, "icon": "home"},
+    {"name": "Ilha Privada", "category": "imovel", "subcategory": "Especiais", "price": 50000000, "description": "Ilha particular com infraestrutura completa", "appreciation": 0.10, "status_boost": 1000, "level_required": 25, "icon": "globe"},
+    # Luxo
+    {"name": "Relógio Rolex Submariner", "category": "luxo", "subcategory": "Relógios", "price": 80000, "description": "Relógio suíço icônico de mergulho", "appreciation": 0.08, "status_boost": 20, "level_required": 5, "icon": "watch"},
+    {"name": "Relógio Patek Philippe", "category": "luxo", "subcategory": "Relógios", "price": 500000, "description": "Alta relojoaria suíça, peça de colecionador", "appreciation": 0.12, "status_boost": 80, "level_required": 12, "icon": "watch"},
+    {"name": "Bolsa Hermès Birkin", "category": "luxo", "subcategory": "Acessórios", "price": 120000, "description": "Bolsa de luxo mais desejada do mundo", "appreciation": 0.15, "status_boost": 35, "level_required": 8, "icon": "bag"},
+    {"name": "Coleção de Arte", "category": "luxo", "subcategory": "Arte", "price": 2000000, "description": "Coleção de pinturas de artistas brasileiros", "appreciation": 0.10, "status_boost": 150, "level_required": 15, "icon": "color-palette"},
+    {"name": "Diamante 5 Quilates", "category": "luxo", "subcategory": "Joias", "price": 800000, "description": "Diamante lapidado com certificação GIA", "appreciation": 0.06, "status_boost": 100, "level_required": 10, "icon": "diamond"},
+]
+
+async def seed_assets_for_sale():
+    count = await db.assets_store.count_documents({})
+    if count == 0:
+        assets = []
+        for seed in ASSETS_FOR_SALE:
+            asset = {"id": str(uuid.uuid4()), **seed, "created_at": datetime.utcnow()}
+            assets.append(asset)
+        await db.assets_store.insert_many(assets)
+        logger.info(f"Seeded {len(assets)} assets for sale")
+
+@app.on_event("startup")
+async def startup_assets():
+    await seed_assets_for_sale()
+
+@api_router.get("/assets/store")
+async def get_assets_store(category: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query = {}
+    if category:
+        query['category'] = category
+    assets = await db.assets_store.find(query).sort("price", 1).to_list(200)
+    owned_ids = set()
+    owned = await db.user_assets.find({"user_id": current_user['id']}).to_list(200)
+    for o in owned:
+        owned_ids.add(o.get('asset_store_id'))
+    for a in assets:
+        if '_id' in a:
+            del a['_id']
+        a['already_owned'] = a['id'] in owned_ids
+    return assets
+
+@api_router.post("/assets/buy")
+async def buy_asset_item(request: dict, current_user: dict = Depends(get_current_user)):
+    asset_id = request.get('asset_id')
+    asset = await db.assets_store.find_one({"id": asset_id})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    user = await db.users.find_one({"id": current_user['id']})
+    if user['money'] < asset['price']:
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Necessário: R$ {asset['price']:,.2f}")
+    if user.get('level', 1) < asset.get('level_required', 1):
+        raise HTTPException(status_code=400, detail=f"Nível insuficiente. Requer nível {asset['level_required']}")
+    already = await db.user_assets.find_one({"user_id": current_user['id'], "asset_store_id": asset_id})
+    if already:
+        raise HTTPException(status_code=400, detail="Você já possui este item")
+    new_money = user['money'] - asset['price']
+    await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
+    user_asset = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "asset_store_id": asset_id,
+        "name": asset['name'],
+        "category": asset['category'],
+        "subcategory": asset['subcategory'],
+        "icon": asset.get('icon', 'cube'),
+        "purchase_price": asset['price'],
+        "current_value": asset['price'],
+        "appreciation": asset.get('appreciation', 0),
+        "status_boost": asset.get('status_boost', 0),
+        "description": asset['description'],
+        "purchased_at": datetime.utcnow(),
+    }
+    await db.user_assets.insert_one(user_asset)
+    return {
+        "message": f"Parabéns! Você comprou {asset['name']}!",
+        "item": asset['name'],
+        "price": asset['price'],
+        "status_boost": asset.get('status_boost', 0),
+        "new_balance": round(new_money, 2),
+    }
+
+@api_router.get("/assets/owned")
+async def get_owned_assets(current_user: dict = Depends(get_current_user)):
+    assets = await db.user_assets.find({"user_id": current_user['id']}).to_list(200)
+    total_value = 0
+    total_invested = 0
+    for a in assets:
+        if '_id' in a:
+            del a['_id']
+        purchased_at = a.get('purchased_at', datetime.utcnow())
+        if isinstance(purchased_at, str):
+            purchased_at = datetime.fromisoformat(purchased_at.replace('Z', '+00:00'))
+        months_owned = max(1, (datetime.utcnow() - purchased_at).days / 30)
+        appreciation = a.get('appreciation', 0)
+        a['current_value'] = round(a['purchase_price'] * (1 + appreciation * months_owned), 2)
+        a['profit'] = round(a['current_value'] - a['purchase_price'], 2)
+        a['profit_pct'] = round((a['profit'] / a['purchase_price']) * 100, 2) if a['purchase_price'] > 0 else 0
+        total_value += a['current_value']
+        total_invested += a['purchase_price']
+        if a.get('purchased_at') and isinstance(a['purchased_at'], datetime):
+            a['purchased_at'] = a['purchased_at'].isoformat()
+    return {
+        "assets": assets,
+        "summary": {
+            "total_value": round(total_value, 2),
+            "total_invested": round(total_invested, 2),
+            "total_profit": round(total_value - total_invested, 2),
+            "count": len(assets),
+            "total_status_boost": sum(a.get('status_boost', 0) for a in assets),
+        }
+    }
+
+@api_router.post("/assets/sell")
+async def sell_asset_item(request: dict, current_user: dict = Depends(get_current_user)):
+    asset_id = request.get('asset_id')
+    asset = await db.user_assets.find_one({"id": asset_id, "user_id": current_user['id']})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Item não encontrado no seu patrimônio")
+    purchased_at = asset.get('purchased_at', datetime.utcnow())
+    if isinstance(purchased_at, str):
+        purchased_at = datetime.fromisoformat(purchased_at.replace('Z', '+00:00'))
+    months = max(1, (datetime.utcnow() - purchased_at).days / 30)
+    sell_value = round(asset['purchase_price'] * (1 + asset.get('appreciation', 0) * months), 2)
+    profit = sell_value - asset['purchase_price']
+    user = await db.users.find_one({"id": current_user['id']})
+    new_money = user['money'] + sell_value
+    await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
+    await db.user_assets.delete_one({"id": asset_id, "user_id": current_user['id']})
+    return {
+        "message": f"{asset['name']} vendido por R$ {sell_value:,.2f}!",
+        "sell_value": sell_value,
+        "profit": round(profit, 2),
+        "new_balance": round(new_money, 2),
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 

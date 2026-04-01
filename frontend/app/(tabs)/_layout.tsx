@@ -14,6 +14,9 @@ export default function TabsLayout() {
         },
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: '#888',
+        tabBarLabelStyle: {
+          fontSize: 10,
+        },
       }}
     >
       <Tabs.Screen
@@ -35,27 +38,27 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="courses"
+        name="companies"
         options={{
-          title: 'Cursos',
+          title: 'Empresas',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school" size={size} color={color} />
+            <Ionicons name="business" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="map"
+        name="patrimonio"
         options={{
-          title: 'Mapa',
-          tabBarIcon: ({ color, size}) => (
-            <Ionicons name="map" size={size} color={color} />
+          title: 'Patrimônio',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="diamond" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="investments"
         options={{
-          title: 'Investimentos',
+          title: 'Investir',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trending-up" size={size} color={color} />
           ),
@@ -70,6 +73,9 @@ export default function TabsLayout() {
           ),
         }}
       />
+      {/* Hidden tabs - accessible via links */}
+      <Tabs.Screen name="courses" options={{ href: null }} />
+      <Tabs.Screen name="map" options={{ href: null }} />
     </Tabs>
   );
 }
