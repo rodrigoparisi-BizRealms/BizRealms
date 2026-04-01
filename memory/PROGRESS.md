@@ -25,7 +25,18 @@
 - ✅ Seletor visual de nível educacional
 - ✅ Seletor visual de boost de certificação
 
-## ✅ FASE 3 COMPLETA: Sistema de Empregos
+## ✅ FASE 4 COMPLETA: Mapa Interativo
+
+#### 🗺️ Mapa com OpenStreetMap
+- ✅ Mapa dark mode com tiles CartoDB
+- ✅ 20 empresas em 5 cidades brasileiras (SP, RJ, BH, Curitiba, POA)
+- ✅ 12 categorias de empresas (Tecnologia, Financeiro, Alimentação, etc.)
+- ✅ Marcadores com emojis coloridos por categoria
+- ✅ Navegação rápida por cidades
+- ✅ Filtro por categoria com contadores
+- ✅ Modal de detalhes da empresa (funcionários, receita, avaliação)
+- ✅ Vagas abertas e investimento disponível por empresa
+- ✅ Leaflet embutido via WebView (funciona web + mobile)
 
 #### 💼 Sistema de Empregos
 - ✅ Listagem de vagas com requisitos

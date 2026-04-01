@@ -1728,6 +1728,104 @@ async def get_transactions(current_user: dict = Depends(get_current_user)):
     
     return transactions
 
+# ==================== MAP / COMPANIES SYSTEM ====================
+
+MAP_COMPANY_SEEDS = [
+    # São Paulo - Centro
+    {"name": "TechNova Solutions", "category": "tecnologia", "lat": -23.5505, "lng": -46.6333, "description": "Startup de IA e Machine Learning", "employees": 120, "revenue": "R$ 15M/ano", "rating": 4.5, "city": "São Paulo"},
+    {"name": "Banco Digital Plus", "category": "financeiro", "lat": -23.5475, "lng": -46.6361, "description": "Fintech de pagamentos digitais", "employees": 450, "revenue": "R$ 200M/ano", "rating": 4.2, "city": "São Paulo"},
+    {"name": "Café Paulistano", "category": "alimentacao", "lat": -23.5565, "lng": -46.6297, "description": "Rede de cafeterias premium", "employees": 85, "revenue": "R$ 8M/ano", "rating": 4.7, "city": "São Paulo"},
+    {"name": "Construtora Horizonte", "category": "construcao", "lat": -23.5615, "lng": -46.6555, "description": "Construtora de edifícios residenciais", "employees": 800, "revenue": "R$ 500M/ano", "rating": 3.9, "city": "São Paulo"},
+    # São Paulo - Faria Lima
+    {"name": "Venture Capital BR", "category": "financeiro", "lat": -23.5735, "lng": -46.6895, "description": "Fundo de investimento em startups", "employees": 35, "revenue": "R$ 2B AUM", "rating": 4.8, "city": "São Paulo"},
+    {"name": "E-Commerce Master", "category": "varejo", "lat": -23.5750, "lng": -46.6850, "description": "Marketplace líder em eletrônicos", "employees": 2000, "revenue": "R$ 1.2B/ano", "rating": 4.0, "city": "São Paulo"},
+    {"name": "GreenEnergy Ltda", "category": "energia", "lat": -23.5685, "lng": -46.6920, "description": "Energia solar e sustentável", "employees": 200, "revenue": "R$ 45M/ano", "rating": 4.3, "city": "São Paulo"},
+    # São Paulo - Vila Olímpia
+    {"name": "AppFactory Studio", "category": "tecnologia", "lat": -23.5950, "lng": -46.6800, "description": "Desenvolvimento de aplicativos mobile", "employees": 60, "revenue": "R$ 12M/ano", "rating": 4.6, "city": "São Paulo"},
+    {"name": "FitLife Academias", "category": "saude", "lat": -23.5920, "lng": -46.6755, "description": "Rede de academias premium", "employees": 350, "revenue": "R$ 30M/ano", "rating": 4.1, "city": "São Paulo"},
+    # São Paulo - Pinheiros
+    {"name": "Agência Criativa 360", "category": "marketing", "lat": -23.5620, "lng": -46.6910, "description": "Marketing digital e branding", "employees": 40, "revenue": "R$ 6M/ano", "rating": 4.4, "city": "São Paulo"},
+    {"name": "Restaurante Sabores", "category": "alimentacao", "lat": -23.5630, "lng": -46.6935, "description": "Gastronomia contemporânea brasileira", "employees": 25, "revenue": "R$ 3M/ano", "rating": 4.9, "city": "São Paulo"},
+    # Rio de Janeiro
+    {"name": "Petro Energy RJ", "category": "energia", "lat": -22.9068, "lng": -43.1729, "description": "Exploração de petróleo offshore", "employees": 5000, "revenue": "R$ 10B/ano", "rating": 3.8, "city": "Rio de Janeiro"},
+    {"name": "TurismoRio Ltda", "category": "turismo", "lat": -22.9519, "lng": -43.2105, "description": "Turismo e hotelaria", "employees": 150, "revenue": "R$ 20M/ano", "rating": 4.0, "city": "Rio de Janeiro"},
+    {"name": "GameStudio Carioca", "category": "tecnologia", "lat": -22.9137, "lng": -43.1764, "description": "Estúdio de jogos indie", "employees": 30, "revenue": "R$ 4M/ano", "rating": 4.7, "city": "Rio de Janeiro"},
+    # Belo Horizonte
+    {"name": "MineralTech", "category": "mineracao", "lat": -19.9167, "lng": -43.9345, "description": "Tecnologia para mineração sustentável", "employees": 280, "revenue": "R$ 80M/ano", "rating": 4.1, "city": "Belo Horizonte"},
+    {"name": "Padaria Mineira Real", "category": "alimentacao", "lat": -19.9200, "lng": -43.9380, "description": "Padaria artesanal mineira", "employees": 15, "revenue": "R$ 1.5M/ano", "rating": 4.8, "city": "Belo Horizonte"},
+    # Curitiba
+    {"name": "LogiTech Transportes", "category": "logistica", "lat": -25.4284, "lng": -49.2733, "description": "Logística e transporte rodoviário", "employees": 600, "revenue": "R$ 150M/ano", "rating": 3.7, "city": "Curitiba"},
+    {"name": "BioFarm Labs", "category": "saude", "lat": -25.4320, "lng": -49.2700, "description": "Pesquisa farmacêutica e biotecnologia", "employees": 90, "revenue": "R$ 25M/ano", "rating": 4.5, "city": "Curitiba"},
+    # Porto Alegre
+    {"name": "AgroSul Grãos", "category": "agronegocio", "lat": -30.0346, "lng": -51.2177, "description": "Produção e exportação de grãos", "employees": 400, "revenue": "R$ 300M/ano", "rating": 4.0, "city": "Porto Alegre"},
+    {"name": "DesignGaúcho Studio", "category": "marketing", "lat": -30.0300, "lng": -51.2200, "description": "Design e UX para produtos digitais", "employees": 20, "revenue": "R$ 2M/ano", "rating": 4.6, "city": "Porto Alegre"},
+]
+
+CATEGORY_INFO = {
+    "tecnologia": {"icon": "laptop", "color": "#2196F3"},
+    "financeiro": {"icon": "cash", "color": "#4CAF50"},
+    "alimentacao": {"icon": "restaurant", "color": "#FF9800"},
+    "construcao": {"icon": "construct", "color": "#795548"},
+    "varejo": {"icon": "cart", "color": "#9C27B0"},
+    "energia": {"icon": "flash", "color": "#FFC107"},
+    "saude": {"icon": "medkit", "color": "#F44336"},
+    "marketing": {"icon": "megaphone", "color": "#E91E63"},
+    "turismo": {"icon": "airplane", "color": "#00BCD4"},
+    "mineracao": {"icon": "hammer", "color": "#607D8B"},
+    "logistica": {"icon": "bus", "color": "#3F51B5"},
+    "agronegocio": {"icon": "leaf", "color": "#8BC34A"},
+}
+
+async def seed_map_companies():
+    count = await db.map_companies.count_documents({})
+    if count == 0:
+        companies = []
+        for seed in MAP_COMPANY_SEEDS:
+            cat_info = CATEGORY_INFO.get(seed['category'], {"icon": "business", "color": "#888"})
+            company = {
+                "id": str(uuid.uuid4()),
+                **seed,
+                "icon": cat_info['icon'],
+                "color": cat_info['color'],
+                "open_positions": random.randint(0, 5),
+                "investment_available": random.choice([True, False]),
+                "min_investment": random.choice([5000, 10000, 25000, 50000, 100000]),
+                "created_at": datetime.utcnow(),
+            }
+            companies.append(company)
+        await db.map_companies.insert_many(companies)
+        logger.info(f"Seeded {len(companies)} map companies")
+
+@app.on_event("startup")
+async def startup_map():
+    await seed_map_companies()
+
+@api_router.get("/map/companies")
+async def get_map_companies(category: Optional[str] = None, city: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Get all companies for the map"""
+    query = {}
+    if category:
+        query['category'] = category
+    if city:
+        query['city'] = city
+    
+    companies = await db.map_companies.find(query).to_list(200)
+    for c in companies:
+        if '_id' in c:
+            del c['_id']
+    
+    return {"companies": companies, "categories": CATEGORY_INFO}
+
+@api_router.get("/map/companies/{company_id}")
+async def get_company_detail(company_id: str, current_user: dict = Depends(get_current_user)):
+    """Get detailed company info"""
+    company = await db.map_companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    if '_id' in company:
+        del company['_id']
+    return company
+
 # Include the router in the main app
 app.include_router(api_router)
 
