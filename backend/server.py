@@ -332,6 +332,33 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     del current_user['_id']
     return current_user
 
+@api_router.put("/user/avatar-photo")
+async def update_avatar_photo(photo_data: dict, current_user: dict = Depends(get_current_user)):
+    """Update user avatar photo"""
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {'$set': {'avatar_photo': photo_data.get('avatar_photo')}}
+    )
+    return {"message": "Foto atualizada com sucesso"}
+
+@api_router.delete("/user/education/{education_id}")
+async def delete_education(education_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete education entry"""
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {'$pull': {'education': {'id': education_id}}}
+    )
+    return {"message": "Educação removida com sucesso"}
+
+@api_router.delete("/user/certification/{cert_id}")
+async def delete_certification(cert_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete certification entry"""
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {'$pull': {'certifications': {'id': cert_id}}}
+    )
+    return {"message": "Certificação removida com sucesso"}
+
 @api_router.put("/user/location")
 async def update_location(location: dict, current_user: dict = Depends(get_current_user)):
     """Update user location"""
