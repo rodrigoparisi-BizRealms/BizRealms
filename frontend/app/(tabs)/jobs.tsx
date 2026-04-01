@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,12 +31,22 @@ interface Job {
   };
 }
 
+interface JobApplication {
+  id: string;
+  user_id: string;
+  job_id: string;
+  status: string;
+  match_score: number;
+  job?: Job;
+}
+
 interface CurrentJob {
   company: string;
   position: string;
   salary: number;
   days_worked: number;
-  last_work_date: string | null;
+  last_collection_date: string | null;
+  job_id?: string;
 }
 
 interface AdBoost {
@@ -49,9 +60,11 @@ export default function Jobs() {
   const { token, refreshUser } = useAuth();
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<JobApplication[]>([]);
   const [currentJob, setCurrentJob] = useState<CurrentJob | null>(null);
   const [adBoost, setAdBoost] = useState<AdBoost>({ active: false, multiplier: 1, ads_watched: 0, seconds_remaining: 0 });
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [adProgress, setAdProgress] = useState(0);
@@ -59,34 +72,36 @@ export default function Jobs() {
 
   useEffect(() => {
     loadData();
-    // Update boost timer every second
-    const interval = setInterval(() => {
-      if (adBoost.active && adBoost.seconds_remaining > 0) {
-        setAdBoost(prev => ({
-          ...prev,
-          seconds_remaining: Math.max(0, prev.seconds_remaining - 1)
-        }));
-      }
-    }, 1000);
-    
-    return () => clearInterval(interval);
   }, []);
+
+  // Boost timer
+  useEffect(() => {
+    if (!adBoost.active || adBoost.seconds_remaining <= 0) return;
+    const interval = setInterval(() => {
+      setAdBoost(prev => {
+        if (prev.seconds_remaining <= 1) {
+          return { ...prev, seconds_remaining: 0, active: false, multiplier: 1 };
+        }
+        return { ...prev, seconds_remaining: prev.seconds_remaining - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [adBoost.active]);
 
   const loadData = async () => {
     try {
-      const [jobsRes, currentJobRes, boostRes] = await Promise.all([
+      const headers = { Authorization: `Bearer ${token}` };
+      const [jobsRes, currentJobRes, boostRes, appsRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs`),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/current`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/ads/current-boost`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/current`, { headers }).catch(() => ({ data: null })),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/ads/current-boost`, { headers }).catch(() => ({ data: { active: false, multiplier: 1, ads_watched: 0, seconds_remaining: 0 } })),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/my-applications`, { headers }).catch(() => ({ data: [] })),
       ]);
 
       setJobs(jobsRes.data);
       setCurrentJob(currentJobRes.data);
       setAdBoost(boostRes.data);
+      setApplications(appsRes.data || []);
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
@@ -97,10 +112,16 @@ export default function Jobs() {
   const onRefresh = async () => {
     setRefreshing(true);
     await loadData();
+    await refreshUser();
     setRefreshing(false);
   };
 
+  const getApplicationForJob = (jobId: string): JobApplication | undefined => {
+    return applications.find(a => a.job_id === jobId);
+  };
+
   const handleApply = async (jobId: string) => {
+    setApplying(jobId);
     try {
       const response = await axios.post(
         `${EXPO_PUBLIC_BACKEND_URL}/api/jobs/apply`,
@@ -108,20 +129,28 @@ export default function Jobs() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert(
-        response.data.status === 'accepted' ? 'Aprovado! 🎉' : 'Candidatura Enviada',
-        response.data.message + `\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`,
-        response.data.status === 'accepted'
-          ? [
-              { text: 'Ver Depois', style: 'cancel' },
-              { text: 'Aceitar Vaga', onPress: () => handleAccept(jobId) },
-            ]
-          : undefined
-      );
+      if (response.data.status === 'accepted') {
+        Alert.alert(
+          'Aprovado!',
+          `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`,
+          [
+            { text: 'Ver Depois', style: 'cancel' },
+            { text: 'Aceitar Vaga', onPress: () => handleAccept(jobId) },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Candidatura Enviada',
+          `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%\n\nSua candidatura foi registrada mas o match precisa ser maior para aprovação automática.`
+        );
+      }
 
       await loadData();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao candidatar-se');
+      const detail = error.response?.data?.detail || 'Erro ao candidatar-se';
+      Alert.alert('Erro', detail);
+    } finally {
+      setApplying(null);
     }
   };
 
@@ -134,8 +163,8 @@ export default function Jobs() {
       );
 
       Alert.alert(
-        'Sucesso! 🎊', 
-        response.data.message + `\n\nGanho diário: R$ ${response.data.daily_earnings.toFixed(2)}`
+        'Parabéns!',
+        `${response.data.message}\n\nGanho diário: R$ ${response.data.daily_earnings.toFixed(2)}`
       );
       await loadData();
       await refreshUser();
@@ -156,14 +185,14 @@ export default function Jobs() {
         Alert.alert('Aviso', response.data.message);
       } else {
         const message = `${response.data.message}\n\n` +
-          `💰 Ganhos: R$ ${response.data.earnings.toFixed(2)}\n` +
-          `⭐ XP: +${response.data.xp_gained}\n` +
-          `📅 Dias trabalhados: ${response.data.days_worked}` +
-          (response.data.promotion ? `\n\n🎉 ${response.data.promotion}` : '');
+          `Ganhos: R$ ${response.data.earnings.toFixed(2)}\n` +
+          `XP: +${response.data.xp_gained}\n` +
+          `Dias trabalhados: ${response.data.days_worked}` +
+          (response.data.promotion ? `\n\n${response.data.promotion}` : '');
 
         Alert.alert('Ganhos Coletados!', message);
       }
-      
+
       await loadData();
       await refreshUser();
     } catch (error: any) {
@@ -176,7 +205,7 @@ export default function Jobs() {
   const handleResign = () => {
     Alert.alert(
       'Pedir Demissão?',
-      'Tem certeza que deseja sair deste emprego?',
+      'Tem certeza que deseja sair deste emprego? Você poderá se candidatar a novas vagas.',
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Sim, Sair', style: 'destructive', onPress: confirmResign },
@@ -204,9 +233,8 @@ export default function Jobs() {
     setWatchingAd(true);
     setAdProgress(0);
 
-    // Simulate ad watching (30 seconds)
-    const duration = 30000; // 30 seconds
-    const interval = 100; // Update every 100ms
+    const duration = 30000;
+    const interval = 100;
     const steps = duration / interval;
     let currentStep = 0;
 
@@ -230,11 +258,11 @@ export default function Jobs() {
       );
 
       Alert.alert(
-        '🎉 Boost Ativado!',
+        'Boost Ativado!',
         `${response.data.message}\n\n` +
-        `📈 Multiplicador: ${response.data.multiplier}x\n` +
-        `💰 Ganho diário: R$ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
-        `⏱️ Duração: ${response.data.seconds_remaining}s`
+        `Multiplicador: ${response.data.multiplier}x\n` +
+        `Ganho diário: R$ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
+        `Duração: ${response.data.seconds_remaining}s`
       );
 
       await loadData();
@@ -253,14 +281,20 @@ export default function Jobs() {
   };
 
   const getEducationLabel = (level: number) => {
-    const labels = ['Nenhum', 'Ensino Médio', 'Graduação', 'Mestrado', 'Doutorado'];
+    const labels: Record<number, string> = { 0: 'Nenhum', 1: 'Ensino Médio', 2: 'Graduação', 3: 'Mestrado', 4: 'Doutorado' };
     return labels[level] || 'Nenhum';
   };
+
+  // Filter out accepted applications for display
+  const acceptedApps = applications.filter(a => a.status === 'accepted');
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.loadingText}>Carregando vagas...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Carregando vagas...</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -278,60 +312,68 @@ export default function Jobs() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4CAF50" />
         }
       >
-        {/* Current Job Section */}
+        {/* ===== CURRENT JOB SECTION ===== */}
         {currentJob && (
           <View style={styles.currentJobCard}>
             <View style={styles.currentJobHeader}>
               <Ionicons name="briefcase" size={24} color="#4CAF50" />
-              <Text style={styles.currentJobTitle}>Emprego Atual</Text>
+              <Text style={styles.currentJobLabel}>Emprego Atual</Text>
             </View>
-            
+
             {/* Ad Boost Badge */}
             {adBoost.active && adBoost.multiplier > 1 && (
               <View style={styles.boostBadge}>
-                <Ionicons name="flash" size={20} color="#FFD700" />
+                <Ionicons name="flash" size={18} color="#000" />
                 <Text style={styles.boostText}>{adBoost.multiplier}x BOOST</Text>
                 <Text style={styles.boostTimer}>{formatTime(adBoost.seconds_remaining)}</Text>
               </View>
             )}
-            
+
             <Text style={styles.currentJobPosition}>{currentJob.position}</Text>
             <Text style={styles.currentJobCompany}>{currentJob.company}</Text>
-            
-            <View style={styles.salaryContainer}>
-              <View>
-                <Text style={styles.currentJobSalary}>
-                  R$ {currentJob.salary.toLocaleString('pt-BR')}/mês
-                </Text>
-                <Text style={styles.dailyEarnings}>
-                  R$ {((currentJob.salary / 30) * (adBoost.multiplier || 1)).toFixed(2)}/dia
-                  {adBoost.multiplier > 1 && (
-                    <Text style={styles.boosted}> (BOOSTED!)</Text>
-                  )}
-                </Text>
-              </View>
+
+            <View style={styles.salaryRow}>
+              <Text style={styles.currentJobSalary}>
+                R$ {currentJob.salary.toLocaleString('pt-BR')}/mês
+              </Text>
+              <Text style={styles.dailyEarnings}>
+                R$ {((currentJob.salary / 30) * (adBoost.active ? adBoost.multiplier : 1)).toFixed(2)}/dia
+                {adBoost.active && adBoost.multiplier > 1 && (
+                  <Text style={styles.boosted}> BOOST!</Text>
+                )}
+              </Text>
             </View>
-            
+
             <Text style={styles.currentJobDays}>
-              📅 {currentJob.days_worked} dias trabalhados
+              {currentJob.days_worked} dias trabalhados
             </Text>
 
-            <View style={styles.currentJobActions}>
-              {/* Watch Ad Button */}
-              {!watchingAd && (
+            <View style={styles.actionButtons}>
+              {/* Collect Earnings */}
+              <TouchableOpacity
+                style={[styles.collectButton, working && styles.buttonDisabled]}
+                onPress={handleCollectEarnings}
+                disabled={working || watchingAd}
+              >
+                <Ionicons name="cash" size={20} color="#fff" />
+                <Text style={styles.collectButtonText}>
+                  {working ? 'Coletando...' : 'Coletar Ganhos'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Watch Ad */}
+              {!watchingAd ? (
                 <TouchableOpacity
                   style={styles.adButton}
                   onPress={handleWatchAd}
+                  disabled={adBoost.multiplier >= 10}
                 >
                   <Ionicons name="play-circle" size={20} color="#fff" />
                   <Text style={styles.adButtonText}>
-                    Assistir Propaganda ({adBoost.multiplier >= 10 ? 'MAX' : `+${adBoost.multiplier > 1 ? 1 : 1}x`})
+                    {adBoost.multiplier >= 10 ? 'Boost MAX!' : `Assistir Propaganda (+1x)`}
                   </Text>
                 </TouchableOpacity>
-              )}
-
-              {/* Ad Watching Progress */}
-              {watchingAd && (
+              ) : (
                 <View style={styles.adWatchingContainer}>
                   <Text style={styles.adWatchingText}>Assistindo propaganda...</Text>
                   <View style={styles.progressBarContainer}>
@@ -341,22 +383,11 @@ export default function Jobs() {
                 </View>
               )}
 
-              {/* Collect Earnings Button */}
-              <TouchableOpacity
-                style={[styles.workButton, working && styles.workButtonDisabled]}
-                onPress={handleCollectEarnings}
-                disabled={working || watchingAd}
-              >
-                <Ionicons name="cash" size={20} color="#fff" />
-                <Text style={styles.workButtonText}>
-                  {working ? 'Coletando...' : 'Coletar Ganhos'}
-                </Text>
-              </TouchableOpacity>
-
+              {/* Info */}
               <View style={styles.infoCard}>
                 <Ionicons name="information-circle" size={16} color="#2196F3" />
-                <Text style={styles.infoText}>
-                  Assista propagandas para multiplicar seus ganhos até 10x! Seus ganhos acumulam automaticamente.
+                <Text style={styles.infoCardText}>
+                  Assista propagandas para multiplicar ganhos até 10x! Ganhos acumulam automaticamente.
                 </Text>
               </View>
 
@@ -367,11 +398,12 @@ export default function Jobs() {
               >
                 <Ionicons name="school" size={20} color="#4CAF50" />
                 <Text style={styles.coursesLinkText}>
-                  Fazer Cursos para Aumentar Ganhos Permanentemente
+                  Fazer Cursos (Boost Permanente)
                 </Text>
                 <Ionicons name="arrow-forward" size={20} color="#4CAF50" />
               </TouchableOpacity>
 
+              {/* Resign */}
               <TouchableOpacity style={styles.resignButton} onPress={handleResign}>
                 <Text style={styles.resignButtonText}>Pedir Demissão</Text>
               </TouchableOpacity>
@@ -379,83 +411,148 @@ export default function Jobs() {
           </View>
         )}
 
-        {/* Available Jobs */}
-        {!currentJob && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                Vagas Disponíveis ({jobs.length})
-              </Text>
-              <Ionicons name="briefcase-outline" size={24} color="#4CAF50" />
+        {/* ===== ACCEPTED OFFERS (not yet started working) ===== */}
+        {!currentJob && acceptedApps.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
+              <Text style={styles.sectionTitle}>Ofertas Aprovadas</Text>
             </View>
-
-            {jobs.map(job => (
-              <View key={job.id} style={styles.jobCard}>
-                <View style={styles.jobHeader}>
-                  <View style={styles.jobTitleContainer}>
-                    <Text style={styles.jobTitle}>{job.title}</Text>
-                    <Text style={styles.jobCompany}>{job.company}</Text>
-                  </View>
-                  <Text style={styles.jobSalary}>
-                    R$ {job.salary.toLocaleString('pt-BR')}
+            {acceptedApps.map(app => (
+              <View key={app.id} style={styles.acceptedCard}>
+                <View style={styles.acceptedInfo}>
+                  <Text style={styles.acceptedJobTitle}>{app.job?.title || 'Vaga'}</Text>
+                  <Text style={styles.acceptedJobCompany}>{app.job?.company || ''}</Text>
+                  <Text style={styles.acceptedMatch}>
+                    Compatibilidade: {app.match_score.toFixed(0)}%
                   </Text>
-                </View>
-
-                <Text style={styles.jobDescription}>{job.description}</Text>
-
-                <View style={styles.jobInfo}>
-                  <View style={styles.jobInfoItem}>
-                    <Ionicons name="location" size={14} color="#888" />
-                    <Text style={styles.jobInfoText}>{job.location}</Text>
-                  </View>
-                  <View style={styles.jobInfoItem}>
-                    <Ionicons name="school" size={14} color="#888" />
-                    <Text style={styles.jobInfoText}>
-                      {getEducationLabel(job.requirements.education_level)}
+                  {app.job?.salary && (
+                    <Text style={styles.acceptedSalary}>
+                      R$ {app.job.salary.toLocaleString('pt-BR')}/mês
                     </Text>
-                  </View>
-                  {job.requirements.experience_months > 0 && (
-                    <View style={styles.jobInfoItem}>
-                      <Ionicons name="time" size={14} color="#888" />
-                      <Text style={styles.jobInfoText}>
-                        {job.requirements.experience_months} meses exp.
-                      </Text>
-                    </View>
                   )}
                 </View>
-
-                {Object.keys(job.requirements.skills).length > 0 && (
-                  <View style={styles.skillsRequired}>
-                    <Text style={styles.skillsLabel}>Habilidades:</Text>
-                    <View style={styles.skillsList}>
-                      {Object.entries(job.requirements.skills).map(([skill, level]) => (
-                        <View key={skill} style={styles.skillTag}>
-                          <Text style={styles.skillTagText}>
-                            {skill.charAt(0).toUpperCase() + skill.slice(1)} {level}/10
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
                 <TouchableOpacity
-                  style={styles.applyButton}
-                  onPress={() => handleApply(job.id)}
+                  style={styles.acceptButton}
+                  onPress={() => handleAccept(app.job_id)}
                 >
-                  <Text style={styles.applyButtonText}>Candidatar-se</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Text style={styles.acceptButtonText}>Aceitar</Text>
+                  <Ionicons name="checkmark" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
             ))}
-          </>
+          </View>
         )}
 
+        {/* ===== AVAILABLE JOBS ===== */}
+        {!currentJob && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="search" size={22} color="#888" />
+              <Text style={styles.sectionTitle}>
+                Vagas Disponíveis ({jobs.length})
+              </Text>
+            </View>
+
+            {jobs.map(job => {
+              const existingApp = getApplicationForJob(job.id);
+              const isApplied = !!existingApp;
+              const isAccepted = existingApp?.status === 'accepted';
+              const isPending = existingApp?.status === 'pending';
+              const isApplyingThis = applying === job.id;
+
+              return (
+                <View key={job.id} style={[styles.jobCard, isApplied && styles.jobCardApplied]}>
+                  <View style={styles.jobHeader}>
+                    <View style={styles.jobTitleContainer}>
+                      <Text style={styles.jobTitle}>{job.title}</Text>
+                      <Text style={styles.jobCompany}>{job.company}</Text>
+                    </View>
+                    <Text style={styles.jobSalary}>
+                      R$ {job.salary.toLocaleString('pt-BR')}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.jobDescription}>{job.description}</Text>
+
+                  <View style={styles.jobInfoRow}>
+                    <View style={styles.jobInfoItem}>
+                      <Ionicons name="location" size={14} color="#888" />
+                      <Text style={styles.jobInfoText}>{job.location}</Text>
+                    </View>
+                    <View style={styles.jobInfoItem}>
+                      <Ionicons name="school" size={14} color="#888" />
+                      <Text style={styles.jobInfoText}>
+                        {getEducationLabel(job.requirements.education_level)}
+                      </Text>
+                    </View>
+                    {job.requirements.experience_months > 0 && (
+                      <View style={styles.jobInfoItem}>
+                        <Ionicons name="time" size={14} color="#888" />
+                        <Text style={styles.jobInfoText}>
+                          {job.requirements.experience_months} meses exp.
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {Object.keys(job.requirements.skills).length > 0 && (
+                    <View style={styles.skillsRequired}>
+                      <Text style={styles.skillsLabel}>Habilidades:</Text>
+                      <View style={styles.skillsList}>
+                        {Object.entries(job.requirements.skills).map(([skill, level]) => (
+                          <View key={skill} style={styles.skillTag}>
+                            <Text style={styles.skillTagText}>
+                              {skill.charAt(0).toUpperCase() + skill.slice(1)} {level}/10
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Action Button */}
+                  {isAccepted ? (
+                    <TouchableOpacity
+                      style={styles.acceptJobButton}
+                      onPress={() => handleAccept(job.id)}
+                    >
+                      <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                      <Text style={styles.acceptJobButtonText}>Aceitar Vaga</Text>
+                    </TouchableOpacity>
+                  ) : isPending ? (
+                    <View style={styles.pendingBadge}>
+                      <Ionicons name="hourglass" size={18} color="#FF9800" />
+                      <Text style={styles.pendingText}>Candidatura Pendente</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.applyButton, isApplyingThis && styles.buttonDisabled]}
+                      onPress={() => handleApply(job.id)}
+                      disabled={isApplyingThis}
+                    >
+                      {isApplyingThis ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <Text style={styles.applyButtonText}>Candidatar-se</Text>
+                          <Ionicons name="arrow-forward" size={18} color="#fff" />
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Info when employed */}
         {currentJob && (
           <View style={styles.infoBox}>
             <Ionicons name="information-circle" size={20} color="#2196F3" />
-            <Text style={styles.infoText}>
-              Você já está empregado. Peça demissão para ver outras vagas.
+            <Text style={styles.infoBoxText}>
+              Você está empregado. Peça demissão para ver e candidatar-se a outras vagas.
             </Text>
           </View>
         )}
@@ -484,12 +581,20 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingBottom: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
   },
   loadingText: {
-    color: '#fff',
-    textAlign: 'center',
-    marginTop: 32,
+    color: '#888',
+    fontSize: 16,
   },
+
+  // Current Job
   currentJobCard: {
     backgroundColor: '#2a3a2a',
     borderRadius: 16,
@@ -502,12 +607,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    gap: 8,
   },
-  currentJobTitle: {
+  currentJobLabel: {
     fontSize: 14,
     color: '#4CAF50',
     fontWeight: 'bold',
-    marginLeft: 8,
+    textTransform: 'uppercase',
   },
   currentJobPosition: {
     fontSize: 22,
@@ -518,64 +624,29 @@ const styles = StyleSheet.create({
   currentJobCompany: {
     fontSize: 16,
     color: '#888',
+    marginBottom: 12,
+  },
+  salaryRow: {
     marginBottom: 8,
   },
   currentJobSalary: {
     fontSize: 20,
     color: '#4CAF50',
     fontWeight: 'bold',
-    marginBottom: 8,
+  },
+  dailyEarnings: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
+  },
+  boosted: {
+    color: '#FFD700',
+    fontWeight: 'bold',
   },
   currentJobDays: {
     fontSize: 14,
     color: '#aaa',
     marginBottom: 16,
-  },
-  currentJobActions: {
-    gap: 12,
-  },
-  workButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  workButtonDisabled: {
-    opacity: 0.6,
-  },
-  workButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  resignButton: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  resignButtonText: {
-    color: '#F44336',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a2a3a',
-    borderRadius: 8,
-    padding: 12,
-    gap: 8,
-    marginBottom: 12,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#aaa',
-    lineHeight: 16,
   },
   boostBadge: {
     flexDirection: 'row',
@@ -602,17 +673,27 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  salaryContainer: {
-    marginBottom: 8,
+
+  // Action Buttons
+  actionButtons: {
+    gap: 12,
   },
-  dailyEarnings: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
+  collectButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
-  boosted: {
-    color: '#FFD700',
+  collectButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   adButton: {
     backgroundColor: '#FF6B6B',
@@ -622,7 +703,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
   },
   adButtonText: {
     color: '#fff',
@@ -633,7 +713,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
     alignItems: 'center',
   },
   adWatchingText: {
@@ -658,6 +737,20 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 12,
   },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#1a2a3a',
+    borderRadius: 8,
+    padding: 12,
+    gap: 8,
+  },
+  infoCardText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#aaa',
+    lineHeight: 16,
+  },
   coursesLink: {
     backgroundColor: '#2a2a2a',
     borderRadius: 12,
@@ -667,7 +760,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#4CAF50',
-    marginBottom: 12,
   },
   coursesLinkText: {
     flex: 1,
@@ -676,23 +768,95 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginHorizontal: 12,
   },
-  sectionHeader: {
+  resignButton: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  resignButtonText: {
+    color: '#F44336',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  // Sections
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  sectionHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 16,
   },
+
+  // Accepted Offers
+  acceptedCard: {
+    backgroundColor: '#2a3a2a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  acceptedInfo: {
+    flex: 1,
+  },
+  acceptedJobTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  acceptedJobCompany: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 4,
+  },
+  acceptedMatch: {
+    fontSize: 12,
+    color: '#4CAF50',
+    marginBottom: 2,
+  },
+  acceptedSalary: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  acceptButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  acceptButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  // Job Cards
   jobCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
+  },
+  jobCardApplied: {
+    borderWidth: 1,
+    borderColor: '#555',
+    opacity: 0.85,
   },
   jobHeader: {
     flexDirection: 'row',
@@ -701,6 +865,7 @@ const styles = StyleSheet.create({
   },
   jobTitleContainer: {
     flex: 1,
+    marginRight: 12,
   },
   jobTitle: {
     fontSize: 18,
@@ -723,7 +888,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     lineHeight: 20,
   },
-  jobInfo: {
+  jobInfoRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -761,6 +926,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#aaa',
   },
+
+  // Apply Button
   applyButton: {
     backgroundColor: '#4CAF50',
     borderRadius: 12,
@@ -769,12 +936,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
+    minHeight: 48,
   },
   applyButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  // Accept Job (in job card)
+  acceptJobButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  acceptJobButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  // Pending Badge
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3a3a2a',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
+  pendingText: {
+    color: '#FF9800',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  // Info Box
   infoBox: {
     backgroundColor: '#1a2a3a',
     borderRadius: 12,
@@ -784,7 +988,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2196F3',
   },
-  infoText: {
+  infoBoxText: {
     flex: 1,
     fontSize: 14,
     color: '#aaa',

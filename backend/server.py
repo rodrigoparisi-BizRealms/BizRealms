@@ -122,6 +122,7 @@ class UserResponse(BaseModel):
     onboarding_completed: bool
     avatar_color: str
     avatar_icon: str
+    avatar_photo: Optional[str] = None
     background: str
     dream: str
     personality: dict
@@ -757,6 +758,10 @@ async def apply_to_job(request: JobApplyRequest, current_user: dict = Depends(ge
     
     await db.job_applications.insert_one(application.dict())
     
+    # Remove ObjectId before returning
+    if '_id' in job:
+        del job['_id']
+    
     return {
         "message": "Candidatura enviada!" if status == "pending" else "Parabéns! Você foi aprovado!",
         "status": status,
@@ -1114,8 +1119,11 @@ async def get_my_applications(current_user: dict = Depends(get_current_user)):
     # Enrich with job details
     for app in applications:
         job = await db.jobs.find_one({"id": app['job_id']})
+        if job and '_id' in job:
+            del job['_id']
         app['job'] = job
-        del app['_id']
+        if '_id' in app:
+            del app['_id']
     
     return applications
 
@@ -1132,8 +1140,11 @@ async def get_current_job(current_user: dict = Depends(get_current_user)):
     
     # Get job details
     job = await db.jobs.find_one({"id": current_job.get('job_id')})
+    if job and '_id' in job:
+        del job['_id']
     current_job['job_details'] = job
-    del current_job['_id']
+    if '_id' in current_job:
+        del current_job['_id']
     
     return current_job
 

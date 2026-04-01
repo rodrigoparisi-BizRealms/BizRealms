@@ -11,6 +11,7 @@ interface User {
   onboarding_completed: boolean;
   avatar_color?: string;
   avatar_icon?: string;
+  avatar_photo?: string | null;
   background?: string;
   dream?: string;
   personality?: any;
