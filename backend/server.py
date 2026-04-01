@@ -133,6 +133,12 @@ class UserResponse(BaseModel):
     experience_points: int = 0
     level: int = 1
     location: str = ""
+    full_name: str = ""
+    address: str = ""
+    city: str = ""
+    state: str = ""
+    zip_code: str = ""
+    phone: str = ""
     education: List[Education] = []
     certifications: List[Certification] = []
     work_experience: List[WorkExperience] = []
@@ -352,6 +358,19 @@ async def update_avatar_photo(photo_data: dict, current_user: dict = Depends(get
         {'$set': {'avatar_photo': photo_data.get('avatar_photo')}}
     )
     return {"message": "Foto atualizada com sucesso"}
+
+@api_router.put("/user/personal-data")
+async def update_personal_data(data: dict, current_user: dict = Depends(get_current_user)):
+    """Update user personal data (name, address, phone, etc.)"""
+    allowed = ['full_name', 'address', 'city', 'state', 'zip_code', 'phone', 'name', 'email', 'location']
+    update_data = {k: v for k, v in data.items() if k in allowed and v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum dado válido para atualizar")
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {'$set': update_data}
+    )
+    return {"message": "Dados pessoais atualizados com sucesso", "updated_fields": list(update_data.keys())}
 
 @api_router.delete("/user/education/{education_id}")
 async def delete_education(education_id: str, current_user: dict = Depends(get_current_user)):
@@ -723,6 +742,49 @@ async def seed_jobs():
         }
     ]
     await db.jobs.insert_many(jobs)
+
+# Higher-level jobs that unlock as player levels up
+HIGHER_LEVEL_JOBS = [
+    {"title": "Diretor de Marketing", "company": "Grupo Empresarial XYZ", "description": "Liderar estratégias de marketing digital e branding", "salary": 15000.0, "location": "São Paulo, Brazil", "requirements": {"education_level": 3, "experience_months": 36, "skills": {"comunicação": 6, "liderança": 5}}, "min_level": 10},
+    {"title": "CTO (Chief Technology Officer)", "company": "TechVentures SA", "description": "Liderar equipe de tecnologia e inovação", "salary": 25000.0, "location": "São Paulo, Brazil", "requirements": {"education_level": 3, "experience_months": 48, "skills": {"técnico": 8, "liderança": 7}}, "min_level": 20},
+    {"title": "VP de Vendas", "company": "MegaCorp Internacional", "description": "Vice-presidente responsável por vendas globais", "salary": 35000.0, "location": "São Paulo, Brazil", "requirements": {"education_level": 3, "experience_months": 60, "skills": {"negociação": 8, "liderança": 7, "comunicação": 6}}, "min_level": 30},
+    {"title": "CEO", "company": "Holding Alpha", "description": "Diretor executivo de conglomerado empresarial", "salary": 50000.0, "location": "São Paulo, Brazil", "requirements": {"education_level": 3, "experience_months": 72, "skills": {"liderança": 9, "financeiro": 8, "negociação": 8}}, "min_level": 40},
+    {"title": "Investidor Profissional", "company": "Capital Partners", "description": "Gestão de fundos e investimentos de alto valor", "salary": 80000.0, "location": "São Paulo, Brazil", "requirements": {"education_level": 3, "experience_months": 84, "skills": {"financeiro": 9, "negociação": 8}}, "min_level": 50},
+    {"title": "Presidente do Conselho", "company": "Global Enterprises", "description": "Presidir conselho de administração de multinacional", "salary": 120000.0, "location": "São Paulo, Brazil", "requirements": {"education_level": 3, "experience_months": 96, "skills": {"liderança": 10, "financeiro": 9, "negociação": 9}}, "min_level": 60},
+]
+
+@api_router.get("/jobs/available-for-level")
+async def get_jobs_for_level(current_user: dict = Depends(get_current_user)):
+    """Get jobs including higher-level ones based on user level"""
+    user = await db.users.find_one({"id": current_user['id']})
+    user_level = user.get('level', 1)
+    
+    # Get base jobs
+    base_jobs = await db.jobs.find({}).to_list(100)
+    for j in base_jobs:
+        if '_id' in j:
+            del j['_id']
+    
+    # Add higher-level jobs the user qualifies for
+    for hlj in HIGHER_LEVEL_JOBS:
+        if user_level >= hlj['min_level']:
+            job = {
+                "id": f"hl_{hlj['title'].lower().replace(' ', '_')}",
+                "title": hlj['title'],
+                "company": hlj['company'],
+                "description": hlj['description'],
+                "salary": hlj['salary'],
+                "location": hlj['location'],
+                "requirements": hlj['requirements'],
+                "status": "open",
+                "min_level": hlj['min_level'],
+                "is_premium": True,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            base_jobs.append(job)
+    
+    return base_jobs
+
 
 @api_router.post("/jobs/apply")
 async def apply_to_job(request: JobApplyRequest, current_user: dict = Depends(get_current_user)):
@@ -1409,12 +1471,11 @@ def generate_price_history(asset: dict, days: int = 30) -> list:
     
     return prices
 
-def get_current_price(asset: dict) -> float:
-    """Get the current simulated price for an asset"""
+def get_current_price(asset: dict, event_multiplier: float = 1.0) -> float:
+    """Get the current simulated price for an asset, applying market event effects"""
     history = generate_price_history(asset, 30)
-    if history:
-        return history[-1]['price']
-    return asset['base_price']
+    base = history[-1]['price'] if history else asset['base_price']
+    return round(base * event_multiplier, 2)
 
 async def seed_investments():
     """Seed investment assets if not exists"""
@@ -2741,6 +2802,323 @@ async def get_store_purchases(current_user: dict = Depends(get_current_user)):
         if isinstance(p.get('created_at'), datetime):
             p['created_at'] = p['created_at'].isoformat()
     return purchases
+
+# ==================== DAILY FREE MONEY (PROPAGANDA DIÁRIA) ====================
+
+@api_router.post("/store/daily-reward")
+async def claim_daily_reward(current_user: dict = Depends(get_current_user)):
+    """Claim daily free money by watching an ad (once per day)"""
+    now = datetime.utcnow()
+    today = now.strftime("%Y-%m-%d")
+    
+    # Check if already claimed today
+    existing = await db.daily_rewards.find_one({
+        "user_id": current_user['id'],
+        "date": today
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Você já resgatou sua recompensa diária hoje! Volte amanhã.")
+    
+    # Calculate reward based on level (higher levels get more)
+    user = await db.users.find_one({"id": current_user['id']})
+    user_level = user.get('level', 1)
+    base_reward = 500
+    reward_amount = base_reward + (user_level * 100)  # 500 + 100 per level
+    
+    # Record claim
+    await db.daily_rewards.insert_one({
+        "user_id": current_user['id'],
+        "date": today,
+        "amount": reward_amount,
+        "created_at": now
+    })
+    
+    # Add money
+    new_money = user.get('money', 0) + reward_amount
+    await db.users.update_one(
+        {"id": current_user['id']},
+        {"$set": {"money": new_money}}
+    )
+    
+    return {
+        "success": True,
+        "message": f"Propaganda assistida! Você ganhou R$ {reward_amount:,.0f}!",
+        "amount": reward_amount,
+        "new_balance": round(new_money, 2),
+        "level_bonus": user_level * 100,
+    }
+
+@api_router.get("/store/daily-reward-status")
+async def daily_reward_status(current_user: dict = Depends(get_current_user)):
+    """Check if daily reward is available"""
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    existing = await db.daily_rewards.find_one({
+        "user_id": current_user['id'],
+        "date": today
+    })
+    user = await db.users.find_one({"id": current_user['id']})
+    user_level = user.get('level', 1)
+    reward_amount = 500 + (user_level * 100)
+    
+    return {
+        "available": existing is None,
+        "already_claimed": existing is not None,
+        "reward_amount": reward_amount,
+    }
+
+
+# ==================== FRANCHISE SYSTEM (FRANQUIAS) ====================
+
+FRANCHISE_SEGMENTS = ['restaurante', 'loja', 'fabrica']
+
+@api_router.post("/companies/create-franchise")
+async def create_franchise(request: dict, current_user: dict = Depends(get_current_user)):
+    """Create a franchise from an existing company (retail/similar segments only)"""
+    company_id = request.get('company_id')
+    franchise_name = request.get('franchise_name', '')
+    franchise_location = request.get('franchise_location', 'Nova Unidade')
+    
+    # Find the parent company
+    parent = await db.user_companies.find_one({
+        "id": company_id,
+        "user_id": current_user['id']
+    })
+    if not parent:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    segment = parent.get('segment', '')
+    if segment not in FRANCHISE_SEGMENTS:
+        raise HTTPException(status_code=400, detail=f"Apenas empresas de varejo, restaurantes e fábricas podem criar franquias. Segmento '{segment}' não é elegível.")
+    
+    # Check user funds - franchise costs 60% of parent
+    franchise_cost = parent.get('purchase_price', 0) * 0.6
+    user = await db.users.find_one({"id": current_user['id']})
+    if user['money'] < franchise_cost:
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Custo da franquia: R$ {franchise_cost:,.0f}")
+    
+    # Count existing franchises for this parent
+    existing_franchises = await db.user_companies.count_documents({
+        "user_id": current_user['id'],
+        "parent_company_id": company_id
+    })
+    max_franchises = 5
+    if existing_franchises >= max_franchises:
+        raise HTTPException(status_code=400, detail=f"Limite de {max_franchises} franquias por empresa atingido")
+    
+    # Franchise earns 70% of parent revenue
+    franchise_revenue = round(parent.get('monthly_revenue', 0) * 0.7)
+    
+    # Deduct money
+    new_money = user['money'] - franchise_cost
+    await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
+    
+    # Create franchise
+    fname = franchise_name or f"{parent.get('name', 'Empresa')} - Franquia {existing_franchises + 1}"
+    franchise = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "name": fname,
+        "segment": segment,
+        "purchase_price": franchise_cost,
+        "monthly_revenue": franchise_revenue,
+        "employees": max(1, parent.get('employees', 1) // 2),
+        "description": f"Franquia de {parent.get('name', '')} - {franchise_location}",
+        "is_franchise": True,
+        "parent_company_id": company_id,
+        "parent_company_name": parent.get('name', ''),
+        "location": franchise_location,
+        "icon": parent.get('icon', 'business'),
+        "color": parent.get('color', '#4CAF50'),
+        "created_at": datetime.utcnow(),
+    }
+    await db.user_companies.insert_one(franchise)
+    
+    return {
+        "success": True,
+        "message": f"Franquia '{fname}' criada com sucesso!",
+        "franchise": {k: v for k, v in franchise.items() if k != '_id'},
+        "cost": franchise_cost,
+        "monthly_revenue": franchise_revenue,
+        "new_balance": round(new_money, 2),
+    }
+
+
+# ==================== DYNAMIC MARKET EVENTS ====================
+
+MARKET_EVENTS = [
+    {"id": "bull_run", "title": "Alta do Mercado!", "description": "Otimismo generalizado eleva os preços das ações", "icon": "trending-up", "color": "#4CAF50", "effect": {"acoes": 1.15, "crypto": 1.10}, "duration_hours": 6},
+    {"id": "crypto_boom", "title": "Boom das Criptos!", "description": "Bitcoin atinge nova máxima histórica, arrastando todo o mercado", "icon": "rocket", "color": "#FF9800", "effect": {"crypto": 1.30}, "duration_hours": 4},
+    {"id": "market_crash", "title": "Crash do Mercado!", "description": "Pânico nos mercados após crise bancária global", "icon": "trending-down", "color": "#F44336", "effect": {"acoes": 0.85, "crypto": 0.80, "fundos": 0.90}, "duration_hours": 8},
+    {"id": "tech_rally", "title": "Rally da Tecnologia!", "description": "Resultados trimestrais surpreendem e setor tech dispara", "icon": "logo-apple", "color": "#2196F3", "effect": {"acoes": 1.12}, "duration_hours": 5},
+    {"id": "gold_rush", "title": "Corrida do Ouro!", "description": "Incerteza política leva investidores a buscar refúgio em commodities", "icon": "diamond", "color": "#FFD700", "effect": {"commodities": 1.25}, "duration_hours": 6},
+    {"id": "inflation_fear", "title": "Medo da Inflação!", "description": "Dados de inflação acima do esperado assustam investidores", "icon": "alert-circle", "color": "#FF5722", "effect": {"acoes": 0.92, "fundos": 0.88}, "duration_hours": 12},
+    {"id": "regulation_news", "title": "Nova Regulação Cripto!", "description": "Governo anuncia regulação favorável para criptomoedas", "icon": "shield-checkmark", "color": "#9C27B0", "effect": {"crypto": 1.20}, "duration_hours": 8},
+    {"id": "ipo_hype", "title": "Onda de IPOs!", "description": "Várias empresas abrem capital e mercado aquece", "icon": "business", "color": "#00BCD4", "effect": {"acoes": 1.10}, "duration_hours": 6},
+    {"id": "economic_recovery", "title": "Recuperação Econômica!", "description": "PIB cresce acima do esperado e mercados celebram", "icon": "sunny", "color": "#4CAF50", "effect": {"acoes": 1.08, "fundos": 1.06, "commodities": 1.05}, "duration_hours": 10},
+    {"id": "defi_surge", "title": "DeFi em Alta!", "description": "Protocolos de finanças descentralizadas explodem em valor", "icon": "flash", "color": "#E91E63", "effect": {"crypto": 1.25}, "duration_hours": 4},
+]
+
+@api_router.get("/market/events")
+async def get_market_events(current_user: dict = Depends(get_current_user)):
+    """Get current active market events"""
+    now = datetime.utcnow()
+    
+    # Get active events
+    active_events = await db.market_events.find({
+        "expires_at": {"$gt": now}
+    }).to_list(10)
+    
+    for e in active_events:
+        if '_id' in e:
+            del e['_id']
+        if isinstance(e.get('expires_at'), datetime):
+            e['seconds_remaining'] = int((e['expires_at'] - now).total_seconds())
+            e['expires_at'] = e['expires_at'].isoformat()
+        if isinstance(e.get('created_at'), datetime):
+            e['created_at'] = e['created_at'].isoformat()
+    
+    return {
+        "active_events": active_events,
+        "count": len(active_events)
+    }
+
+@api_router.post("/market/trigger-event")
+async def trigger_market_event(current_user: dict = Depends(get_current_user)):
+    """Trigger a random market event (limited frequency)"""
+    now = datetime.utcnow()
+    
+    # Check if an event was recently triggered (min 1 hour between events)
+    last_event = await db.market_events.find_one({}, sort=[("created_at", -1)])
+    if last_event:
+        last_time = last_event.get('created_at', datetime.min)
+        if isinstance(last_time, str):
+            last_time = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+        if (now - last_time).total_seconds() < 3600:
+            mins_left = int((3600 - (now - last_time).total_seconds()) / 60)
+            raise HTTPException(status_code=400, detail=f"Próximo evento em {mins_left} minutos")
+    
+    # Pick a random event
+    import random
+    event_template = random.choice(MARKET_EVENTS)
+    
+    event = {
+        "id": str(uuid.uuid4()),
+        "event_type": event_template['id'],
+        "title": event_template['title'],
+        "description": event_template['description'],
+        "icon": event_template['icon'],
+        "color": event_template['color'],
+        "effect": event_template['effect'],
+        "duration_hours": event_template['duration_hours'],
+        "created_at": now,
+        "expires_at": now + timedelta(hours=event_template['duration_hours']),
+    }
+    await db.market_events.insert_one(event)
+    
+    return {
+        "success": True,
+        "event": {k: v for k, v in event.items() if k != '_id'},
+        "message": f"Evento: {event_template['title']}",
+    }
+
+
+# ==================== ASSET IMAGES ====================
+
+ASSET_IMAGES = {
+    "moto_cg160": [
+        "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=60",
+        "https://images.unsplash.com/photo-1558980664-769d59546b3d?w=400&q=60",
+        "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=400&q=60",
+        "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=400&q=60",
+    ],
+    "fiat_uno": [
+        "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400&q=60",
+        "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&q=60",
+        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=60",
+        "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&q=60",
+    ],
+    "civic_touring": [
+        "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&q=60",
+        "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&q=60",
+        "https://images.unsplash.com/photo-1542362567-b07e54358753?w=400&q=60",
+        "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&q=60",
+    ],
+    "bmw_x5": [
+        "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&q=60",
+        "https://images.unsplash.com/photo-1556189250-72ba954cfc2b?w=400&q=60",
+        "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=400&q=60",
+        "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&q=60",
+    ],
+    "kitnet": [
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=60",
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=60",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=60",
+        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&q=60",
+    ],
+    "apartamento": [
+        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&q=60",
+        "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=400&q=60",
+        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&q=60",
+        "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=400&q=60",
+    ],
+    "casa_condominio": [
+        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400&q=60",
+        "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=60",
+        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=60",
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=60",
+    ],
+    "mansao": [
+        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&q=60",
+        "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=400&q=60",
+        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=60",
+        "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&q=60",
+    ],
+    "rolex": [
+        "https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=400&q=60",
+        "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400&q=60",
+        "https://images.unsplash.com/photo-1548171916-c8d1c1e8982c?w=400&q=60",
+        "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=400&q=60",
+    ],
+    "iate": [
+        "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400&q=60",
+        "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=60",
+        "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?w=400&q=60",
+        "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?w=400&q=60",
+    ],
+    "default_vehicle": [
+        "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&q=60",
+        "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400&q=60",
+        "https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=400&q=60",
+        "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=400&q=60",
+    ],
+    "default_property": [
+        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=60",
+        "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=60",
+        "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&q=60",
+        "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400&q=60",
+    ],
+    "default_luxury": [
+        "https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?w=400&q=60",
+        "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=400&q=60",
+        "https://images.unsplash.com/photo-1583937443999-b71b09a43c72?w=400&q=60",
+        "https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?w=400&q=60",
+    ],
+}
+
+@api_router.get("/assets/images/{asset_key}")
+async def get_asset_images(asset_key: str):
+    """Get images for an asset"""
+    images = ASSET_IMAGES.get(asset_key)
+    if not images:
+        # Try category defaults
+        if "moto" in asset_key or "fiat" in asset_key or "civic" in asset_key or "bmw" in asset_key or "ferrari" in asset_key:
+            images = ASSET_IMAGES.get("default_vehicle", [])
+        elif "kit" in asset_key or "apart" in asset_key or "casa" in asset_key or "mans" in asset_key:
+            images = ASSET_IMAGES.get("default_property", [])
+        else:
+            images = ASSET_IMAGES.get("default_luxury", [])
+    return {"images": images}
+
 
 # Include the router in the main app
 app.include_router(api_router)

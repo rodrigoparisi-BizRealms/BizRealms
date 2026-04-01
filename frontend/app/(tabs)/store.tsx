@@ -28,16 +28,20 @@ export default function Store() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix'>('credit_card');
   const [showHistory, setShowHistory] = useState(false);
+  const [dailyStatus, setDailyStatus] = useState<any>(null);
+  const [claimingDaily, setClaimingDaily] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const h = { Authorization: `Bearer ${token}` };
-      const [itemsRes, purchasesRes] = await Promise.all([
+      const [itemsRes, purchasesRes, dailyRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/store/items`, { headers: h }),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/store/purchases`, { headers: h }).catch(() => ({ data: [] })),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/store/daily-reward-status`, { headers: h }).catch(() => ({ data: null })),
       ]);
       setItems(itemsRes.data);
       setPurchases(purchasesRes.data);
+      if (dailyRes.data) setDailyStatus(dailyRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, [token]);
@@ -76,6 +80,22 @@ export default function Store() {
       setPurchasing(null);
       setSelectedItem(null);
     }
+  };
+
+  const handleDailyReward = async () => {
+    setClaimingDaily(true);
+    try {
+      const r = await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/store/daily-reward`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showAlert('Recompensa Diária!', r.data.message);
+      await loadData();
+      await refreshUser();
+    } catch (e: any) {
+      showAlert('Indisponível', e.response?.data?.detail || 'Erro ao resgatar');
+    } finally { setClaimingDaily(false); }
   };
 
   const filtered = filterCat === 'all' ? items : items.filter(i => i.category === filterCat);
@@ -140,6 +160,47 @@ export default function Store() {
 
       {/* Items */}
       <ScrollView contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E91E63" />}>
+        {/* Daily Free Money */}
+        {dailyStatus?.available && (
+          <TouchableOpacity
+            style={[s.dailyCard, claimingDaily && { opacity: 0.5 }]}
+            onPress={handleDailyReward}
+            disabled={claimingDaily}
+            activeOpacity={0.7}
+          >
+            <View style={s.dailyLeft}>
+              <View style={s.dailyIconBg}>
+                <Ionicons name="gift" size={28} color="#FFD700" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.dailyTitle}>Dinheiro Grátis Diário!</Text>
+                <Text style={s.dailyDesc}>Assista uma propaganda e ganhe R$ {dailyStatus.reward_amount?.toLocaleString('pt-BR')}</Text>
+              </View>
+            </View>
+            {claimingDaily ? (
+              <ActivityIndicator size="small" color="#FFD700" />
+            ) : (
+              <View style={s.dailyBtn}>
+                <Ionicons name="play-circle" size={20} color="#000" />
+                <Text style={s.dailyBtnText}>ASSISTIR</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+        {dailyStatus && !dailyStatus.available && (
+          <View style={[s.dailyCard, { borderColor: '#333', opacity: 0.6 }]}>
+            <View style={s.dailyLeft}>
+              <View style={[s.dailyIconBg, { backgroundColor: '#333' }]}>
+                <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.dailyTitle, { color: '#666' }]}>Recompensa Resgatada!</Text>
+                <Text style={s.dailyDesc}>Volte amanhã para ganhar mais</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Mock Payment Notice */}
         <View style={s.mockNotice}>
           <Ionicons name="information-circle" size={18} color="#FF9800" />
@@ -314,6 +375,14 @@ const s = StyleSheet.create({
   fText: { color: '#888', fontSize: 13, fontWeight: 'bold' },
   fTextActive: { color: '#fff' },
   content: { padding: 16, paddingBottom: 32 },
+  // Daily Free Money
+  dailyCard: { backgroundColor: '#1a2a1a', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#FFD700' },
+  dailyLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  dailyIconBg: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFD70020', justifyContent: 'center', alignItems: 'center' },
+  dailyTitle: { color: '#FFD700', fontSize: 16, fontWeight: 'bold' },
+  dailyDesc: { color: '#888', fontSize: 12, marginTop: 2 },
+  dailyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD700', borderRadius: 12, paddingVertical: 12 },
+  dailyBtnText: { color: '#000', fontSize: 14, fontWeight: 'bold' },
   // Mock Notice
   mockNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#2a2a1a', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FF9800' },
   mockText: { flex: 1, color: '#FF9800', fontSize: 12 },

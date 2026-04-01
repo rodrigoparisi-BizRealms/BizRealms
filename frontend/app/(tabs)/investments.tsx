@@ -233,9 +233,14 @@ export default function Investments() {
     }
   };
 
+  const showAlert = (title: string, msg: string) => {
+    if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
+    else Alert.alert(title, msg);
+  };
+
   const handleTrade = async () => {
     if (!selectedAsset || !quantity || parseFloat(quantity) <= 0) {
-      Alert.alert('Erro', 'Informe uma quantidade válida');
+      showAlert('Erro', 'Informe uma quantidade válida');
       return;
     }
 
@@ -248,7 +253,7 @@ export default function Investments() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert(
+      showAlert(
         tradeType === 'buy' ? 'Compra Realizada!' : 'Venda Realizada!',
         res.data.message + `\n\nNovo saldo: R$ ${res.data.new_balance.toLocaleString('pt-BR')}`
       );
@@ -257,7 +262,7 @@ export default function Investments() {
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao realizar operação');
+      showAlert('Erro', error.response?.data?.detail || 'Erro ao realizar operação');
     } finally {
       setTrading(false);
     }

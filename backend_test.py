@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Business Empire - Rankings Rewards System
-Testing the new rankings rewards endpoints
+Backend API Testing for Business Empire Game - NEW Endpoints
+Testing the specific endpoints mentioned in the review request
 """
 
 import requests
@@ -11,253 +11,461 @@ from datetime import datetime
 
 # Configuration
 BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
+TEST_EMAIL = "teste@businessempire.com"
+TEST_PASSWORD = "teste123"
 
-# Test credentials for 2nd place winner
-TEST_EMAIL = "test_jobs@businessempire.com"
-TEST_PASSWORD = "test123"
-
-class RankingsRewardsTest:
+class BusinessEmpireAPITester:
     def __init__(self):
+        self.base_url = BASE_URL
         self.token = None
-        self.user_id = None
+        self.user_data = None
         
     def login(self):
         """Login and get JWT token"""
-        print("🔐 Logging in as test_jobs user...")
-        
-        response = requests.post(f"{BASE_URL}/auth/login", json={
+        print("🔐 Logging in...")
+        response = requests.post(f"{self.base_url}/auth/login", json={
             "email": TEST_EMAIL,
             "password": TEST_PASSWORD
         })
         
         if response.status_code == 200:
             data = response.json()
-            # Try both possible token field names
-            self.token = data.get('access_token') or data.get('token')
-            self.user_id = data.get('user', {}).get('id')
-            print(f"✅ Login successful! User ID: {self.user_id}")
-            print(f"✅ Token received: {self.token[:50]}..." if self.token else "❌ No token received")
+            self.token = data['token']
+            self.user_data = data['user']
+            print(f"✅ Login successful! User: {self.user_data.get('name', 'Unknown')}")
+            print(f"   Level: {self.user_data.get('level', 1)}, Money: R$ {self.user_data.get('money', 0):,.2f}")
             return True
         else:
             print(f"❌ Login failed: {response.status_code} - {response.text}")
             return False
     
     def get_headers(self):
-        """Get authorization headers"""
-        return {"Authorization": f"Bearer {self.token}"}
+        """Get headers with authorization"""
+        return {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
     
-    def test_rankings_with_rewards_info(self):
-        """Test GET /api/rankings - should include new reward fields"""
-        print("\n📊 Testing GET /api/rankings with rewards info...")
+    def test_personal_data_endpoints(self):
+        """Test Personal Data (Profile) endpoints"""
+        print("\n" + "="*60)
+        print("🧑‍💼 TESTING PERSONAL DATA ENDPOINTS")
+        print("="*60)
         
-        response = requests.get(f"{BASE_URL}/rankings", headers=self.get_headers())
+        # Test PUT /api/user/personal-data
+        print("\n📝 Testing PUT /api/user/personal-data...")
+        personal_data = {
+            "full_name": "Teste Jogador",
+            "address": "Rua ABC 123",
+            "city": "São Paulo",
+            "state": "SP",
+            "zip_code": "01000-000",
+            "phone": "11999999999"
+        }
+        
+        response = requests.put(
+            f"{self.base_url}/user/personal-data",
+            json=personal_data,
+            headers=self.get_headers()
+        )
         
         if response.status_code == 200:
-            data = response.json()
-            print("✅ Rankings endpoint working")
+            result = response.json()
+            print(f"✅ Personal data updated successfully!")
+            print(f"   Updated fields: {result.get('updated_fields', [])}")
+        else:
+            print(f"❌ Personal data update failed: {response.status_code} - {response.text}")
+        
+        # Test GET /api/user/me to verify new fields
+        print("\n👤 Testing GET /api/user/me (verify new fields)...")
+        response = requests.get(
+            f"{self.base_url}/user/me",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 200:
+            user = response.json()
+            print(f"✅ User profile retrieved successfully!")
+            print(f"   Full Name: {user.get('full_name', 'Not set')}")
+            print(f"   Address: {user.get('address', 'Not set')}")
+            print(f"   City: {user.get('city', 'Not set')}")
+            print(f"   State: {user.get('state', 'Not set')}")
+            print(f"   ZIP Code: {user.get('zip_code', 'Not set')}")
+            print(f"   Phone: {user.get('phone', 'Not set')}")
             
-            # Check for new fields
-            required_fields = ['has_unclaimed_reward', 'unclaimed_reward', 'prizes']
-            missing_fields = []
-            
-            for field in required_fields:
-                if field not in data:
-                    missing_fields.append(field)
-            
+            # Verify all fields were saved
+            expected_fields = ['full_name', 'address', 'city', 'state', 'zip_code', 'phone']
+            missing_fields = [field for field in expected_fields if not user.get(field)]
             if missing_fields:
-                print(f"❌ Missing required fields: {missing_fields}")
-                return False
+                print(f"⚠️  Missing fields: {missing_fields}")
+            else:
+                print("✅ All personal data fields present!")
+        else:
+            print(f"❌ Get user profile failed: {response.status_code} - {response.text}")
+    
+    def test_daily_reward_endpoints(self):
+        """Test Daily Free Money endpoints"""
+        print("\n" + "="*60)
+        print("💰 TESTING DAILY REWARD ENDPOINTS")
+        print("="*60)
+        
+        # Test GET /api/store/daily-reward-status (should be available first time)
+        print("\n🎯 Testing GET /api/store/daily-reward-status (initial check)...")
+        response = requests.get(
+            f"{self.base_url}/store/daily-reward-status",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 200:
+            status = response.json()
+            print(f"✅ Daily reward status retrieved!")
+            print(f"   Available: {status.get('available', False)}")
+            print(f"   Already claimed: {status.get('already_claimed', False)}")
+            print(f"   Reward amount: R$ {status.get('reward_amount', 0):,.0f}")
             
-            print(f"✅ has_unclaimed_reward: {data['has_unclaimed_reward']}")
-            print(f"✅ unclaimed_reward: {data['unclaimed_reward']}")
-            print(f"✅ prizes array: {len(data['prizes'])} items")
+            initial_available = status.get('available', False)
+        else:
+            print(f"❌ Daily reward status failed: {response.status_code} - {response.text}")
+            return
+        
+        # Test POST /api/store/daily-reward (claim reward)
+        print("\n🎁 Testing POST /api/store/daily-reward (claim reward)...")
+        response = requests.post(
+            f"{self.base_url}/store/daily-reward",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print(f"✅ Daily reward claimed successfully!")
+            print(f"   Message: {result.get('message', '')}")
+            print(f"   Amount: R$ {result.get('amount', 0):,.0f}")
+            print(f"   New balance: R$ {result.get('new_balance', 0):,.2f}")
+            print(f"   Level bonus: R$ {result.get('level_bonus', 0):,.0f}")
+        else:
+            print(f"❌ Daily reward claim failed: {response.status_code} - {response.text}")
+        
+        # Test GET /api/store/daily-reward-status (should now be unavailable)
+        print("\n🚫 Testing GET /api/store/daily-reward-status (after claim)...")
+        response = requests.get(
+            f"{self.base_url}/store/daily-reward-status",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 200:
+            status = response.json()
+            print(f"✅ Daily reward status retrieved!")
+            print(f"   Available: {status.get('available', False)}")
+            print(f"   Already claimed: {status.get('already_claimed', False)}")
             
-            # Validate prizes array
-            prizes = data['prizes']
-            if len(prizes) != 3:
-                print(f"❌ Expected 3 prizes, got {len(prizes)}")
-                return False
+            if not status.get('available', True):
+                print("✅ Reward correctly marked as unavailable after claiming!")
+            else:
+                print("⚠️  Reward still shows as available after claiming!")
+        else:
+            print(f"❌ Daily reward status failed: {response.status_code} - {response.text}")
+        
+        # Test POST /api/store/daily-reward again (should fail with 400)
+        print("\n🔄 Testing POST /api/store/daily-reward (duplicate claim - should fail)...")
+        response = requests.post(
+            f"{self.base_url}/store/daily-reward",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 400:
+            print(f"✅ Duplicate claim correctly rejected!")
+            print(f"   Error message: {response.json().get('detail', 'No detail')}")
+        else:
+            print(f"⚠️  Expected 400 error, got: {response.status_code} - {response.text}")
+    
+    def test_higher_level_jobs_endpoint(self):
+        """Test Higher-Level Jobs endpoint"""
+        print("\n" + "="*60)
+        print("💼 TESTING HIGHER-LEVEL JOBS ENDPOINT")
+        print("="*60)
+        
+        # Test GET /api/jobs/available-for-level
+        print("\n🎯 Testing GET /api/jobs/available-for-level...")
+        response = requests.get(
+            f"{self.base_url}/jobs/available-for-level",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 200:
+            jobs = response.json()
+            print(f"✅ Jobs for level retrieved successfully!")
+            print(f"   Total jobs available: {len(jobs)}")
             
-            # Check prize structure
-            for i, prize in enumerate(prizes, 1):
-                required_prize_fields = ['position', 'icon', 'color', 'description', 'type']
-                for field in required_prize_fields:
-                    if field not in prize:
-                        print(f"❌ Prize {i} missing field: {field}")
-                        return False
+            # Count base jobs vs higher-level jobs
+            base_jobs = [j for j in jobs if not j.get('is_premium', False)]
+            premium_jobs = [j for j in jobs if j.get('is_premium', False)]
+            
+            print(f"   Base jobs: {len(base_jobs)}")
+            print(f"   Higher-level jobs: {len(premium_jobs)}")
+            
+            if premium_jobs:
+                print("\n🌟 Higher-level jobs available:")
+                for job in premium_jobs[:3]:  # Show first 3
+                    print(f"   • {job.get('title', 'Unknown')} at {job.get('company', 'Unknown')}")
+                    print(f"     Salary: R$ {job.get('salary', 0):,.0f}/month")
+                    print(f"     Min Level: {job.get('min_level', 1)}")
+            else:
+                print("   No higher-level jobs available for current user level")
                 
-                if prize['position'] != i:
-                    print(f"❌ Prize position mismatch: expected {i}, got {prize['position']}")
-                    return False
-            
-            print("✅ Prizes array structure validated")
-            
-            # Show current user position
-            current_user = data.get('current_user')
-            if current_user:
-                print(f"✅ Current user position: {current_user.get('position', 'N/A')}")
-                print(f"✅ Current user net worth: R$ {current_user.get('total_net_worth', 0):,.2f}")
-            
-            return True, data
-        else:
-            print(f"❌ Rankings request failed: {response.status_code} - {response.text}")
-            return False, None
-    
-    def test_distribute_rewards(self):
-        """Test POST /api/rankings/distribute-rewards"""
-        print("\n🎁 Testing POST /api/rankings/distribute-rewards...")
-        
-        response = requests.post(f"{BASE_URL}/rankings/distribute-rewards", headers=self.get_headers())
-        
-        if response.status_code == 200:
-            data = response.json()
-            print("✅ Distribute rewards endpoint working")
-            print(f"✅ Distributed: {data.get('distributed')}")
-            print(f"✅ Message: {data.get('message')}")
-            
-            if data.get('distributed'):
-                print("✅ Rewards were distributed this call")
-                winners = data.get('winners', [])
-                print(f"✅ Winners: {len(winners)} players")
-                for winner in winners:
-                    print(f"   Position {winner['position']}: {winner['name']} - {winner['prize']}")
-            else:
-                print("ℹ️ Rewards already distributed this week")
-                next_days = data.get('next_distribution_in_days', 'N/A')
-                print(f"ℹ️ Next distribution in: {next_days} days")
-            
-            return True, data
-        else:
-            print(f"❌ Distribute rewards failed: {response.status_code} - {response.text}")
-            return False, None
-    
-    def test_claim_reward(self):
-        """Test POST /api/rankings/claim-reward"""
-        print("\n🏆 Testing POST /api/rankings/claim-reward...")
-        
-        response = requests.post(f"{BASE_URL}/rankings/claim-reward", headers=self.get_headers())
-        
-        if response.status_code == 200:
-            data = response.json()
-            print("✅ Claim reward endpoint working")
-            print(f"✅ Success: {data.get('success')}")
-            print(f"✅ Message: {data.get('message')}")
-            print(f"✅ Position: {data.get('position')}")
-            print(f"✅ Reward type: {data.get('reward_type')}")
-            print(f"✅ Description: {data.get('reward_description')}")
-            
-            # If it's a boost reward, check ad_boosts collection
-            if data.get('reward_type') == 'boost':
-                print("🔍 Checking if ad boost was activated...")
-                boost_response = requests.get(f"{BASE_URL}/ads/current-boost", headers=self.get_headers())
-                if boost_response.status_code == 200:
-                    boost_data = boost_response.json()
-                    print(f"✅ Ad boost active: {boost_data.get('active')}")
-                    print(f"✅ Multiplier: {boost_data.get('multiplier')}x")
-                    print(f"✅ Time remaining: {boost_data.get('seconds_remaining')} seconds")
+            # Verify structure
+            if jobs:
+                sample_job = jobs[0]
+                required_fields = ['id', 'title', 'company', 'description', 'salary', 'location', 'requirements', 'status']
+                missing_fields = [field for field in required_fields if field not in sample_job]
+                if missing_fields:
+                    print(f"⚠️  Missing required fields in job: {missing_fields}")
                 else:
-                    print(f"⚠️ Could not verify ad boost: {boost_response.status_code}")
+                    print("✅ Job structure validation passed!")
+        else:
+            print(f"❌ Higher-level jobs request failed: {response.status_code} - {response.text}")
+    
+    def test_franchise_system_endpoint(self):
+        """Test Franchise System endpoint"""
+        print("\n" + "="*60)
+        print("🏢 TESTING FRANCHISE SYSTEM ENDPOINT")
+        print("="*60)
+        
+        # First, check if user has any companies
+        print("\n🔍 Checking user's companies...")
+        response = requests.get(
+            f"{self.base_url}/companies/owned",
+            headers=self.get_headers()
+        )
+        
+        eligible_company = None
+        if response.status_code == 200:
+            companies = response.json()
+            print(f"   User owns {len(companies)} companies")
             
-            return True, data
-        elif response.status_code == 404:
-            print("ℹ️ No unclaimed reward available (404 as expected)")
-            return True, None
+            # Look for eligible companies (restaurante, loja, fabrica)
+            eligible_segments = ['restaurante', 'loja', 'fabrica']
+            for company in companies:
+                if isinstance(company, dict) and company.get('segment') in eligible_segments:
+                    eligible_company = company
+                    print(f"   Found eligible company: {company.get('name')} ({company.get('segment')})")
+                    break
+        
+        # Test POST /api/companies/create-franchise
+        print("\n🏪 Testing POST /api/companies/create-franchise...")
+        
+        if eligible_company:
+            franchise_data = {
+                "company_id": eligible_company['id'],
+                "franchise_name": "Franquia Teste",
+                "franchise_location": "Shopping Center ABC"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/companies/create-franchise",
+                json=franchise_data,
+                headers=self.get_headers()
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"✅ Franchise created successfully!")
+                print(f"   Message: {result.get('message', '')}")
+                print(f"   Franchise name: {result.get('franchise', {}).get('name', 'Unknown')}")
+                print(f"   Cost: R$ {result.get('cost', 0):,.0f}")
+                print(f"   Monthly revenue: R$ {result.get('monthly_revenue', 0):,.0f}")
+                print(f"   New balance: R$ {result.get('new_balance', 0):,.2f}")
+            elif response.status_code == 400:
+                error_detail = response.json().get('detail', 'Unknown error')
+                if "Saldo insuficiente" in error_detail:
+                    print(f"⚠️  Insufficient funds for franchise creation: {error_detail}")
+                elif "Limite de" in error_detail:
+                    print(f"⚠️  Franchise limit reached: {error_detail}")
+                else:
+                    print(f"⚠️  Franchise creation failed: {error_detail}")
+            else:
+                print(f"❌ Franchise creation failed: {response.status_code} - {response.text}")
         else:
-            print(f"❌ Claim reward failed: {response.status_code} - {response.text}")
-            return False, None
+            # Test with non-eligible company or no company
+            print("   No eligible company found. Testing error message for ineligible segment...")
+            
+            # Try with a fake company ID to test error handling
+            franchise_data = {
+                "company_id": "fake-company-id",
+                "franchise_name": "Test Franchise",
+                "franchise_location": "Test Location"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/companies/create-franchise",
+                json=franchise_data,
+                headers=self.get_headers()
+            )
+            
+            if response.status_code == 404:
+                print(f"✅ Correctly rejected non-existent company: {response.json().get('detail', '')}")
+            else:
+                print(f"⚠️  Expected 404 for non-existent company, got: {response.status_code} - {response.text}")
     
-    def test_claim_reward_twice(self):
-        """Test claiming reward twice - should get 404 on second attempt"""
-        print("\n🔄 Testing claim reward twice (should fail second time)...")
+    def test_market_events_endpoints(self):
+        """Test Market Events endpoints"""
+        print("\n" + "="*60)
+        print("📈 TESTING MARKET EVENTS ENDPOINTS")
+        print("="*60)
         
-        # First attempt
-        response1 = requests.post(f"{BASE_URL}/rankings/claim-reward", headers=self.get_headers())
-        
-        # Second attempt immediately after
-        response2 = requests.post(f"{BASE_URL}/rankings/claim-reward", headers=self.get_headers())
-        
-        if response1.status_code == 200 and response2.status_code == 404:
-            print("✅ First claim successful, second claim properly rejected with 404")
-            return True
-        elif response1.status_code == 404 and response2.status_code == 404:
-            print("ℹ️ No rewards available for claiming (both attempts returned 404)")
-            return True
-        else:
-            print(f"❌ Unexpected behavior: First: {response1.status_code}, Second: {response2.status_code}")
-            return False
-    
-    def test_auth_debug(self):
-        """Debug authentication by testing a simple endpoint"""
-        print("\n🔍 Testing authentication with /api/user/me...")
-        
-        response = requests.get(f"{BASE_URL}/user/me", headers=self.get_headers())
+        # Test GET /api/market/events (initial - may be empty)
+        print("\n📊 Testing GET /api/market/events (initial check)...")
+        response = requests.get(
+            f"{self.base_url}/market/events",
+            headers=self.get_headers()
+        )
         
         if response.status_code == 200:
-            data = response.json()
-            print(f"✅ Authentication working! User: {data.get('name')}")
-            return True
+            events_data = response.json()
+            initial_count = events_data.get('count', 0)
+            print(f"✅ Market events retrieved successfully!")
+            print(f"   Active events: {initial_count}")
+            
+            if initial_count > 0:
+                print("   Current events:")
+                for event in events_data.get('active_events', [])[:2]:  # Show first 2
+                    print(f"   • {event.get('title', 'Unknown')}: {event.get('description', '')}")
+                    print(f"     Duration: {event.get('seconds_remaining', 0)} seconds remaining")
         else:
-            print(f"❌ Authentication failed: {response.status_code} - {response.text}")
-            print(f"🔍 Token: {self.token[:50]}..." if self.token else "No token")
-            return False
-    
-    def run_full_test(self):
-        """Run complete rankings rewards test suite"""
-        print("🚀 Starting Rankings Rewards System Test")
-        print("=" * 50)
+            print(f"❌ Market events request failed: {response.status_code} - {response.text}")
+            return
         
-        # Login
-        if not self.login():
-            return False
+        # Test POST /api/market/trigger-event
+        print("\n🎲 Testing POST /api/market/trigger-event...")
+        response = requests.post(
+            f"{self.base_url}/market/trigger-event",
+            headers=self.get_headers()
+        )
         
-        # Debug authentication
-        if not self.test_auth_debug():
-            return False
-        
-        # Test 1: Check rankings endpoint with new fields
-        success1, rankings_data = self.test_rankings_with_rewards_info()
-        if not success1:
-            return False
-        
-        # Test 2: Try to distribute rewards
-        success2, distribute_data = self.test_distribute_rewards()
-        if not success2:
-            return False
-        
-        # Test 3: Check if user has unclaimed reward after distribution
-        print("\n🔍 Checking for unclaimed rewards after distribution...")
-        success3, updated_rankings = self.test_rankings_with_rewards_info()
-        if not success3:
-            return False
-        
-        # Test 4: Try to claim reward
-        success4, claim_data = self.test_claim_reward()
-        if not success4:
-            return False
-        
-        # Test 5: Try to claim again (should fail)
-        success5 = self.test_claim_reward_twice()
-        if not success5:
-            return False
-        
-        # Final check: Verify rankings endpoint shows no unclaimed reward
-        print("\n🔍 Final check - rankings should show no unclaimed reward...")
-        success6, final_rankings = self.test_rankings_with_rewards_info()
-        if success6 and final_rankings:
-            if not final_rankings.get('has_unclaimed_reward'):
-                print("✅ Confirmed: No unclaimed rewards remaining")
+        if response.status_code == 200:
+            result = response.json()
+            print(f"✅ Market event triggered successfully!")
+            event = result.get('event', {})
+            print(f"   Event: {event.get('title', 'Unknown')}")
+            print(f"   Description: {event.get('description', '')}")
+            print(f"   Duration: {event.get('duration_hours', 0)} hours")
+            print(f"   Effect: {event.get('effect', {})}")
+        elif response.status_code == 400:
+            error_detail = response.json().get('detail', 'Unknown error')
+            if "Próximo evento em" in error_detail:
+                print(f"⚠️  Event cooldown active: {error_detail}")
             else:
-                print("⚠️ Warning: Still shows unclaimed reward after claiming")
+                print(f"⚠️  Event trigger failed: {error_detail}")
+        else:
+            print(f"❌ Event trigger failed: {response.status_code} - {response.text}")
         
-        print("\n" + "=" * 50)
-        print("🎉 Rankings Rewards System Test Complete!")
-        return True
+        # Test GET /api/market/events again (should now have 1 active event)
+        print("\n📈 Testing GET /api/market/events (after trigger)...")
+        response = requests.get(
+            f"{self.base_url}/market/events",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 200:
+            events_data = response.json()
+            final_count = events_data.get('count', 0)
+            print(f"✅ Market events retrieved successfully!")
+            print(f"   Active events: {final_count}")
+            
+            if final_count > initial_count:
+                print("✅ New event successfully added!")
+            elif final_count == initial_count and initial_count > 0:
+                print("⚠️  Event count unchanged (may be due to cooldown)")
+            else:
+                print("⚠️  Event count did not increase as expected")
+        else:
+            print(f"❌ Market events request failed: {response.status_code} - {response.text}")
+        
+        # Test POST /api/market/trigger-event again (should fail within 1 hour)
+        print("\n🔄 Testing POST /api/market/trigger-event (duplicate - should fail)...")
+        response = requests.post(
+            f"{self.base_url}/market/trigger-event",
+            headers=self.get_headers()
+        )
+        
+        if response.status_code == 400:
+            error_detail = response.json().get('detail', 'Unknown error')
+            print(f"✅ Duplicate trigger correctly rejected: {error_detail}")
+        else:
+            print(f"⚠️  Expected 400 error for duplicate trigger, got: {response.status_code} - {response.text}")
+    
+    def test_asset_images_endpoints(self):
+        """Test Asset Images endpoints"""
+        print("\n" + "="*60)
+        print("🖼️  TESTING ASSET IMAGES ENDPOINTS")
+        print("="*60)
+        
+        # Test specific assets mentioned in review request
+        test_assets = [
+            ("moto_cg160", "Moto CG 160"),
+            ("kitnet", "Kitnet"),
+            ("rolex", "Rolex"),
+            ("nonexistent", "Non-existent asset (should return defaults)")
+        ]
+        
+        for asset_key, description in test_assets:
+            print(f"\n🎨 Testing GET /api/assets/images/{asset_key} ({description})...")
+            response = requests.get(f"{self.base_url}/assets/images/{asset_key}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                images = result.get('images', [])
+                print(f"✅ Asset images retrieved successfully!")
+                print(f"   Number of images: {len(images)}")
+                
+                if len(images) == 4:
+                    print("✅ Correct number of images (4) returned!")
+                else:
+                    print(f"⚠️  Expected 4 images, got {len(images)}")
+                
+                # Show first 2 image URLs
+                for i, img_url in enumerate(images[:2]):
+                    print(f"   Image {i+1}: {img_url}")
+                
+                # Verify URLs are valid
+                valid_urls = all(url.startswith('https://') for url in images)
+                if valid_urls:
+                    print("✅ All image URLs are valid HTTPS URLs!")
+                else:
+                    print("⚠️  Some image URLs are not valid HTTPS URLs")
+            else:
+                print(f"❌ Asset images request failed: {response.status_code} - {response.text}")
+    
+    def run_all_tests(self):
+        """Run all NEW endpoint tests"""
+        print("🚀 STARTING BUSINESS EMPIRE NEW ENDPOINTS TESTING")
+        print("="*80)
+        print(f"Backend URL: {self.base_url}")
+        print(f"Test User: {TEST_EMAIL}")
+        print("="*80)
+        
+        # Login first
+        if not self.login():
+            print("❌ Cannot proceed without login!")
+            return
+        
+        # Run all tests
+        try:
+            self.test_personal_data_endpoints()
+            self.test_daily_reward_endpoints()
+            self.test_higher_level_jobs_endpoint()
+            self.test_franchise_system_endpoint()
+            self.test_market_events_endpoints()
+            self.test_asset_images_endpoints()
+            
+            print("\n" + "="*80)
+            print("🎉 ALL NEW ENDPOINT TESTS COMPLETED!")
+            print("="*80)
+            
+        except Exception as e:
+            print(f"\n❌ Test execution failed with error: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 if __name__ == "__main__":
-    tester = RankingsRewardsTest()
-    success = tester.run_full_test()
-    
-    if success:
-        print("✅ All tests passed!")
-    else:
-        print("❌ Some tests failed!")
+    tester = BusinessEmpireAPITester()
+    tester.run_all_tests()
