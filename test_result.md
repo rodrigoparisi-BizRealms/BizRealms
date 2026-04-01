@@ -367,20 +367,53 @@ metadata:
         agent: "testing"
         comment: "✅ VERIFIED: Avatar photo upload endpoint working correctly. Successfully updates user avatar photo with base64 data."
 
-  - task: "Delete education/certification"
+  - task: "Investment System - Market endpoints"
     implemented: true
-    working: "NA"
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Investment market endpoints working perfectly. GET /api/investments/market returns all 22 assets with tickers, prices, daily changes, and sparklines. Category filtering working correctly: crypto (5 assets), acoes (8 B3 stocks), fundos (4 assets), commodities (5 assets). Price history endpoint working with 30-day data including volume."
+
+  - task: "Investment System - Buy/Sell operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Buy/sell operations working correctly. POST /api/investments/buy successfully purchases assets, handles averaging for multiple purchases of same asset. POST /api/investments/sell handles partial sales with proper P&L calculations. Error handling working: insufficient funds properly rejected, selling more than held properly rejected."
+
+  - task: "Investment System - Portfolio and transactions"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Portfolio tracking working perfectly. GET /api/investments/portfolio shows holdings with current prices, P&L calculations, profit percentages. GET /api/investments/transactions returns complete transaction history with buy/sell records. Portfolio summary includes total invested, current value, total profit/loss."
+
+  - task: "Investment System - Asset price simulation"
+    implemented: true
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "DELETE endpoints for education and certifications."
-      - working: "NA"
+      - working: true
         agent: "testing"
-        comment: "Minor: Delete endpoints exist but require adding education/certification first to get IDs for testing. Endpoints are implemented correctly in backend code."
+        comment: "✅ VERIFIED: Price simulation system working correctly. Deterministic random walk with drift generates realistic price movements. Sparkline data (7-day mini charts) working. 30-day price history with volume data generated correctly. Current prices update properly during market data requests."
 
 test_plan:
   current_focus:
@@ -401,6 +434,8 @@ agent_communication:
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: All 7 backend endpoints thoroughly tested and working perfectly. Authentication system (registration, login, JWT validation, password hashing) fully functional. Profile management (get profile, get stats, update location) working correctly. Education and certification systems working with proper XP calculations and skill boosts. Game mechanics verified: level progression (1000 XP per level), skill caps, XP formulas all correct. Test user currently at Level 4 with 3400 XP, 2 educations, 2 certifications. All API endpoints returning proper responses and handling authentication correctly. Backend ready for production use."
   - agent: "main"
-    message: "CRITICAL FIX: Fixed ObjectId serialization error in multiple endpoints. The job variable returned from MongoDB contained _id (ObjectId) which caused FastAPI's jsonable_encoder to fail with ValueError. Added 'del job[_id]' before returning job in /api/jobs/apply, /api/jobs/current, /api/jobs/my-applications. Also improved frontend jobs.tsx with application tracking, status display, and error handling. Improved profile.tsx with photo upload, delete buttons for edu/certs, skills display. Please test the job system endpoints: apply, accept, collect-earnings, resign. Also test courses/enroll, user/avatar-photo, and delete edu/cert endpoints."
+    message: "INVESTMENT SYSTEM IMPLEMENTED: Full investment system with 22 assets (8 B3 stocks, 5 crypto, 4 funds, 5 commodities). Backend endpoints: GET /api/investments/market, GET /api/investments/asset/{id}/history, POST /api/investments/buy, POST /api/investments/sell, GET /api/investments/portfolio, GET /api/investments/transactions. Frontend has market view with sparkline charts, category filters, portfolio view with P&L tracking, asset detail modal with 30-day charts, buy/sell modal with quick quantity buttons. Price simulation uses deterministic random walk with drift. Please test all investment endpoints: market listing, buy, sell, portfolio, history, transactions."
   - agent: "testing"
     message: "🎉 JOB SYSTEM TESTING COMPLETE - OBJECTID BUG FIXED! ✅ Comprehensive testing of all job system endpoints completed successfully. CRITICAL FINDING: ObjectId serialization bug has been FIXED - no more 500 errors. All endpoints tested: ✅ GET /api/jobs (6 jobs, no ObjectId issues) ✅ POST /api/jobs/apply (proper JSON responses, match scoring working) ✅ POST /api/jobs/accept (creates work experience correctly) ✅ GET /api/jobs/current (no ObjectId issues) ✅ GET /api/jobs/my-applications (no ObjectId issues) ✅ GET /api/jobs/collect-earnings (earnings calculation working) ✅ POST /api/ads/watch (multiplier system working) ✅ GET /api/ads/current-boost (boost tracking working) ✅ GET /api/courses (6 courses available) ✅ POST /api/courses/enroll (skill boosts working) ✅ GET /api/courses/my-courses (progress tracking working) ✅ PUT /api/user/avatar-photo (photo upload working) Authentication system secure (401 for unauthorized). Job application flow working end-to-end. The main issue reported by user (Candidatar-se button not working due to 500 errors) has been RESOLVED. Backend is ready for production use."
+  - agent: "testing"
+    message: "🎉 INVESTMENT SYSTEM TESTING COMPLETE! ✅ Comprehensive testing of all investment endpoints completed successfully. ALL ENDPOINTS WORKING PERFECTLY: ✅ GET /api/investments/market (22 assets with tickers, prices, daily changes, sparklines) ✅ Category filtering: crypto (5 assets), acoes (8 B3 stocks), fundos (4), commodities (5) ✅ GET /api/investments/asset/{id}/history (30-day price history with volume) ✅ POST /api/investments/buy (asset purchases with averaging for multiple buys) ✅ POST /api/investments/sell (partial sales with P&L calculations) ✅ GET /api/investments/portfolio (holdings with current prices, profit/loss tracking) ✅ GET /api/investments/transactions (complete buy/sell history) ✅ Error handling: insufficient funds properly rejected, selling more than held properly rejected ✅ Price simulation: deterministic random walk with drift working correctly ✅ Previous endpoints still working: user stats, jobs, courses. Investment system is production-ready with full functionality including market data, trading operations, portfolio tracking, and proper error handling."
