@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -74,29 +75,44 @@ export default function Courses() {
 
   const handleEnroll = (course: Course) => {
     if ((user?.level || 1) < course.level_required) {
-      Alert.alert(
-        'Nível Insuficiente',
-        `Você precisa ser nível ${course.level_required} para fazer este curso.`
-      );
+      if (Platform.OS === 'web') {
+        window.alert(`Nível Insuficiente\n\nVocê precisa ser nível ${course.level_required} para fazer este curso.`);
+      } else {
+        Alert.alert(
+          'Nível Insuficiente',
+          `Você precisa ser nível ${course.level_required} para fazer este curso.`
+        );
+      }
       return;
     }
 
     if ((user?.money || 0) < course.cost) {
-      Alert.alert(
-        'Dinheiro Insuficiente',
-        `Você precisa de R$ ${course.cost.toLocaleString('pt-BR')} para fazer este curso.\n\nSeu saldo: R$ ${(user?.money || 0).toLocaleString('pt-BR')}`
-      );
+      if (Platform.OS === 'web') {
+        window.alert(`Dinheiro Insuficiente\n\nVocê precisa de R$ ${course.cost.toLocaleString('pt-BR')} para fazer este curso.\nSeu saldo: R$ ${(user?.money || 0).toLocaleString('pt-BR')}`);
+      } else {
+        Alert.alert(
+          'Dinheiro Insuficiente',
+          `Você precisa de R$ ${course.cost.toLocaleString('pt-BR')} para fazer este curso.\n\nSeu saldo: R$ ${(user?.money || 0).toLocaleString('pt-BR')}`
+        );
+      }
       return;
     }
 
-    Alert.alert(
-      `Fazer Curso: ${course.name}?`,
-      `Custo: R$ ${course.cost.toLocaleString('pt-BR')}\n\nBenefícios:\n• +${(course.earnings_boost * 100).toFixed(0)}% ganhos permanentes\n• ${Object.entries(course.skill_boost).map(([skill, boost]) => `+${boost} ${skill.charAt(0).toUpperCase() + skill.slice(1)}`).join('\n• ')}\n\nEste boost é PERMANENTE!`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Fazer Curso', onPress: () => confirmEnroll(course) },
-      ]
-    );
+    const courseInfo = `Custo: R$ ${course.cost.toLocaleString('pt-BR')}\nBenefícios: +${(course.earnings_boost * 100).toFixed(0)}% ganhos permanentes`;
+
+    if (Platform.OS === 'web') {
+      const ok = window.confirm(`Fazer Curso: ${course.name}?\n\n${courseInfo}\n\nEste boost é PERMANENTE!`);
+      if (ok) confirmEnroll(course);
+    } else {
+      Alert.alert(
+        `Fazer Curso: ${course.name}?`,
+        `${courseInfo}\n\n${Object.entries(course.skill_boost).map(([skill, boost]) => `+${boost} ${skill.charAt(0).toUpperCase() + skill.slice(1)}`).join('\n')}\n\nEste boost é PERMANENTE!`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Fazer Curso', onPress: () => confirmEnroll(course) },
+        ]
+      );
+    }
   };
 
   const confirmEnroll = async (course: Course) => {
@@ -107,15 +123,22 @@ export default function Courses() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert(
-        '🎓 Curso Concluído!',
-        `${response.data.message}\n\n💰 Gasto: R$ ${response.data.cost.toLocaleString('pt-BR')}\n📈 Boost: ${response.data.earnings_boost}\n\nSeus ganhos aumentaram PERMANENTEMENTE!`
-      );
+      const successMsg = `${response.data.message}\n\nGasto: R$ ${response.data.cost.toLocaleString('pt-BR')}\nBoost: ${response.data.earnings_boost}\n\nSeus ganhos aumentaram PERMANENTEMENTE!`;
+      if (Platform.OS === 'web') {
+        window.alert(`Curso Concluído!\n\n${successMsg}`);
+      } else {
+        Alert.alert('Curso Concluído!', successMsg);
+      }
 
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao fazer curso');
+      const errMsg = error.response?.data?.detail || 'Erro ao fazer curso';
+      if (Platform.OS === 'web') {
+        window.alert(`Erro\n\n${errMsg}`);
+      } else {
+        Alert.alert('Erro', errMsg);
+      }
     }
   };
 

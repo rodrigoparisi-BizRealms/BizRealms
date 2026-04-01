@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -130,19 +131,28 @@ export default function Jobs() {
       );
 
       if (response.data.status === 'accepted') {
-        Alert.alert(
-          'Aprovado!',
-          `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`,
-          [
-            { text: 'Ver Depois', style: 'cancel' },
-            { text: 'Aceitar Vaga', onPress: () => handleAccept(jobId) },
-          ]
-        );
+        if (Platform.OS === 'web') {
+          const ok = window.confirm(`Aprovado!\n\n${response.data.message}\nCompatibilidade: ${response.data.match_score.toFixed(0)}%\n\nDeseja aceitar a vaga?`);
+          if (ok) handleAccept(jobId);
+        } else {
+          Alert.alert(
+            'Aprovado!',
+            `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`,
+            [
+              { text: 'Ver Depois', style: 'cancel' },
+              { text: 'Aceitar Vaga', onPress: () => handleAccept(jobId) },
+            ]
+          );
+        }
       } else {
-        Alert.alert(
-          'Candidatura Enviada',
-          `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%\n\nSua candidatura foi registrada mas o match precisa ser maior para aprovação automática.`
-        );
+        if (Platform.OS === 'web') {
+          window.alert(`Candidatura Enviada\n\n${response.data.message}\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`);
+        } else {
+          Alert.alert(
+            'Candidatura Enviada',
+            `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%\n\nSua candidatura foi registrada mas o match precisa ser maior para aprovação automática.`
+          );
+        }
       }
 
       await loadData();
@@ -212,14 +222,19 @@ export default function Jobs() {
   };
 
   const handleResign = () => {
-    Alert.alert(
-      'Pedir Demissão?',
-      'Tem certeza que deseja sair deste emprego? Você poderá se candidatar a novas vagas.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sim, Sair', style: 'destructive', onPress: confirmResign },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const ok = window.confirm('Pedir Demissão?\n\nTem certeza que deseja sair deste emprego? Você poderá se candidatar a novas vagas.');
+      if (ok) confirmResign();
+    } else {
+      Alert.alert(
+        'Pedir Demissão?',
+        'Tem certeza que deseja sair deste emprego? Você poderá se candidatar a novas vagas.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Sim, Sair', style: 'destructive', onPress: confirmResign },
+        ]
+      );
+    }
   };
 
   const confirmResign = async () => {

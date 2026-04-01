@@ -98,82 +98,91 @@ export default function Profile() {
   };
 
   const handleRemovePhoto = async () => {
-    Alert.alert(
-      'Remover Foto?',
-      'Deseja voltar ao avatar padrão?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.put(
-                `${EXPO_PUBLIC_BACKEND_URL}/api/user/avatar-photo`,
-                { avatar_photo: null },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              Alert.alert('Sucesso!', 'Foto removida');
-              await refreshUser();
-            } catch (error: any) {
-              Alert.alert('Erro', 'Erro ao remover foto');
-            }
-          },
-        },
-      ]
-    );
+    const doRemove = async () => {
+      try {
+        await axios.put(
+          `${EXPO_PUBLIC_BACKEND_URL}/api/user/avatar-photo`,
+          { avatar_photo: null },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Platform.OS === 'web') window.alert('Foto removida!');
+        else Alert.alert('Sucesso!', 'Foto removida');
+        await refreshUser();
+      } catch (error: any) {
+        if (Platform.OS === 'web') window.alert('Erro ao remover foto');
+        else Alert.alert('Erro', 'Erro ao remover foto');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const ok = window.confirm('Remover Foto?\n\nDeseja voltar ao avatar padrão?');
+      if (ok) doRemove();
+    } else {
+      Alert.alert(
+        'Remover Foto?',
+        'Deseja voltar ao avatar padrão?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Remover', style: 'destructive', onPress: doRemove },
+        ]
+      );
+    }
   };
 
   const handleDeleteEducation = (eduId: string, eduName: string) => {
-    Alert.alert(
-      'Remover Educação?',
-      `Deseja remover "${eduName}" do seu perfil?`,
-      [
+    const doDelete = async () => {
+      try {
+        await axios.delete(
+          `${EXPO_PUBLIC_BACKEND_URL}/api/user/education/${eduId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Platform.OS === 'web') window.alert('Educação removida!');
+        else Alert.alert('Sucesso!', 'Educação removida');
+        await refreshUser();
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || 'Erro ao remover educação';
+        if (Platform.OS === 'web') window.alert(`Erro: ${msg}`);
+        else Alert.alert('Erro', msg);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const ok = window.confirm(`Remover Educação?\n\nDeseja remover "${eduName}" do seu perfil?`);
+      if (ok) doDelete();
+    } else {
+      Alert.alert('Remover Educação?', `Deseja remover "${eduName}" do seu perfil?`, [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(
-                `${EXPO_PUBLIC_BACKEND_URL}/api/user/education/${eduId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              Alert.alert('Sucesso!', 'Educação removida');
-              await refreshUser();
-            } catch (error: any) {
-              Alert.alert('Erro', error.response?.data?.detail || 'Erro ao remover educação');
-            }
-          },
-        },
-      ]
-    );
+        { text: 'Remover', style: 'destructive', onPress: doDelete },
+      ]);
+    }
   };
 
   const handleDeleteCertification = (certId: string, certNameStr: string) => {
-    Alert.alert(
-      'Remover Certificação?',
-      `Deseja remover "${certNameStr}" do seu perfil?`,
-      [
+    const doDelete = async () => {
+      try {
+        await axios.delete(
+          `${EXPO_PUBLIC_BACKEND_URL}/api/user/certification/${certId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Platform.OS === 'web') window.alert('Certificação removida!');
+        else Alert.alert('Sucesso!', 'Certificação removida');
+        await refreshUser();
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || 'Erro ao remover certificação';
+        if (Platform.OS === 'web') window.alert(`Erro: ${msg}`);
+        else Alert.alert('Erro', msg);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const ok = window.confirm(`Remover Certificação?\n\nDeseja remover "${certNameStr}" do seu perfil?`);
+      if (ok) doDelete();
+    } else {
+      Alert.alert('Remover Certificação?', `Deseja remover "${certNameStr}" do seu perfil?`, [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(
-                `${EXPO_PUBLIC_BACKEND_URL}/api/user/certification/${certId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              Alert.alert('Sucesso!', 'Certificação removida');
-              await refreshUser();
-            } catch (error: any) {
-              Alert.alert('Erro', error.response?.data?.detail || 'Erro ao remover certificação');
-            }
-          },
-        },
-      ]
-    );
+        { text: 'Remover', style: 'destructive', onPress: doDelete },
+      ]);
+    }
   };
 
   const handleAddEducation = async () => {
