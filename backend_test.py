@@ -12,9 +12,9 @@ from datetime import datetime
 # Configuration
 BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
 TEST_USER = {
-    "email": "test_jobs@businessempire.com",
-    "password": "test123",
-    "name": "Test Jobs User"
+    "email": "teste@businessempire.com",
+    "password": "teste123",
+    "name": "Jogador Teste"
 }
 
 # Global variables
@@ -1234,6 +1234,176 @@ def test_sell_asset():
         log_test("Sell Asset", False, "Invalid JSON response")
         return False
 
+# ==================== RANKINGS SYSTEM TESTS ====================
+
+def test_get_weekly_rankings():
+    """Test 29: GET /api/rankings?period=weekly"""
+    response = make_request('GET', '/rankings?period=weekly')
+    
+    if not response:
+        log_test("Get Weekly Rankings", False, "Request failed")
+        return False
+    
+    if response.status_code != 200:
+        log_test("Get Weekly Rankings", False, f"Status: {response.status_code}, Response: {response.text}")
+        return False
+    
+    try:
+        data = response.json()
+        
+        # Check required top-level fields
+        required_fields = ['period', 'updated_at', 'total_players', 'rankings', 'current_user']
+        for field in required_fields:
+            if field not in data:
+                log_test("Get Weekly Rankings", False, f"Missing field: {field}")
+                return False
+        
+        # Verify period is correct
+        if data['period'] != 'weekly':
+            log_test("Get Weekly Rankings", False, f"Expected period 'weekly', got '{data['period']}'")
+            return False
+        
+        # Check rankings array
+        rankings = data['rankings']
+        if not isinstance(rankings, list):
+            log_test("Get Weekly Rankings", False, "Rankings is not a list")
+            return False
+        
+        # Check each ranking entry structure
+        for i, ranking in enumerate(rankings):
+            required_ranking_fields = [
+                'position', 'user_id', 'name', 'avatar_color', 'avatar_icon', 
+                'level', 'total_net_worth', 'cash', 'investment_value', 
+                'companies_value', 'assets_value', 'num_companies', 
+                'num_assets', 'num_investments', 'position_change'
+            ]
+            for field in required_ranking_fields:
+                if field not in ranking:
+                    log_test("Get Weekly Rankings", False, f"Missing field '{field}' in ranking entry {i}")
+                    return False
+        
+        # Verify rankings are sorted by total_net_worth descending
+        for i in range(len(rankings) - 1):
+            if rankings[i]['total_net_worth'] < rankings[i + 1]['total_net_worth']:
+                log_test("Get Weekly Rankings", False, f"Rankings not sorted correctly: position {i+1} has lower net worth than position {i+2}")
+                return False
+        
+        # Check current_user structure
+        current_user = data['current_user']
+        if current_user is not None:
+            # Verify current_user has the correct user_id matching the logged-in user
+            if 'user_id' not in current_user:
+                log_test("Get Weekly Rankings", False, "Missing user_id in current_user")
+                return False
+            
+            # Check current_user has all required fields
+            for field in required_ranking_fields:
+                if field not in current_user:
+                    log_test("Get Weekly Rankings", False, f"Missing field '{field}' in current_user")
+                    return False
+        
+        log_test("Get Weekly Rankings", True, f"Retrieved weekly rankings: {data['total_players']} players, top player net worth: R$ {rankings[0]['total_net_worth']:,.2f}")
+        return True
+        
+    except json.JSONDecodeError:
+        log_test("Get Weekly Rankings", False, "Invalid JSON response")
+        return False
+
+def test_get_monthly_rankings():
+    """Test 30: GET /api/rankings?period=monthly"""
+    response = make_request('GET', '/rankings?period=monthly')
+    
+    if not response:
+        log_test("Get Monthly Rankings", False, "Request failed")
+        return False
+    
+    if response.status_code != 200:
+        log_test("Get Monthly Rankings", False, f"Status: {response.status_code}, Response: {response.text}")
+        return False
+    
+    try:
+        data = response.json()
+        
+        # Check required top-level fields
+        required_fields = ['period', 'updated_at', 'total_players', 'rankings', 'current_user']
+        for field in required_fields:
+            if field not in data:
+                log_test("Get Monthly Rankings", False, f"Missing field: {field}")
+                return False
+        
+        # Verify period is correct
+        if data['period'] != 'monthly':
+            log_test("Get Monthly Rankings", False, f"Expected period 'monthly', got '{data['period']}'")
+            return False
+        
+        # Check rankings array
+        rankings = data['rankings']
+        if not isinstance(rankings, list):
+            log_test("Get Monthly Rankings", False, "Rankings is not a list")
+            return False
+        
+        # Check each ranking entry structure
+        for i, ranking in enumerate(rankings):
+            required_ranking_fields = [
+                'position', 'user_id', 'name', 'avatar_color', 'avatar_icon', 
+                'level', 'total_net_worth', 'cash', 'investment_value', 
+                'companies_value', 'assets_value', 'num_companies', 
+                'num_assets', 'num_investments', 'position_change'
+            ]
+            for field in required_ranking_fields:
+                if field not in ranking:
+                    log_test("Get Monthly Rankings", False, f"Missing field '{field}' in ranking entry {i}")
+                    return False
+        
+        # Verify rankings are sorted by total_net_worth descending
+        for i in range(len(rankings) - 1):
+            if rankings[i]['total_net_worth'] < rankings[i + 1]['total_net_worth']:
+                log_test("Get Monthly Rankings", False, f"Rankings not sorted correctly: position {i+1} has lower net worth than position {i+2}")
+                return False
+        
+        # Check current_user structure
+        current_user = data['current_user']
+        if current_user is not None:
+            # Verify current_user has the correct user_id matching the logged-in user
+            if 'user_id' not in current_user:
+                log_test("Get Monthly Rankings", False, "Missing user_id in current_user")
+                return False
+            
+            # Check current_user has all required fields
+            for field in required_ranking_fields:
+                if field not in current_user:
+                    log_test("Get Monthly Rankings", False, f"Missing field '{field}' in current_user")
+                    return False
+        
+        log_test("Get Monthly Rankings", True, f"Retrieved monthly rankings: {data['total_players']} players, top player net worth: R$ {rankings[0]['total_net_worth']:,.2f}")
+        return True
+        
+    except json.JSONDecodeError:
+        log_test("Get Monthly Rankings", False, "Invalid JSON response")
+        return False
+
+def test_rankings_user_authentication():
+    """Test 31: Verify rankings endpoints require authentication"""
+    global auth_token
+    # Test without auth token
+    old_token = auth_token
+    auth_token = None
+    
+    response = make_request('GET', '/rankings?period=weekly')
+    
+    auth_token = old_token  # Restore token
+    
+    if not response:
+        log_test("Rankings Authentication", False, "Request failed")
+        return False
+    
+    if response.status_code != 401:
+        log_test("Rankings Authentication", False, f"Expected 401, got {response.status_code}")
+        return False
+    
+    log_test("Rankings Authentication", True, "Properly rejected unauthorized request to rankings")
+    return True
+
 def main():
     """Run all tests"""
     print("=" * 60)
@@ -1275,6 +1445,10 @@ def main():
         ("Buy Asset", test_buy_asset),
         ("Get Owned Assets", test_get_owned_assets),
         ("Sell Asset", test_sell_asset),
+        # Rankings System Tests
+        ("Get Weekly Rankings", test_get_weekly_rankings),
+        ("Get Monthly Rankings", test_get_monthly_rankings),
+        ("Rankings Authentication", test_rankings_user_authentication),
     ]
     
     passed = 0

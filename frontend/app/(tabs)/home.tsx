@@ -42,22 +42,25 @@ export default function Home() {
   const [portfolio, setPortfolio] = useState<any>(null);
   const [companies, setCompanies] = useState<any>(null);
   const [assets, setAssets] = useState<any>(null);
+  const [rankings, setRankings] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadAllData = useCallback(async () => {
     if (!token) return;
     const h = { Authorization: `Bearer ${token}` };
     try {
-      const [statsRes, portfolioRes, companiesRes, assetsRes] = await Promise.all([
+      const [statsRes, portfolioRes, companiesRes, assetsRes, rankingsRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/user/stats`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/portfolio`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/owned`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/owned`, { headers: h }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/rankings?period=weekly`, { headers: h }).catch(() => null),
       ]);
       if (statsRes) setStats(statsRes.data);
       if (portfolioRes) setPortfolio(portfolioRes.data);
       if (companiesRes) setCompanies(companiesRes.data);
       if (assetsRes) setAssets(assetsRes.data);
+      if (rankingsRes) setRankings(rankingsRes.data);
     } catch (e) {
       console.error('Error loading dashboard:', e);
     }
@@ -182,6 +185,64 @@ export default function Home() {
             <View style={[styles.progressFill, { width: `${levelProgress}%` }]} />
           </View>
         </View>
+
+        {/* Rankings Panel */}
+        <TouchableOpacity
+          style={[styles.panelCard, { borderWidth: 1, borderColor: '#FFD70030' }]}
+          onPress={() => router.push('/rankings')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
+                <Ionicons name="trophy" size={20} color="#FFD700" />
+              </View>
+              <Text style={styles.panelTitle}>Ranking Semanal</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          {rankings?.current_user ? (
+            <View style={{ gap: 8 }}>
+              <View style={styles.panelMainRow}>
+                <View>
+                  <Text style={[styles.panelBigValue, { color: '#FFD700' }]}>
+                    #{rankings.current_user.position}
+                  </Text>
+                  <Text style={styles.panelSubLabel}>
+                    de {rankings.total_players} jogador{rankings.total_players > 1 ? 'es' : ''}
+                  </Text>
+                </View>
+                <View style={[styles.profitBadge, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
+                  <Ionicons name="trophy" size={14} color="#FFD700" />
+                  <Text style={[styles.profitText, { color: '#FFD700' }]}>
+                    {formatMoney(rankings.current_user.total_net_worth)}
+                  </Text>
+                </View>
+              </View>
+              {/* Mini Top 3 */}
+              {rankings.rankings?.slice(0, 3).map((r: any, i: number) => (
+                <View key={r.user_id} style={styles.miniHolding}>
+                  <Text style={{
+                    color: i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : '#CD7F32',
+                    fontSize: 14, fontWeight: 'bold', width: 24
+                  }}>
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
+                  </Text>
+                  <Text style={styles.miniTicker} numberOfLines={1}>
+                    {r.user_id === user?.id ? 'Você' : r.name}
+                  </Text>
+                  <Text style={[styles.miniProfit, { color: '#FFD700' }]}>
+                    {formatMoney(r.total_net_worth)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.panelEmpty}>
+              <Text style={styles.panelEmptyText}>Ranking disponível em breve</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         {/* Investment Portfolio Panel */}
         <TouchableOpacity

@@ -2278,7 +2278,151 @@ async def sell_asset_item(request: dict, current_user: dict = Depends(get_curren
         "new_balance": round(new_money, 2),
     }
 
-# ==================== GAME STORE (LOJA DO JOGO) ====================
+# ==================== RANKINGS (CLASSIFICAÇÃO) ====================
+
+async def calculate_user_net_worth(user: dict) -> dict:
+    """Calculate total net worth for a user"""
+    user_id = user['id']
+    cash = user.get('money', 0)
+
+    # Investment holdings value
+    investment_value = 0
+    holdings = await db.user_holdings.find({"user_id": user_id}).to_list(200)
+    for h in holdings:
+        asset = await db.investment_assets.find_one({"id": h['asset_id']})
+        if asset:
+            current_price = get_current_price(asset)
+            investment_value += h['quantity'] * current_price
+
+    # Companies value (purchase_price + accumulated value)
+    companies_value = 0
+    companies_revenue = 0
+    companies = await db.user_companies.find({"user_id": user_id}).to_list(200)
+    for c in companies:
+        companies_value += c.get('purchase_price', 0)
+        companies_revenue += c.get('monthly_revenue', 0)
+
+    # Assets value (with appreciation/depreciation)
+    assets_value = 0
+    assets = await db.user_assets.find({"user_id": user_id}).to_list(200)
+    for a in assets:
+        purchase_price = a.get('purchase_price', 0)
+        rate = a.get('appreciation_rate', 0) / 100
+        purchased_at = a.get('purchased_at', datetime.utcnow())
+        if isinstance(purchased_at, str):
+            purchased_at = datetime.fromisoformat(purchased_at.replace('Z', '+00:00'))
+        days = (datetime.utcnow() - purchased_at).days
+        current_val = purchase_price * (1 + rate * days / 365)
+        assets_value += max(0, current_val)
+
+    total = cash + investment_value + companies_value + assets_value
+
+    return {
+        "user_id": user_id,
+        "name": user.get('name', 'Jogador'),
+        "avatar_color": user.get('avatar_color', 'green'),
+        "avatar_icon": user.get('avatar_icon', 'person'),
+        "avatar_photo": user.get('avatar_photo'),
+        "level": user.get('level', 1),
+        "cash": round(cash, 2),
+        "investment_value": round(investment_value, 2),
+        "companies_value": round(companies_value, 2),
+        "companies_revenue": round(companies_revenue, 2),
+        "assets_value": round(assets_value, 2),
+        "total_net_worth": round(total, 2),
+        "num_companies": len(companies),
+        "num_assets": len(assets),
+        "num_investments": len(holdings),
+    }
+
+
+@api_router.get("/rankings")
+async def get_rankings(
+    period: str = "weekly",
+    current_user: dict = Depends(get_current_user)
+):
+    """Get player rankings by net worth"""
+    # Fetch all users
+    all_users = await db.users.find({}).to_list(500)
+
+    # Calculate net worth for each user
+    rankings = []
+    for u in all_users:
+        nw = await calculate_user_net_worth(u)
+        rankings.append(nw)
+
+    # Sort by total net worth descending
+    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
+
+    # Assign positions
+    for i, r in enumerate(rankings):
+        r['position'] = i + 1
+
+    # Find current user position
+    current_position = next((r for r in rankings if r['user_id'] == current_user['id']), None)
+
+    # Get previous ranking snapshot for comparison
+    snapshot_key = f"ranking_{period}"
+    now = datetime.utcnow()
+
+    if period == "weekly":
+        cutoff = now - timedelta(days=7)
+    else:
+        cutoff = now - timedelta(days=30)
+
+    # Fetch previous snapshot
+    prev_snapshot = await db.ranking_snapshots.find_one(
+        {"type": period, "created_at": {"$gte": cutoff}},
+        sort=[("created_at", -1)]
+    )
+
+    # Calculate position changes
+    prev_positions = {}
+    if prev_snapshot and 'rankings' in prev_snapshot:
+        for pr in prev_snapshot['rankings']:
+            prev_positions[pr['user_id']] = pr['position']
+
+    for r in rankings:
+        prev_pos = prev_positions.get(r['user_id'])
+        if prev_pos is not None:
+            r['position_change'] = prev_pos - r['position']  # positive = moved up
+        else:
+            r['position_change'] = 0
+            r['is_new'] = True
+
+    # Save current snapshot (max 1 per hour to avoid spam)
+    last_save = await db.ranking_snapshots.find_one(
+        {"type": period},
+        sort=[("created_at", -1)]
+    )
+    should_save = True
+    if last_save:
+        last_time = last_save.get('created_at', datetime.min)
+        if isinstance(last_time, str):
+            last_time = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+        if (now - last_time).total_seconds() < 3600:
+            should_save = False
+
+    if should_save:
+        snapshot = {
+            "type": period,
+            "created_at": now,
+            "rankings": [{"user_id": r['user_id'], "position": r['position'], "total_net_worth": r['total_net_worth']} for r in rankings[:50]]
+        }
+        await db.ranking_snapshots.insert_one(snapshot)
+
+    # Top 50
+    top_rankings = rankings[:50]
+
+    return {
+        "period": period,
+        "updated_at": now.isoformat(),
+        "total_players": len(rankings),
+        "rankings": top_rankings,
+        "current_user": current_position,
+    }
+
+
 
 STORE_ITEMS = [
     # Money Packs
