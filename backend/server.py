@@ -211,6 +211,14 @@ class CourseEnrollRequest(BaseModel):
 class WorkRequest(BaseModel):
     hours: int = 8  # Horas trabalhadas
 
+class AdBoost(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    multiplier: float = 1.0  # 1x, 2x, 3x, etc.
+    ads_watched: int = 0
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 # ==================== HELPER FUNCTIONS ====================
 
 def hash_password(password: str) -> str:
@@ -934,6 +942,125 @@ async def resign_from_job(current_user: dict = Depends(get_current_user)):
     )
     
     return {"message": "Você pediu demissão. Boa sorte na próxima oportunidade!"}
+
+# ADS BOOST SYSTEM
+@api_router.post("/ads/watch")
+async def watch_ad(current_user: dict = Depends(get_current_user)):
+    """Watch an ad to boost earnings (simulated)"""
+    # Check if user has active job
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    
+    if not current_job:
+        raise HTTPException(status_code=400, detail="Você precisa ter um emprego para assistir propagandas")
+    
+    # Get or create ad boost
+    ad_boost = await db.ad_boosts.find_one({"user_id": current_user['id']})
+    
+    now = datetime.utcnow()
+    
+    if ad_boost:
+        # Check if expired
+        expires_at = ad_boost.get('expires_at')
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+        
+        if expires_at > now:
+            # Still active, increase multiplier
+            new_multiplier = min(10.0, ad_boost.get('multiplier', 1.0) + 1.0)
+            new_ads_watched = ad_boost.get('ads_watched', 0) + 1
+            # Add 60 seconds per ad
+            new_expires_at = expires_at + timedelta(seconds=60)
+        else:
+            # Expired, reset
+            new_multiplier = 2.0
+            new_ads_watched = 1
+            new_expires_at = now + timedelta(seconds=60)
+        
+        await db.ad_boosts.update_one(
+            {'_id': ad_boost['_id']},
+            {
+                '$set': {
+                    'multiplier': new_multiplier,
+                    'ads_watched': new_ads_watched,
+                    'expires_at': new_expires_at
+                }
+            }
+        )
+    else:
+        # Create new boost
+        new_multiplier = 2.0
+        new_ads_watched = 1
+        new_expires_at = now + timedelta(seconds=60)
+        
+        boost = AdBoost(
+            user_id=current_user['id'],
+            multiplier=new_multiplier,
+            ads_watched=new_ads_watched,
+            expires_at=new_expires_at
+        )
+        await db.ad_boosts.insert_one(boost.dict())
+    
+    # Calculate boosted daily earnings
+    daily_salary = current_job['salary'] / 30
+    boosted_daily = daily_salary * new_multiplier
+    
+    return {
+        "message": f"Propaganda assistida! Seus ganhos aumentaram {new_multiplier}x!",
+        "multiplier": new_multiplier,
+        "ads_watched": new_ads_watched,
+        "expires_at": new_expires_at.isoformat(),
+        "seconds_remaining": 60 * new_ads_watched if new_ads_watched <= 10 else 600,
+        "daily_earnings_normal": daily_salary,
+        "daily_earnings_boosted": boosted_daily,
+        "boost_value": boosted_daily - daily_salary
+    }
+
+@api_router.get("/ads/current-boost")
+async def get_current_boost(current_user: dict = Depends(get_current_user)):
+    """Get current ad boost status"""
+    ad_boost = await db.ad_boosts.find_one({"user_id": current_user['id']})
+    
+    if not ad_boost:
+        return {
+            "active": False,
+            "multiplier": 1.0,
+            "ads_watched": 0,
+            "seconds_remaining": 0
+        }
+    
+    now = datetime.utcnow()
+    expires_at = ad_boost.get('expires_at')
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+    
+    if expires_at <= now:
+        # Expired
+        return {
+            "active": False,
+            "multiplier": 1.0,
+            "ads_watched": 0,
+            "seconds_remaining": 0
+        }
+    
+    seconds_remaining = (expires_at - now).total_seconds()
+    
+    # Calculate current multiplier based on decay
+    # Loses 1x every 60 seconds
+    time_passed = (now - ad_boost.get('created_at', now)).total_seconds()
+    decay_amount = int(time_passed / 60)
+    current_multiplier = max(1.0, ad_boost.get('multiplier', 1.0) - decay_amount)
+    
+    return {
+        "active": True,
+        "multiplier": current_multiplier,
+        "max_multiplier": ad_boost.get('multiplier', 1.0),
+        "ads_watched": ad_boost.get('ads_watched', 0),
+        "seconds_remaining": int(seconds_remaining),
+        "expires_at": expires_at.isoformat()
+    }
 
 @api_router.get("/jobs/my-applications")
 async def get_my_applications(current_user: dict = Depends(get_current_user)):
