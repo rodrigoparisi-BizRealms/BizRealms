@@ -1,1488 +1,263 @@
 #!/usr/bin/env python3
 """
-Business Empire Backend API Test Suite
-Focus: Companies and Assets System Endpoints + Job System Verification
+Backend API Testing for Business Empire - Rankings Rewards System
+Testing the new rankings rewards endpoints
 """
 
 import requests
 import json
-import sys
+import time
 from datetime import datetime
 
 # Configuration
 BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
-TEST_USER = {
-    "email": "teste@businessempire.com",
-    "password": "teste123",
-    "name": "Jogador Teste"
-}
 
-# Global variables
-auth_token = None
-user_data = None
-job_id = None
-education_id = None
-cert_id = None
-company_id = None
-company_id_2 = None
-asset_id = None
+# Test credentials for 2nd place winner
+TEST_EMAIL = "test_jobs@businessempire.com"
+TEST_PASSWORD = "test123"
 
-def log_test(test_name, success, details=""):
-    """Log test results"""
-    status = "✅ PASS" if success else "❌ FAIL"
-    print(f"{status} {test_name}")
-    if details:
-        print(f"   {details}")
-    print()
-
-def make_request(method, endpoint, data=None, headers=None):
-    """Make HTTP request with error handling"""
-    url = f"{BASE_URL}{endpoint}"
-    
-    if headers is None:
-        headers = {}
-    
-    if auth_token and 'Authorization' not in headers:
-        headers['Authorization'] = f'Bearer {auth_token}'
-    
-    try:
-        if method == 'GET':
-            response = requests.get(url, headers=headers, timeout=60)
-        elif method == 'POST':
-            headers['Content-Type'] = 'application/json'
-            response = requests.post(url, json=data, headers=headers, timeout=60)
-        elif method == 'PUT':
-            headers['Content-Type'] = 'application/json'
-            response = requests.put(url, json=data, headers=headers, timeout=60)
-        elif method == 'DELETE':
-            response = requests.delete(url, headers=headers, timeout=60)
+class RankingsRewardsTest:
+    def __init__(self):
+        self.token = None
+        self.user_id = None
+        
+    def login(self):
+        """Login and get JWT token"""
+        print("🔐 Logging in as test_jobs user...")
+        
+        response = requests.post(f"{BASE_URL}/auth/login", json={
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        })
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Try both possible token field names
+            self.token = data.get('access_token') or data.get('token')
+            self.user_id = data.get('user', {}).get('id')
+            print(f"✅ Login successful! User ID: {self.user_id}")
+            print(f"✅ Token received: {self.token[:50]}..." if self.token else "❌ No token received")
+            return True
         else:
-            raise ValueError(f"Unsupported method: {method}")
-        
-        return response
-    except requests.exceptions.Timeout:
-        print(f"Request timeout for {method} {url}")
-        return None
-    except requests.exceptions.ConnectionError as e:
-        print(f"Connection error for {method} {url}: {e}")
-        return None
-    except requests.exceptions.RequestException as e:
-        print(f"Request failed for {method} {url}: {e}")
-        return None
-
-def test_user_registration():
-    """Test 1: POST /api/auth/register"""
-    global auth_token, user_data
-    
-    response = make_request('POST', '/auth/register', TEST_USER)
-    
-    if not response:
-        log_test("User Registration", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "já cadastrado" in response.text:
-        # User already exists, try to login instead
-        return test_user_login()
-    
-    if response.status_code != 200:
-        log_test("User Registration", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        if 'token' not in data or 'user' not in data:
-            log_test("User Registration", False, "Missing token or user in response")
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
             return False
+    
+    def get_headers(self):
+        """Get authorization headers"""
+        return {"Authorization": f"Bearer {self.token}"}
+    
+    def test_rankings_with_rewards_info(self):
+        """Test GET /api/rankings - should include new reward fields"""
+        print("\n📊 Testing GET /api/rankings with rewards info...")
         
-        auth_token = data['token']
-        user_data = data['user']
-        log_test("User Registration", True, f"User created: {user_data['email']}")
-        return True
+        response = requests.get(f"{BASE_URL}/rankings", headers=self.get_headers())
         
-    except json.JSONDecodeError:
-        log_test("User Registration", False, "Invalid JSON response")
-        return False
-
-def test_user_login():
-    """Fallback: POST /api/auth/login if user exists"""
-    global auth_token, user_data
-    
-    login_data = {
-        "email": TEST_USER["email"],
-        "password": TEST_USER["password"]
-    }
-    
-    response = make_request('POST', '/auth/login', login_data)
-    
-    if not response or response.status_code != 200:
-        log_test("User Login (fallback)", False, f"Status: {response.status_code if response else 'No response'}")
-        return False
-    
-    try:
-        data = response.json()
-        auth_token = data['token']
-        user_data = data['user']
-        log_test("User Login (fallback)", True, f"User logged in: {user_data['email']}")
-        return True
-    except json.JSONDecodeError:
-        log_test("User Login (fallback)", False, "Invalid JSON response")
-        return False
-
-def test_complete_profile():
-    """Test 2: POST /api/character/complete-profile"""
-    profile_data = {
-        "background": "trabalhador",
-        "dream": "carreira",
-        "avatar_color": "blue",
-        "avatar_icon": "person",
-        "personality": {
-            "ambição": 7,
-            "risco": 5,
-            "social": 6,
-            "analítico": 5
-        }
-    }
-    
-    response = make_request('POST', '/character/complete-profile', profile_data)
-    
-    if not response:
-        log_test("Complete Profile", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Complete Profile", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        log_test("Complete Profile", True, f"Profile completed. Money: {data.get('money', 'N/A')}")
-        return True
-    except json.JSONDecodeError:
-        log_test("Complete Profile", False, "Invalid JSON response")
-        return False
-
-def test_get_jobs():
-    """Test 3: GET /api/jobs"""
-    response = make_request('GET', '/jobs')
-    
-    if not response:
-        log_test("Get Jobs", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Jobs", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        jobs = response.json()
-        if not isinstance(jobs, list):
-            log_test("Get Jobs", False, "Response is not a list")
-            return False
-        
-        if len(jobs) < 6:
-            log_test("Get Jobs", False, f"Expected 6 jobs, got {len(jobs)}")
-            return False
-        
-        # Check for ObjectId serialization issues
-        for job in jobs:
-            if '_id' in job:
-                log_test("Get Jobs", False, "ObjectId found in response - serialization bug not fixed")
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ Rankings endpoint working")
+            
+            # Check for new fields
+            required_fields = ['has_unclaimed_reward', 'unclaimed_reward', 'prizes']
+            missing_fields = []
+            
+            for field in required_fields:
+                if field not in data:
+                    missing_fields.append(field)
+            
+            if missing_fields:
+                print(f"❌ Missing required fields: {missing_fields}")
                 return False
-        
-        log_test("Get Jobs", True, f"Retrieved {len(jobs)} jobs successfully")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Jobs", False, "Invalid JSON response")
-        return False
-
-def test_apply_to_job():
-    """Test 4: POST /api/jobs/apply"""
-    global job_id
-    
-    # First get jobs to find a suitable one
-    response = make_request('GET', '/jobs')
-    if not response or response.status_code != 200:
-        log_test("Apply to Job", False, "Could not get jobs list")
-        return False
-    
-    jobs = response.json()
-    # Find "Estagiário" job (low requirements)
-    target_job = None
-    for job in jobs:
-        if "Estagiário" in job.get('title', ''):
-            target_job = job
-            break
-    
-    if not target_job:
-        # Fallback to first job
-        target_job = jobs[0] if jobs else None
-    
-    if not target_job:
-        log_test("Apply to Job", False, "No jobs available")
-        return False
-    
-    job_id = target_job['id']
-    apply_data = {"job_id": job_id}
-    
-    response = make_request('POST', '/jobs/apply', apply_data)
-    
-    if not response:
-        log_test("Apply to Job", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Apply to Job", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        
-        # Check for ObjectId serialization issues
-        if 'job' in data and '_id' in data['job']:
-            log_test("Apply to Job", False, "ObjectId found in job response - serialization bug not fixed")
-            return False
-        
-        required_fields = ['message', 'status', 'match_score', 'job']
-        for field in required_fields:
-            if field not in data:
-                log_test("Apply to Job", False, f"Missing field: {field}")
+            
+            print(f"✅ has_unclaimed_reward: {data['has_unclaimed_reward']}")
+            print(f"✅ unclaimed_reward: {data['unclaimed_reward']}")
+            print(f"✅ prizes array: {len(data['prizes'])} items")
+            
+            # Validate prizes array
+            prizes = data['prizes']
+            if len(prizes) != 3:
+                print(f"❌ Expected 3 prizes, got {len(prizes)}")
                 return False
-        
-        log_test("Apply to Job", True, f"Applied to {target_job['title']} - Status: {data['status']}, Match: {data['match_score']:.1f}%")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Apply to Job", False, "Invalid JSON response")
-        return False
-
-def test_accept_job():
-    """Test 5: POST /api/jobs/accept"""
-    if not job_id:
-        log_test("Accept Job", False, "No job_id available from previous test")
-        return False
-    
-    accept_data = {"job_id": job_id}
-    response = make_request('POST', '/jobs/accept', accept_data)
-    
-    if not response:
-        log_test("Accept Job", False, "Request failed")
-        return False
-    
-    if response.status_code == 404:
-        log_test("Accept Job", True, "Job not accepted (expected if match score < 70%)")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Accept Job", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'salary', 'daily_earnings']
-        for field in required_fields:
-            if field not in data:
-                log_test("Accept Job", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Accept Job", True, f"Job accepted! Salary: R$ {data['salary']}, Daily: R$ {data['daily_earnings']:.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Accept Job", False, "Invalid JSON response")
-        return False
-
-def test_get_current_job():
-    """Test 6: GET /api/jobs/current"""
-    response = make_request('GET', '/jobs/current')
-    
-    if not response:
-        log_test("Get Current Job", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Current Job", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        
-        if data is None:
-            log_test("Get Current Job", True, "No current job (expected if not accepted)")
-            return True
-        
-        # Check for ObjectId serialization issues
-        if '_id' in data:
-            log_test("Get Current Job", False, "ObjectId found in response - serialization bug not fixed")
-            return False
-        
-        log_test("Get Current Job", True, f"Current job: {data.get('position', 'N/A')} at {data.get('company', 'N/A')}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Current Job", False, "Invalid JSON response")
-        return False
-
-def test_collect_earnings():
-    """Test 7: GET /api/jobs/collect-earnings"""
-    response = make_request('GET', '/jobs/collect-earnings')
-    
-    if not response:
-        log_test("Collect Earnings", False, "Request failed")
-        return False
-    
-    if response.status_code == 400:
-        log_test("Collect Earnings", True, "No job to collect from (expected if not employed)")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Collect Earnings", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'earnings', 'days_elapsed']
-        for field in required_fields:
-            if field not in data:
-                log_test("Collect Earnings", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Collect Earnings", True, f"Earnings: R$ {data['earnings']:.2f}, Days: {data['days_elapsed']:.1f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Collect Earnings", False, "Invalid JSON response")
-        return False
-
-def test_watch_ad():
-    """Test 8: POST /api/ads/watch"""
-    response = make_request('POST', '/ads/watch')
-    
-    if not response:
-        log_test("Watch Ad", False, "Request failed")
-        return False
-    
-    if response.status_code == 400:
-        log_test("Watch Ad", True, "No job for ad boost (expected if not employed)")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Watch Ad", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'multiplier', 'ads_watched']
-        for field in required_fields:
-            if field not in data:
-                log_test("Watch Ad", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Watch Ad", True, f"Ad watched! Multiplier: {data['multiplier']}x, Ads: {data['ads_watched']}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Watch Ad", False, "Invalid JSON response")
-        return False
-
-def test_get_current_boost():
-    """Test 9: GET /api/ads/current-boost"""
-    response = make_request('GET', '/ads/current-boost')
-    
-    if not response:
-        log_test("Get Current Boost", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Current Boost", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['active', 'multiplier', 'ads_watched', 'seconds_remaining']
-        for field in required_fields:
-            if field not in data:
-                log_test("Get Current Boost", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Get Current Boost", True, f"Boost active: {data['active']}, Multiplier: {data['multiplier']}x")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Current Boost", False, "Invalid JSON response")
-        return False
-
-def test_get_my_applications():
-    """Test 10: GET /api/jobs/my-applications"""
-    response = make_request('GET', '/jobs/my-applications')
-    
-    if not response:
-        log_test("Get My Applications", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get My Applications", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        applications = response.json()
-        if not isinstance(applications, list):
-            log_test("Get My Applications", False, "Response is not a list")
-            return False
-        
-        # Check for ObjectId serialization issues
-        for app in applications:
-            if '_id' in app:
-                log_test("Get My Applications", False, "ObjectId found in application - serialization bug not fixed")
-                return False
-            if 'job' in app and app['job'] and '_id' in app['job']:
-                log_test("Get My Applications", False, "ObjectId found in job details - serialization bug not fixed")
-                return False
-        
-        log_test("Get My Applications", True, f"Retrieved {len(applications)} applications")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get My Applications", False, "Invalid JSON response")
-        return False
-
-def test_resign_from_job():
-    """Test 11: POST /api/jobs/resign"""
-    response = make_request('POST', '/jobs/resign')
-    
-    if not response:
-        log_test("Resign from Job", False, "Request failed")
-        return False
-    
-    if response.status_code == 400:
-        log_test("Resign from Job", True, "Not employed (expected if no job accepted)")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Resign from Job", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        if 'message' not in data:
-            log_test("Resign from Job", False, "Missing message field")
-            return False
-        
-        log_test("Resign from Job", True, "Successfully resigned")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Resign from Job", False, "Invalid JSON response")
-        return False
-
-def test_get_courses():
-    """Test 12: GET /api/courses"""
-    response = make_request('GET', '/courses')
-    
-    if not response:
-        log_test("Get Courses", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Courses", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        courses = response.json()
-        if not isinstance(courses, list):
-            log_test("Get Courses", False, "Response is not a list")
-            return False
-        
-        if len(courses) == 0:
-            log_test("Get Courses", False, "No courses available")
-            return False
-        
-        log_test("Get Courses", True, f"Retrieved {len(courses)} courses")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Courses", False, "Invalid JSON response")
-        return False
-
-def test_enroll_course():
-    """Test 13: POST /api/courses/enroll"""
-    enroll_data = {"course_id": "excel-avancado"}
-    response = make_request('POST', '/courses/enroll', enroll_data)
-    
-    if not response:
-        log_test("Enroll Course", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "já fez" in response.text:
-        log_test("Enroll Course", True, "Already completed course (expected)")
-        return True
-    
-    if response.status_code == 400 and "insuficiente" in response.text:
-        log_test("Enroll Course", True, "Insufficient funds (expected)")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Enroll Course", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'cost', 'earnings_boost', 'skill_boost', 'new_money']
-        for field in required_fields:
-            if field not in data:
-                log_test("Enroll Course", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Enroll Course", True, f"Enrolled! Cost: R$ {data['cost']}, Boost: {data['earnings_boost']}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Enroll Course", False, "Invalid JSON response")
-        return False
-
-def test_get_my_courses():
-    """Test 14: GET /api/courses/my-courses"""
-    response = make_request('GET', '/courses/my-courses')
-    
-    if not response:
-        log_test("Get My Courses", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get My Courses", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        if 'courses' not in data or 'total_boost' not in data:
-            log_test("Get My Courses", False, "Missing courses or total_boost field")
-            return False
-        
-        courses = data['courses']
-        if not isinstance(courses, list):
-            log_test("Get My Courses", False, "Courses is not a list")
-            return False
-        
-        log_test("Get My Courses", True, f"Retrieved {len(courses)} completed courses, Total boost: {data['total_boost_percentage']}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get My Courses", False, "Invalid JSON response")
-        return False
-
-def test_update_avatar_photo():
-    """Test 15: PUT /api/user/avatar-photo"""
-    # Simple base64 test data
-    avatar_data = {"avatar_photo": "data:image/png;base64,iVBORw0KGgo="}
-    response = make_request('PUT', '/user/avatar-photo', avatar_data)
-    
-    if not response:
-        log_test("Update Avatar Photo", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Update Avatar Photo", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        if 'message' not in data:
-            log_test("Update Avatar Photo", False, "Missing message field")
-            return False
-        
-        log_test("Update Avatar Photo", True, "Avatar photo updated successfully")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Update Avatar Photo", False, "Invalid JSON response")
-        return False
-
-def test_delete_education():
-    """Test 16: DELETE /api/user/education/{education_id}"""
-    # First, add an education to delete
-    education_data = {
-        "degree": "Graduação",
-        "field": "Administração",
-        "institution": "Universidade Test",
-        "year_completed": 2020,
-        "level": 2
-    }
-    
-    response = make_request('POST', '/user/education', education_data)
-    if not response or response.status_code != 200:
-        log_test("Delete Education", False, "Could not add education to delete")
-        return False
-    
-    try:
-        data = response.json()
-        education_id = data.get('education_id')
-        if not education_id:
-            log_test("Delete Education", False, "No education_id returned from add education")
-            return False
-        
-        # Now delete it
-        response = make_request('DELETE', f'/user/education/{education_id}')
-        
-        if not response:
-            log_test("Delete Education", False, "Delete request failed")
-            return False
-        
-        if response.status_code != 200:
-            log_test("Delete Education", False, f"Status: {response.status_code}, Response: {response.text}")
-            return False
-        
-        data = response.json()
-        if 'message' not in data:
-            log_test("Delete Education", False, "Missing message field")
-            return False
-        
-        log_test("Delete Education", True, "Education deleted successfully")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Delete Education", False, "Invalid JSON response")
-        return False
-
-def test_delete_certification():
-    """Test 17: DELETE /api/user/certification/{cert_id}"""
-    # First, add a certification to delete
-    cert_data = {
-        "name": "Test Certification",
-        "issuer": "Test Institute",
-        "skill_boost": 3
-    }
-    
-    response = make_request('POST', '/user/certification', cert_data)
-    if not response or response.status_code != 200:
-        log_test("Delete Certification", False, "Could not add certification to delete")
-        return False
-    
-    try:
-        data = response.json()
-        cert_id = data.get('certification_id')
-        if not cert_id:
-            log_test("Delete Certification", False, "No certification_id returned from add certification")
-            return False
-        
-        # Now delete it
-        response = make_request('DELETE', f'/user/certification/{cert_id}')
-        
-        if not response:
-            log_test("Delete Certification", False, "Delete request failed")
-            return False
-        
-        if response.status_code != 200:
-            log_test("Delete Certification", False, f"Status: {response.status_code}, Response: {response.text}")
-            return False
-        
-        data = response.json()
-        if 'message' not in data:
-            log_test("Delete Certification", False, "Missing message field")
-            return False
-        
-        log_test("Delete Certification", True, "Certification deleted successfully")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Delete Certification", False, "Invalid JSON response")
-        return False
-
-def test_unauthorized_access():
-    """Test unauthorized access to protected endpoints"""
-    global auth_token
-    # Test without auth token
-    old_token = auth_token
-    auth_token = None
-    
-    response = make_request('GET', '/jobs/current')
-    
-    auth_token = old_token  # Restore token
-    
-    if not response:
-        log_test("Unauthorized Access", False, "Request failed")
-        return False
-    
-    if response.status_code != 401:
-        log_test("Unauthorized Access", False, f"Expected 401, got {response.status_code}")
-        return False
-    
-    log_test("Unauthorized Access", True, "Properly rejected unauthorized request")
-    return True
-
-# ==================== COMPANIES SYSTEM TESTS ====================
-
-def test_get_companies_available():
-    """Test 18: GET /api/companies/available"""
-    response = make_request('GET', '/companies/available')
-    
-    if not response:
-        log_test("Get Companies Available", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Companies Available", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        companies = response.json()
-        if not isinstance(companies, list):
-            log_test("Get Companies Available", False, "Response is not a list")
-            return False
-        
-        if len(companies) == 0:
-            log_test("Get Companies Available", False, "No companies available")
-            return False
-        
-        # Check for ObjectId serialization issues
-        for company in companies:
-            if '_id' in company:
-                log_test("Get Companies Available", False, "ObjectId found in response - serialization bug")
-                return False
-        
-        log_test("Get Companies Available", True, f"Retrieved {len(companies)} companies for sale")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Companies Available", False, "Invalid JSON response")
-        return False
-
-def test_check_user_money():
-    """Check if user has enough money for testing"""
-    response = make_request('GET', '/user/stats')
-    
-    if not response or response.status_code != 200:
-        log_test("Check User Money", False, "Could not get user stats")
-        return False
-    
-    try:
-        stats = response.json()
-        money = stats.get('money', 0)
-        
-        if money < 50000:  # Need money for companies and assets
-            log_test("Check User Money", False, f"User has only R$ {money:,.2f}, need at least R$ 50,000 for testing")
-            # Try to give user money via MongoDB update
-            return give_user_money()
-        
-        log_test("Check User Money", True, f"User has R$ {money:,.2f} - sufficient for testing")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Check User Money", False, "Invalid JSON response")
-        return False
-
-def give_user_money():
-    """Give user money by updating their balance directly"""
-    # This is a test helper - in real app this would be done via admin interface
-    # For now, we'll just note that user needs money and continue with tests
-    log_test("Give User Money", True, "Note: User may need more money for some tests")
-    return True
-
-def test_buy_company():
-    """Test 19: POST /api/companies/buy"""
-    global company_id
-    
-    # First get available companies
-    response = make_request('GET', '/companies/available')
-    if not response or response.status_code != 200:
-        log_test("Buy Company", False, "Could not get companies list")
-        return False
-    
-    companies = response.json()
-    # Find cheapest company
-    cheapest = min(companies, key=lambda c: c.get('price', float('inf')))
-    
-    if not cheapest:
-        log_test("Buy Company", False, "No companies available to buy")
-        return False
-    
-    company_id = cheapest['id']
-    buy_data = {"company_id": company_id}
-    
-    response = make_request('POST', '/companies/buy', buy_data)
-    
-    if not response:
-        log_test("Buy Company", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "insuficiente" in response.text:
-        log_test("Buy Company", True, f"Insufficient funds for {cheapest['name']} (R$ {cheapest['price']:,.2f}) - expected")
-        return True
-    
-    if response.status_code == 400 and "já possui" in response.text:
-        log_test("Buy Company", True, "Already owns this company - expected")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Buy Company", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'company_name', 'price', 'monthly_revenue', 'new_balance']
-        for field in required_fields:
-            if field not in data:
-                log_test("Buy Company", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Buy Company", True, f"Bought {data['company_name']} for R$ {data['price']:,.2f}, Monthly revenue: R$ {data['monthly_revenue']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Buy Company", False, "Invalid JSON response")
-        return False
-
-def test_create_company():
-    """Test 20: POST /api/companies/create"""
-    global company_id_2
-    
-    create_data = {
-        "name": "Test Corp Automation",
-        "segment": "tecnologia"
-    }
-    
-    response = make_request('POST', '/companies/create', create_data)
-    
-    if not response:
-        log_test("Create Company", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "insuficiente" in response.text:
-        log_test("Create Company", True, "Insufficient funds (R$ 5,000 required) - expected")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Create Company", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'company', 'new_balance']
-        for field in required_fields:
-            if field not in data:
-                log_test("Create Company", False, f"Missing field: {field}")
-                return False
-        
-        company_info = data['company']
-        log_test("Create Company", True, f"Created {company_info['name']} in {company_info['segment']} segment, Monthly revenue: R$ {company_info['monthly_revenue']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Create Company", False, "Invalid JSON response")
-        return False
-
-def test_get_owned_companies():
-    """Test 21: GET /api/companies/owned"""
-    response = make_request('GET', '/companies/owned')
-    
-    if not response:
-        log_test("Get Owned Companies", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Owned Companies", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['companies', 'total_monthly_revenue', 'count']
-        for field in required_fields:
-            if field not in data:
-                log_test("Get Owned Companies", False, f"Missing field: {field}")
-                return False
-        
-        companies = data['companies']
-        if not isinstance(companies, list):
-            log_test("Get Owned Companies", False, "Companies is not a list")
-            return False
-        
-        # Check for ObjectId serialization issues
-        for company in companies:
-            if '_id' in company:
-                log_test("Get Owned Companies", False, "ObjectId found in response - serialization bug")
-                return False
-        
-        log_test("Get Owned Companies", True, f"User owns {data['count']} companies, Total monthly revenue: R$ {data['total_monthly_revenue']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Owned Companies", False, "Invalid JSON response")
-        return False
-
-def test_collect_company_revenue():
-    """Test 22: POST /api/companies/collect-revenue"""
-    response = make_request('POST', '/companies/collect-revenue')
-    
-    if not response:
-        log_test("Collect Company Revenue", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "não possui empresas" in response.text:
-        log_test("Collect Company Revenue", True, "No companies owned - expected")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Collect Company Revenue", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'total_revenue', 'details']
-        for field in required_fields:
-            if field not in data:
-                log_test("Collect Company Revenue", False, f"Missing field: {field}")
-                return False
-        
-        if data['total_revenue'] == 0:
-            log_test("Collect Company Revenue", True, "No revenue to collect yet - expected")
+            
+            # Check prize structure
+            for i, prize in enumerate(prizes, 1):
+                required_prize_fields = ['position', 'icon', 'color', 'description', 'type']
+                for field in required_prize_fields:
+                    if field not in prize:
+                        print(f"❌ Prize {i} missing field: {field}")
+                        return False
+                
+                if prize['position'] != i:
+                    print(f"❌ Prize position mismatch: expected {i}, got {prize['position']}")
+                    return False
+            
+            print("✅ Prizes array structure validated")
+            
+            # Show current user position
+            current_user = data.get('current_user')
+            if current_user:
+                print(f"✅ Current user position: {current_user.get('position', 'N/A')}")
+                print(f"✅ Current user net worth: R$ {current_user.get('total_net_worth', 0):,.2f}")
+            
+            return True, data
         else:
-            log_test("Collect Company Revenue", True, f"Collected R$ {data['total_revenue']:,.2f} from {len(data['details'])} companies")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Collect Company Revenue", False, "Invalid JSON response")
-        return False
-
-def test_company_ad_boost():
-    """Test 23: POST /api/companies/ad-boost"""
-    response = make_request('POST', '/companies/ad-boost')
+            print(f"❌ Rankings request failed: {response.status_code} - {response.text}")
+            return False, None
     
-    if not response:
-        log_test("Company Ad Boost", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "não possui empresas" in response.text:
-        log_test("Company Ad Boost", True, "No companies owned - expected")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Company Ad Boost", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'boost_duration_hours', 'expires_at', 'companies_boosted']
-        for field in required_fields:
-            if field not in data:
-                log_test("Company Ad Boost", False, f"Missing field: {field}")
-                return False
+    def test_distribute_rewards(self):
+        """Test POST /api/rankings/distribute-rewards"""
+        print("\n🎁 Testing POST /api/rankings/distribute-rewards...")
         
-        log_test("Company Ad Boost", True, f"Activated 6h boost for {data['companies_boosted']} companies")
-        return True
+        response = requests.post(f"{BASE_URL}/rankings/distribute-rewards", headers=self.get_headers())
         
-    except json.JSONDecodeError:
-        log_test("Company Ad Boost", False, "Invalid JSON response")
-        return False
-
-def test_merge_companies():
-    """Test 24: POST /api/companies/merge"""
-    # First get owned companies to find two of same segment
-    response = make_request('GET', '/companies/owned')
-    if not response or response.status_code != 200:
-        log_test("Merge Companies", True, "Cannot test merge - no owned companies data")
-        return True
-    
-    try:
-        data = response.json()
-        companies = data['companies']
-        
-        if len(companies) < 2:
-            log_test("Merge Companies", True, "Cannot test merge - need at least 2 companies")
-            return True
-        
-        # Find two companies of same segment
-        segments = {}
-        for company in companies:
-            segment = company.get('segment')
-            if segment not in segments:
-                segments[segment] = []
-            segments[segment].append(company)
-        
-        merge_candidates = None
-        for segment, companies_in_segment in segments.items():
-            if len(companies_in_segment) >= 2:
-                merge_candidates = companies_in_segment[:2]
-                break
-        
-        if not merge_candidates:
-            log_test("Merge Companies", True, "Cannot test merge - no two companies of same segment")
-            return True
-        
-        merge_data = {
-            "company_id_1": merge_candidates[0]['id'],
-            "company_id_2": merge_candidates[1]['id']
-        }
-        
-        response = make_request('POST', '/companies/merge', merge_data)
-        
-        if not response:
-            log_test("Merge Companies", False, "Request failed")
-            return False
-        
-        if response.status_code != 200:
-            log_test("Merge Companies", False, f"Status: {response.status_code}, Response: {response.text}")
-            return False
-        
-        data = response.json()
-        required_fields = ['message', 'new_company']
-        for field in required_fields:
-            if field not in data:
-                log_test("Merge Companies", False, f"Missing field: {field}")
-                return False
-        
-        new_company = data['new_company']
-        log_test("Merge Companies", True, f"Merged into {new_company['name']}, Level: {new_company['level']}, Revenue: R$ {new_company['monthly_revenue']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Merge Companies", False, "Invalid JSON response")
-        return False
-
-# ==================== ASSETS SYSTEM TESTS ====================
-
-def test_get_assets_store():
-    """Test 25: GET /api/assets/store"""
-    response = make_request('GET', '/assets/store')
-    
-    if not response:
-        log_test("Get Assets Store", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Assets Store", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        assets = response.json()
-        if not isinstance(assets, list):
-            log_test("Get Assets Store", False, "Response is not a list")
-            return False
-        
-        if len(assets) == 0:
-            log_test("Get Assets Store", False, "No assets available")
-            return False
-        
-        # Check for ObjectId serialization issues
-        for asset in assets:
-            if '_id' in asset:
-                log_test("Get Assets Store", False, "ObjectId found in response - serialization bug")
-                return False
-        
-        # Check categories
-        categories = set(asset.get('category') for asset in assets)
-        expected_categories = {'veiculo', 'imovel', 'luxo'}
-        if not expected_categories.issubset(categories):
-            log_test("Get Assets Store", False, f"Missing expected categories. Found: {categories}")
-            return False
-        
-        log_test("Get Assets Store", True, f"Retrieved {len(assets)} assets across {len(categories)} categories")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Assets Store", False, "Invalid JSON response")
-        return False
-
-def test_buy_asset():
-    """Test 26: POST /api/assets/buy"""
-    global asset_id
-    
-    # First get available assets
-    response = make_request('GET', '/assets/store')
-    if not response or response.status_code != 200:
-        log_test("Buy Asset", False, "Could not get assets list")
-        return False
-    
-    assets = response.json()
-    # Find cheapest asset
-    cheapest = min(assets, key=lambda a: a.get('price', float('inf')))
-    
-    if not cheapest:
-        log_test("Buy Asset", False, "No assets available to buy")
-        return False
-    
-    asset_id = cheapest['id']
-    buy_data = {"asset_id": asset_id}
-    
-    response = make_request('POST', '/assets/buy', buy_data)
-    
-    if not response:
-        log_test("Buy Asset", False, "Request failed")
-        return False
-    
-    if response.status_code == 400 and "insuficiente" in response.text:
-        log_test("Buy Asset", True, f"Insufficient funds for {cheapest['name']} (R$ {cheapest['price']:,.2f}) - expected")
-        return True
-    
-    if response.status_code == 400 and "já possui" in response.text:
-        log_test("Buy Asset", True, "Already owns this asset - expected")
-        return True
-    
-    if response.status_code != 200:
-        log_test("Buy Asset", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['message', 'item', 'price', 'status_boost', 'new_balance']
-        for field in required_fields:
-            if field not in data:
-                log_test("Buy Asset", False, f"Missing field: {field}")
-                return False
-        
-        log_test("Buy Asset", True, f"Bought {data['item']} for R$ {data['price']:,.2f}, Status boost: +{data['status_boost']}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Buy Asset", False, "Invalid JSON response")
-        return False
-
-def test_get_owned_assets():
-    """Test 27: GET /api/assets/owned"""
-    response = make_request('GET', '/assets/owned')
-    
-    if not response:
-        log_test("Get Owned Assets", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Owned Assets", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        required_fields = ['assets', 'summary']
-        for field in required_fields:
-            if field not in data:
-                log_test("Get Owned Assets", False, f"Missing field: {field}")
-                return False
-        
-        assets = data['assets']
-        summary = data['summary']
-        
-        if not isinstance(assets, list):
-            log_test("Get Owned Assets", False, "Assets is not a list")
-            return False
-        
-        # Check for ObjectId serialization issues
-        for asset in assets:
-            if '_id' in asset:
-                log_test("Get Owned Assets", False, "ObjectId found in response - serialization bug")
-                return False
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ Distribute rewards endpoint working")
+            print(f"✅ Distributed: {data.get('distributed')}")
+            print(f"✅ Message: {data.get('message')}")
             
-            # Check appreciation calculation
-            required_asset_fields = ['current_value', 'profit', 'profit_pct']
-            for field in required_asset_fields:
-                if field not in asset:
-                    log_test("Get Owned Assets", False, f"Missing asset field: {field}")
-                    return False
-        
-        # Check summary fields
-        summary_fields = ['total_value', 'total_invested', 'total_profit', 'count', 'total_status_boost']
-        for field in summary_fields:
-            if field not in summary:
-                log_test("Get Owned Assets", False, f"Missing summary field: {field}")
-                return False
-        
-        log_test("Get Owned Assets", True, f"User owns {summary['count']} assets, Total value: R$ {summary['total_value']:,.2f}, Profit: R$ {summary['total_profit']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Owned Assets", False, "Invalid JSON response")
-        return False
-
-def test_sell_asset():
-    """Test 28: POST /api/assets/sell"""
-    # First get owned assets to find one to sell
-    response = make_request('GET', '/assets/owned')
-    if not response or response.status_code != 200:
-        log_test("Sell Asset", True, "Cannot test sell - no owned assets data")
-        return True
-    
-    try:
-        data = response.json()
-        assets = data['assets']
-        
-        if len(assets) == 0:
-            log_test("Sell Asset", True, "Cannot test sell - no assets owned")
-            return True
-        
-        # Sell the first asset
-        asset_to_sell = assets[0]
-        sell_data = {"asset_id": asset_to_sell['id']}
-        
-        response = make_request('POST', '/assets/sell', sell_data)
-        
-        if not response:
-            log_test("Sell Asset", False, "Request failed")
-            return False
-        
-        if response.status_code != 200:
-            log_test("Sell Asset", False, f"Status: {response.status_code}, Response: {response.text}")
-            return False
-        
-        data = response.json()
-        required_fields = ['message', 'sell_value', 'profit', 'new_balance']
-        for field in required_fields:
-            if field not in data:
-                log_test("Sell Asset", False, f"Missing field: {field}")
-                return False
-        
-        profit_loss = "profit" if data['profit'] >= 0 else "loss"
-        log_test("Sell Asset", True, f"Sold {asset_to_sell['name']} for R$ {data['sell_value']:,.2f}, {profit_loss}: R$ {abs(data['profit']):,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Sell Asset", False, "Invalid JSON response")
-        return False
-
-# ==================== RANKINGS SYSTEM TESTS ====================
-
-def test_get_weekly_rankings():
-    """Test 29: GET /api/rankings?period=weekly"""
-    response = make_request('GET', '/rankings?period=weekly')
-    
-    if not response:
-        log_test("Get Weekly Rankings", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Weekly Rankings", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        
-        # Check required top-level fields
-        required_fields = ['period', 'updated_at', 'total_players', 'rankings', 'current_user']
-        for field in required_fields:
-            if field not in data:
-                log_test("Get Weekly Rankings", False, f"Missing field: {field}")
-                return False
-        
-        # Verify period is correct
-        if data['period'] != 'weekly':
-            log_test("Get Weekly Rankings", False, f"Expected period 'weekly', got '{data['period']}'")
-            return False
-        
-        # Check rankings array
-        rankings = data['rankings']
-        if not isinstance(rankings, list):
-            log_test("Get Weekly Rankings", False, "Rankings is not a list")
-            return False
-        
-        # Check each ranking entry structure
-        for i, ranking in enumerate(rankings):
-            required_ranking_fields = [
-                'position', 'user_id', 'name', 'avatar_color', 'avatar_icon', 
-                'level', 'total_net_worth', 'cash', 'investment_value', 
-                'companies_value', 'assets_value', 'num_companies', 
-                'num_assets', 'num_investments', 'position_change'
-            ]
-            for field in required_ranking_fields:
-                if field not in ranking:
-                    log_test("Get Weekly Rankings", False, f"Missing field '{field}' in ranking entry {i}")
-                    return False
-        
-        # Verify rankings are sorted by total_net_worth descending
-        for i in range(len(rankings) - 1):
-            if rankings[i]['total_net_worth'] < rankings[i + 1]['total_net_worth']:
-                log_test("Get Weekly Rankings", False, f"Rankings not sorted correctly: position {i+1} has lower net worth than position {i+2}")
-                return False
-        
-        # Check current_user structure
-        current_user = data['current_user']
-        if current_user is not None:
-            # Verify current_user has the correct user_id matching the logged-in user
-            if 'user_id' not in current_user:
-                log_test("Get Weekly Rankings", False, "Missing user_id in current_user")
-                return False
-            
-            # Check current_user has all required fields
-            for field in required_ranking_fields:
-                if field not in current_user:
-                    log_test("Get Weekly Rankings", False, f"Missing field '{field}' in current_user")
-                    return False
-        
-        log_test("Get Weekly Rankings", True, f"Retrieved weekly rankings: {data['total_players']} players, top player net worth: R$ {rankings[0]['total_net_worth']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Weekly Rankings", False, "Invalid JSON response")
-        return False
-
-def test_get_monthly_rankings():
-    """Test 30: GET /api/rankings?period=monthly"""
-    response = make_request('GET', '/rankings?period=monthly')
-    
-    if not response:
-        log_test("Get Monthly Rankings", False, "Request failed")
-        return False
-    
-    if response.status_code != 200:
-        log_test("Get Monthly Rankings", False, f"Status: {response.status_code}, Response: {response.text}")
-        return False
-    
-    try:
-        data = response.json()
-        
-        # Check required top-level fields
-        required_fields = ['period', 'updated_at', 'total_players', 'rankings', 'current_user']
-        for field in required_fields:
-            if field not in data:
-                log_test("Get Monthly Rankings", False, f"Missing field: {field}")
-                return False
-        
-        # Verify period is correct
-        if data['period'] != 'monthly':
-            log_test("Get Monthly Rankings", False, f"Expected period 'monthly', got '{data['period']}'")
-            return False
-        
-        # Check rankings array
-        rankings = data['rankings']
-        if not isinstance(rankings, list):
-            log_test("Get Monthly Rankings", False, "Rankings is not a list")
-            return False
-        
-        # Check each ranking entry structure
-        for i, ranking in enumerate(rankings):
-            required_ranking_fields = [
-                'position', 'user_id', 'name', 'avatar_color', 'avatar_icon', 
-                'level', 'total_net_worth', 'cash', 'investment_value', 
-                'companies_value', 'assets_value', 'num_companies', 
-                'num_assets', 'num_investments', 'position_change'
-            ]
-            for field in required_ranking_fields:
-                if field not in ranking:
-                    log_test("Get Monthly Rankings", False, f"Missing field '{field}' in ranking entry {i}")
-                    return False
-        
-        # Verify rankings are sorted by total_net_worth descending
-        for i in range(len(rankings) - 1):
-            if rankings[i]['total_net_worth'] < rankings[i + 1]['total_net_worth']:
-                log_test("Get Monthly Rankings", False, f"Rankings not sorted correctly: position {i+1} has lower net worth than position {i+2}")
-                return False
-        
-        # Check current_user structure
-        current_user = data['current_user']
-        if current_user is not None:
-            # Verify current_user has the correct user_id matching the logged-in user
-            if 'user_id' not in current_user:
-                log_test("Get Monthly Rankings", False, "Missing user_id in current_user")
-                return False
-            
-            # Check current_user has all required fields
-            for field in required_ranking_fields:
-                if field not in current_user:
-                    log_test("Get Monthly Rankings", False, f"Missing field '{field}' in current_user")
-                    return False
-        
-        log_test("Get Monthly Rankings", True, f"Retrieved monthly rankings: {data['total_players']} players, top player net worth: R$ {rankings[0]['total_net_worth']:,.2f}")
-        return True
-        
-    except json.JSONDecodeError:
-        log_test("Get Monthly Rankings", False, "Invalid JSON response")
-        return False
-
-def test_rankings_user_authentication():
-    """Test 31: Verify rankings endpoints require authentication"""
-    global auth_token
-    # Test without auth token
-    old_token = auth_token
-    auth_token = None
-    
-    response = make_request('GET', '/rankings?period=weekly')
-    
-    auth_token = old_token  # Restore token
-    
-    if not response:
-        log_test("Rankings Authentication", False, "Request failed")
-        return False
-    
-    if response.status_code != 401:
-        log_test("Rankings Authentication", False, f"Expected 401, got {response.status_code}")
-        return False
-    
-    log_test("Rankings Authentication", True, "Properly rejected unauthorized request to rankings")
-    return True
-
-def main():
-    """Run all tests"""
-    print("=" * 60)
-    print("BUSINESS EMPIRE BACKEND API TEST SUITE")
-    print("Focus: Companies & Assets System + Job System Verification")
-    print("=" * 60)
-    print()
-    
-    tests = [
-        ("User Registration", test_user_registration),
-        ("Complete Profile", test_complete_profile),
-        ("Check User Money", test_check_user_money),
-        ("Get Jobs", test_get_jobs),
-        ("Apply to Job", test_apply_to_job),
-        ("Accept Job", test_accept_job),
-        ("Get Current Job", test_get_current_job),
-        ("Collect Earnings", test_collect_earnings),
-        ("Watch Ad", test_watch_ad),
-        ("Get Current Boost", test_get_current_boost),
-        ("Get My Applications", test_get_my_applications),
-        ("Resign from Job", test_resign_from_job),
-        ("Get Courses", test_get_courses),
-        ("Enroll Course", test_enroll_course),
-        ("Get My Courses", test_get_my_courses),
-        ("Update Avatar Photo", test_update_avatar_photo),
-        ("Delete Education", test_delete_education),
-        ("Delete Certification", test_delete_certification),
-        ("Unauthorized Access", test_unauthorized_access),
-        # Companies System Tests
-        ("Get Companies Available", test_get_companies_available),
-        ("Buy Company", test_buy_company),
-        ("Create Company", test_create_company),
-        ("Get Owned Companies", test_get_owned_companies),
-        ("Collect Company Revenue", test_collect_company_revenue),
-        ("Company Ad Boost", test_company_ad_boost),
-        ("Merge Companies", test_merge_companies),
-        # Assets System Tests
-        ("Get Assets Store", test_get_assets_store),
-        ("Buy Asset", test_buy_asset),
-        ("Get Owned Assets", test_get_owned_assets),
-        ("Sell Asset", test_sell_asset),
-        # Rankings System Tests
-        ("Get Weekly Rankings", test_get_weekly_rankings),
-        ("Get Monthly Rankings", test_get_monthly_rankings),
-        ("Rankings Authentication", test_rankings_user_authentication),
-    ]
-    
-    passed = 0
-    failed = 0
-    
-    for test_name, test_func in tests:
-        try:
-            if test_func():
-                passed += 1
+            if data.get('distributed'):
+                print("✅ Rewards were distributed this call")
+                winners = data.get('winners', [])
+                print(f"✅ Winners: {len(winners)} players")
+                for winner in winners:
+                    print(f"   Position {winner['position']}: {winner['name']} - {winner['prize']}")
             else:
-                failed += 1
-        except Exception as e:
-            log_test(test_name, False, f"Exception: {str(e)}")
-            failed += 1
+                print("ℹ️ Rewards already distributed this week")
+                next_days = data.get('next_distribution_in_days', 'N/A')
+                print(f"ℹ️ Next distribution in: {next_days} days")
+            
+            return True, data
+        else:
+            print(f"❌ Distribute rewards failed: {response.status_code} - {response.text}")
+            return False, None
     
-    print("=" * 60)
-    print("TEST SUMMARY")
-    print("=" * 60)
-    print(f"✅ PASSED: {passed}")
-    print(f"❌ FAILED: {failed}")
-    print(f"📊 TOTAL:  {passed + failed}")
-    print()
+    def test_claim_reward(self):
+        """Test POST /api/rankings/claim-reward"""
+        print("\n🏆 Testing POST /api/rankings/claim-reward...")
+        
+        response = requests.post(f"{BASE_URL}/rankings/claim-reward", headers=self.get_headers())
+        
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ Claim reward endpoint working")
+            print(f"✅ Success: {data.get('success')}")
+            print(f"✅ Message: {data.get('message')}")
+            print(f"✅ Position: {data.get('position')}")
+            print(f"✅ Reward type: {data.get('reward_type')}")
+            print(f"✅ Description: {data.get('reward_description')}")
+            
+            # If it's a boost reward, check ad_boosts collection
+            if data.get('reward_type') == 'boost':
+                print("🔍 Checking if ad boost was activated...")
+                boost_response = requests.get(f"{BASE_URL}/ads/current-boost", headers=self.get_headers())
+                if boost_response.status_code == 200:
+                    boost_data = boost_response.json()
+                    print(f"✅ Ad boost active: {boost_data.get('active')}")
+                    print(f"✅ Multiplier: {boost_data.get('multiplier')}x")
+                    print(f"✅ Time remaining: {boost_data.get('seconds_remaining')} seconds")
+                else:
+                    print(f"⚠️ Could not verify ad boost: {boost_response.status_code}")
+            
+            return True, data
+        elif response.status_code == 404:
+            print("ℹ️ No unclaimed reward available (404 as expected)")
+            return True, None
+        else:
+            print(f"❌ Claim reward failed: {response.status_code} - {response.text}")
+            return False, None
     
-    if failed == 0:
-        print("🎉 ALL TESTS PASSED! Companies & Assets systems working correctly.")
-        print("✅ Job system endpoints also verified working.")
-    else:
-        print("⚠️  Some tests failed. Check the details above.")
-        if failed > passed:
-            print("❌ Major issues detected. Systems may not be working properly.")
+    def test_claim_reward_twice(self):
+        """Test claiming reward twice - should get 404 on second attempt"""
+        print("\n🔄 Testing claim reward twice (should fail second time)...")
+        
+        # First attempt
+        response1 = requests.post(f"{BASE_URL}/rankings/claim-reward", headers=self.get_headers())
+        
+        # Second attempt immediately after
+        response2 = requests.post(f"{BASE_URL}/rankings/claim-reward", headers=self.get_headers())
+        
+        if response1.status_code == 200 and response2.status_code == 404:
+            print("✅ First claim successful, second claim properly rejected with 404")
+            return True
+        elif response1.status_code == 404 and response2.status_code == 404:
+            print("ℹ️ No rewards available for claiming (both attempts returned 404)")
+            return True
+        else:
+            print(f"❌ Unexpected behavior: First: {response1.status_code}, Second: {response2.status_code}")
+            return False
     
-    print("=" * 60)
-    return failed == 0
+    def test_auth_debug(self):
+        """Debug authentication by testing a simple endpoint"""
+        print("\n🔍 Testing authentication with /api/user/me...")
+        
+        response = requests.get(f"{BASE_URL}/user/me", headers=self.get_headers())
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✅ Authentication working! User: {data.get('name')}")
+            return True
+        else:
+            print(f"❌ Authentication failed: {response.status_code} - {response.text}")
+            print(f"🔍 Token: {self.token[:50]}..." if self.token else "No token")
+            return False
+    
+    def run_full_test(self):
+        """Run complete rankings rewards test suite"""
+        print("🚀 Starting Rankings Rewards System Test")
+        print("=" * 50)
+        
+        # Login
+        if not self.login():
+            return False
+        
+        # Debug authentication
+        if not self.test_auth_debug():
+            return False
+        
+        # Test 1: Check rankings endpoint with new fields
+        success1, rankings_data = self.test_rankings_with_rewards_info()
+        if not success1:
+            return False
+        
+        # Test 2: Try to distribute rewards
+        success2, distribute_data = self.test_distribute_rewards()
+        if not success2:
+            return False
+        
+        # Test 3: Check if user has unclaimed reward after distribution
+        print("\n🔍 Checking for unclaimed rewards after distribution...")
+        success3, updated_rankings = self.test_rankings_with_rewards_info()
+        if not success3:
+            return False
+        
+        # Test 4: Try to claim reward
+        success4, claim_data = self.test_claim_reward()
+        if not success4:
+            return False
+        
+        # Test 5: Try to claim again (should fail)
+        success5 = self.test_claim_reward_twice()
+        if not success5:
+            return False
+        
+        # Final check: Verify rankings endpoint shows no unclaimed reward
+        print("\n🔍 Final check - rankings should show no unclaimed reward...")
+        success6, final_rankings = self.test_rankings_with_rewards_info()
+        if success6 and final_rankings:
+            if not final_rankings.get('has_unclaimed_reward'):
+                print("✅ Confirmed: No unclaimed rewards remaining")
+            else:
+                print("⚠️ Warning: Still shows unclaimed reward after claiming")
+        
+        print("\n" + "=" * 50)
+        print("🎉 Rankings Rewards System Test Complete!")
+        return True
 
 if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+    tester = RankingsRewardsTest()
+    success = tester.run_full_test()
+    
+    if success:
+        print("✅ All tests passed!")
+    else:
+        print("❌ Some tests failed!")

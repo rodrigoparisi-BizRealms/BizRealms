@@ -2414,14 +2414,194 @@ async def get_rankings(
     # Top 50
     top_rankings = rankings[:50]
 
+    # Check if current user has unclaimed rewards
+    unclaimed = await db.ranking_rewards.find_one({
+        "user_id": current_user['id'],
+        "claimed": False
+    })
+
     return {
         "period": period,
         "updated_at": now.isoformat(),
         "total_players": len(rankings),
         "rankings": top_rankings,
         "current_user": current_position,
+        "has_unclaimed_reward": unclaimed is not None,
+        "unclaimed_reward": {
+            "position": unclaimed['position'],
+            "reward_type": unclaimed['reward_type'],
+            "reward_description": unclaimed['reward_description'],
+            "week_of": unclaimed.get('week_of', ''),
+        } if unclaimed else None,
+        "prizes": [
+            {"position": 1, "icon": "star", "color": "#FFD700", "description": "+50.000 XP", "type": "xp"},
+            {"position": 2, "icon": "flash", "color": "#C0C0C0", "description": "Boost 5x por 24h", "type": "boost"},
+            {"position": 3, "icon": "cash", "color": "#CD7F32", "description": "+R$ 25.000", "type": "money"},
+        ],
     }
 
+
+WEEKLY_PRIZES = {
+    1: {"type": "xp", "value": 50000, "description": "+50.000 XP de experiência"},
+    2: {"type": "boost", "multiplier": 5.0, "duration_hours": 24, "description": "Boost 5x nos ganhos por 24 horas"},
+    3: {"type": "money", "value": 25000, "description": "+R$ 25.000 em dinheiro do jogo"},
+}
+
+
+@api_router.post("/rankings/distribute-rewards")
+async def distribute_weekly_rewards(current_user: dict = Depends(get_current_user)):
+    """Distribute weekly rewards to top 3 players. Can be called by any user, runs once per week."""
+    now = datetime.utcnow()
+
+    # Check if rewards already distributed this week
+    last_distribution = await db.ranking_distributions.find_one(
+        {},
+        sort=[("created_at", -1)]
+    )
+    if last_distribution:
+        last_time = last_distribution.get('created_at', datetime.min)
+        if isinstance(last_time, str):
+            last_time = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+        if (now - last_time).total_seconds() < 604800:  # 7 days
+            days_left = 7 - int((now - last_time).total_seconds() / 86400)
+            return {
+                "distributed": False,
+                "message": f"Prêmios já distribuídos esta semana. Próxima distribuição em {days_left} dia(s).",
+                "next_distribution_in_days": days_left,
+            }
+
+    # Calculate current rankings
+    all_users = await db.users.find({}).to_list(500)
+    rankings = []
+    for u in all_users:
+        nw = await calculate_user_net_worth(u)
+        rankings.append(nw)
+    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
+
+    # Distribute rewards to top 3
+    week_label = now.strftime("%Y-W%U")
+    winners = []
+
+    for pos in range(1, 4):
+        if pos > len(rankings):
+            break
+        winner = rankings[pos - 1]
+        prize = WEEKLY_PRIZES[pos]
+
+        # Create reward record
+        reward = {
+            "id": str(uuid.uuid4()),
+            "user_id": winner['user_id'],
+            "position": pos,
+            "reward_type": prize['type'],
+            "reward_description": prize['description'],
+            "reward_data": prize,
+            "week_of": week_label,
+            "claimed": False,
+            "created_at": now,
+        }
+        await db.ranking_rewards.insert_one(reward)
+
+        winners.append({
+            "position": pos,
+            "name": winner['name'],
+            "net_worth": winner['total_net_worth'],
+            "prize": prize['description'],
+        })
+
+    # Record distribution
+    await db.ranking_distributions.insert_one({
+        "created_at": now,
+        "week_of": week_label,
+        "winners": winners,
+    })
+
+    return {
+        "distributed": True,
+        "message": "Prêmios semanais distribuídos com sucesso!",
+        "week_of": week_label,
+        "winners": winners,
+    }
+
+
+@api_router.post("/rankings/claim-reward")
+async def claim_ranking_reward(current_user: dict = Depends(get_current_user)):
+    """Claim an unclaimed ranking reward"""
+    reward = await db.ranking_rewards.find_one({
+        "user_id": current_user['id'],
+        "claimed": False,
+    })
+
+    if not reward:
+        raise HTTPException(status_code=404, detail="Nenhum prêmio disponível para resgatar")
+
+    user = await db.users.find_one({"id": current_user['id']})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    prize_data = reward.get('reward_data', {})
+    prize_type = prize_data.get('type', '')
+    messages = []
+    update_ops: dict = {}
+
+    if prize_type == 'xp':
+        xp_amount = prize_data.get('value', 50000)
+        new_xp = user.get('experience_points', 0) + xp_amount
+        new_level = (new_xp // 1000) + 1
+        update_ops['experience_points'] = new_xp
+        update_ops['level'] = new_level
+        messages.append(f"+{xp_amount:,} XP! Agora nível {new_level}")
+
+    elif prize_type == 'money':
+        money_amount = prize_data.get('value', 25000)
+        new_money = user.get('money', 0) + money_amount
+        update_ops['money'] = new_money
+        messages.append(f"+R$ {money_amount:,.0f} adicionados à sua conta!")
+
+    elif prize_type == 'boost':
+        multiplier = prize_data.get('multiplier', 5.0)
+        duration_hours = prize_data.get('duration_hours', 24)
+        now = datetime.utcnow()
+        expires_at = now + timedelta(hours=duration_hours)
+
+        existing_boost = await db.ad_boosts.find_one({"user_id": current_user['id']})
+        if existing_boost:
+            old_expires = existing_boost.get('expires_at', now)
+            if isinstance(old_expires, str):
+                old_expires = datetime.fromisoformat(old_expires.replace('Z', '+00:00'))
+            new_expires = max(old_expires, expires_at)
+            new_mult = max(existing_boost.get('multiplier', 1.0), multiplier)
+            await db.ad_boosts.update_one(
+                {"_id": existing_boost['_id']},
+                {"$set": {"multiplier": new_mult, "expires_at": new_expires}}
+            )
+        else:
+            boost = AdBoost(
+                user_id=current_user['id'],
+                multiplier=multiplier,
+                ads_watched=0,
+                expires_at=expires_at
+            )
+            await db.ad_boosts.insert_one(boost.dict())
+        messages.append(f"Boost {multiplier}x ativado por {duration_hours}h!")
+
+    # Apply user updates
+    if update_ops:
+        await db.users.update_one({"id": current_user['id']}, {"$set": update_ops})
+
+    # Mark reward as claimed
+    await db.ranking_rewards.update_one(
+        {"_id": reward['_id']},
+        {"$set": {"claimed": True, "claimed_at": datetime.utcnow()}}
+    )
+
+    return {
+        "success": True,
+        "message": " | ".join(messages),
+        "position": reward['position'],
+        "reward_type": prize_type,
+        "reward_description": reward['reward_description'],
+    }
 
 
 STORE_ITEMS = [

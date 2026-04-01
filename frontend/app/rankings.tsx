@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Alert, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,6 @@ import axios from 'axios';
 
 const API = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-const MEDALS = ['', '#FFD700', '#C0C0C0', '#CD7F32']; // gold, silver, bronze
 const AVATAR_COLORS: Record<string, string> = {
   green: '#4CAF50', blue: '#2196F3', purple: '#9C27B0',
   orange: '#FF9800', red: '#F44336', yellow: '#FFC107',
@@ -23,13 +22,21 @@ const formatMoney = (v: number) => {
   return `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 };
 
+const showAlert = (title: string, msg: string) => {
+  if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
+  else Alert.alert(title, msg);
+};
+
 export default function Rankings() {
-  const { token, user } = useAuth();
+  const { token, user, refreshUser } = useAuth();
   const router = useRouter();
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [distributing, setDistributing] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   const loadRankings = useCallback(async () => {
     try {
@@ -45,7 +52,46 @@ export default function Rankings() {
 
   const onRefresh = async () => { setRefreshing(true); await loadRankings(); setRefreshing(false); };
 
+  // Auto-show reward modal if unclaimed
+  useEffect(() => {
+    if (data?.has_unclaimed_reward) {
+      setShowRewardModal(true);
+    }
+  }, [data?.has_unclaimed_reward]);
+
+  const handleDistribute = async () => {
+    setDistributing(true);
+    try {
+      const r = await axios.post(`${API}/api/rankings/distribute-rewards`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showAlert(
+        r.data.distributed ? 'Prêmios Distribuídos!' : 'Aguarde',
+        r.data.message
+      );
+      if (r.data.distributed) await loadRankings();
+    } catch (e: any) {
+      showAlert('Erro', e.response?.data?.detail || 'Erro ao distribuir prêmios');
+    } finally { setDistributing(false); }
+  };
+
+  const handleClaim = async () => {
+    setClaiming(true);
+    try {
+      const r = await axios.post(`${API}/api/rankings/claim-reward`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showAlert('Prêmio Resgatado!', r.data.message);
+      setShowRewardModal(false);
+      await refreshUser();
+      await loadRankings();
+    } catch (e: any) {
+      showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar prêmio');
+    } finally { setClaiming(false); }
+  };
+
   const currentUser = data?.current_user;
+  const prizes = data?.prizes || [];
 
   if (loading) return (
     <SafeAreaView style={s.container}>
@@ -88,6 +134,40 @@ export default function Rankings() {
         </TouchableOpacity>
       </View>
 
+      {/* Weekly Prizes Banner */}
+      {period === 'weekly' && prizes.length > 0 && (
+        <View style={s.prizesBanner}>
+          <Text style={s.prizesTitle}>Prêmios Semanais</Text>
+          <View style={s.prizesRow}>
+            {prizes.map((p: any) => (
+              <View key={p.position} style={s.prizeItem}>
+                <View style={[s.prizeIcon, { backgroundColor: `${p.color}30` }]}>
+                  <Ionicons name={(p.icon || 'gift') as any} size={18} color={p.color} />
+                </View>
+                <Text style={[s.prizePos, { color: p.color }]}>
+                  {p.position === 1 ? '1º' : p.position === 2 ? '2º' : '3º'}
+                </Text>
+                <Text style={s.prizeDesc} numberOfLines={2}>{p.description}</Text>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={[s.distributeBtn, distributing && { opacity: 0.5 }]}
+            onPress={handleDistribute}
+            disabled={distributing}
+          >
+            {distributing ? (
+              <ActivityIndicator size="small" color="#FFD700" />
+            ) : (
+              <>
+                <Ionicons name="gift" size={16} color="#FFD700" />
+                <Text style={s.distributeBtnText}>Distribuir Prêmios</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Current User Position */}
       {currentUser && (
         <View style={s.myRankCard}>
@@ -128,10 +208,11 @@ export default function Rankings() {
               <Ionicons name={(data.rankings[1].avatar_icon || 'person') as any} size={20} color="#fff" />
             </View>
             <View style={[s.podiumBar, { height: 50, backgroundColor: '#C0C0C0' }]}>
-              <Text style={s.podiumPos}>2</Text>
+              <Text style={s.podiumPosNum}>2</Text>
             </View>
             <Text style={s.podiumName} numberOfLines={1}>{data.rankings[1].name}</Text>
             <Text style={s.podiumVal}>{formatMoney(data.rankings[1].total_net_worth)}</Text>
+            <Text style={[s.podiumPrize, { color: '#C0C0C0' }]}>5x 24h</Text>
           </View>
           {/* 1st place */}
           <View style={s.podiumItem}>
@@ -140,10 +221,11 @@ export default function Rankings() {
               <Ionicons name={(data.rankings[0].avatar_icon || 'person') as any} size={24} color="#fff" />
             </View>
             <View style={[s.podiumBar, { height: 70, backgroundColor: '#FFD700' }]}>
-              <Text style={[s.podiumPos, { color: '#000' }]}>1</Text>
+              <Text style={[s.podiumPosNum, { color: '#000' }]}>1</Text>
             </View>
             <Text style={[s.podiumName, { color: '#FFD700' }]} numberOfLines={1}>{data.rankings[0].name}</Text>
             <Text style={[s.podiumVal, { color: '#FFD700' }]}>{formatMoney(data.rankings[0].total_net_worth)}</Text>
+            <Text style={[s.podiumPrize, { color: '#FFD700' }]}>+50K XP</Text>
           </View>
           {/* 3rd place */}
           <View style={s.podiumItem}>
@@ -151,10 +233,11 @@ export default function Rankings() {
               <Ionicons name={(data.rankings[2].avatar_icon || 'person') as any} size={20} color="#fff" />
             </View>
             <View style={[s.podiumBar, { height: 35, backgroundColor: '#CD7F32' }]}>
-              <Text style={s.podiumPos}>3</Text>
+              <Text style={s.podiumPosNum}>3</Text>
             </View>
             <Text style={s.podiumName} numberOfLines={1}>{data.rankings[2].name}</Text>
             <Text style={s.podiumVal}>{formatMoney(data.rankings[2].total_net_worth)}</Text>
+            <Text style={[s.podiumPrize, { color: '#CD7F32' }]}>+R$25K</Text>
           </View>
         </View>
       )}
@@ -207,6 +290,63 @@ export default function Rankings() {
           </View>
         )}
       </ScrollView>
+
+      {/* Reward Claim Modal */}
+      <Modal visible={showRewardModal} animationType="slide" transparent onRequestClose={() => setShowRewardModal(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modal}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Prêmio Semanal!</Text>
+              <TouchableOpacity onPress={() => setShowRewardModal(false)}>
+                <Ionicons name="close" size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {data?.unclaimed_reward && (
+              <View style={s.rewardContent}>
+                {/* Trophy animation area */}
+                <View style={s.rewardTrophy}>
+                  <View style={[s.trophyCircle, {
+                    backgroundColor: data.unclaimed_reward.position === 1 ? '#FFD70030'
+                      : data.unclaimed_reward.position === 2 ? '#C0C0C030'
+                      : '#CD7F3230'
+                  }]}>
+                    <Ionicons
+                      name="trophy"
+                      size={64}
+                      color={data.unclaimed_reward.position === 1 ? '#FFD700'
+                        : data.unclaimed_reward.position === 2 ? '#C0C0C0'
+                        : '#CD7F32'}
+                    />
+                  </View>
+                </View>
+
+                <Text style={s.rewardPosition}>
+                  {data.unclaimed_reward.position === 1 ? '1º Lugar!' :
+                   data.unclaimed_reward.position === 2 ? '2º Lugar!' : '3º Lugar!'}
+                </Text>
+                <Text style={s.rewardWeek}>Semana {data.unclaimed_reward.week_of}</Text>
+                <Text style={s.rewardDesc}>{data.unclaimed_reward.reward_description}</Text>
+
+                <TouchableOpacity
+                  style={[s.claimBtn, claiming && { opacity: 0.5 }]}
+                  onPress={handleClaim}
+                  disabled={claiming}
+                >
+                  {claiming ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="gift" size={20} color="#fff" />
+                      <Text style={s.claimBtnText}>Resgatar Prêmio</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -225,6 +365,16 @@ const s = StyleSheet.create({
   toggleActive: { backgroundColor: '#3a3a3a' },
   toggleText: { color: '#888', fontSize: 14, fontWeight: 'bold' },
   toggleTextActive: { color: '#fff' },
+  // Prizes Banner
+  prizesBanner: { marginHorizontal: 16, backgroundColor: '#1a1a2a', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#FFD70040' },
+  prizesTitle: { color: '#FFD700', fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 },
+  prizesRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
+  prizeItem: { alignItems: 'center', flex: 1 },
+  prizeIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  prizePos: { fontSize: 14, fontWeight: 'bold' },
+  prizeDesc: { color: '#aaa', fontSize: 10, textAlign: 'center', marginTop: 2 },
+  distributeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 10, backgroundColor: '#2a2a2a', borderWidth: 1, borderColor: '#FFD70040' },
+  distributeBtnText: { color: '#FFD700', fontSize: 13, fontWeight: 'bold' },
   // My Rank
   myRankCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 16, backgroundColor: '#2a2a2a', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#FFD700' },
   myRankLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
@@ -233,7 +383,6 @@ const s = StyleSheet.create({
   myRankLevel: { color: '#888', fontSize: 12 },
   myRankRight: { alignItems: 'flex-end' },
   myRankValue: { color: '#FFD700', fontSize: 16, fontWeight: 'bold' },
-  // Avatar
   avatar: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
   // Podium
   podium: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
@@ -241,9 +390,10 @@ const s = StyleSheet.create({
   podiumAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 2, marginBottom: 4 },
   podiumAvatarFirst: { width: 48, height: 48, borderRadius: 24, borderWidth: 3 },
   podiumBar: { width: '80%', borderTopLeftRadius: 8, borderTopRightRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  podiumPos: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  podiumPosNum: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   podiumName: { color: '#ccc', fontSize: 11, fontWeight: 'bold', marginTop: 4, textAlign: 'center' },
   podiumVal: { color: '#888', fontSize: 10, marginTop: 2 },
+  podiumPrize: { fontSize: 9, fontWeight: 'bold', marginTop: 2 },
   // List
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   rankRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', borderRadius: 12, padding: 12, marginBottom: 8, gap: 10 },
@@ -259,4 +409,17 @@ const s = StyleSheet.create({
   newBadge: { color: '#4CAF50', fontSize: 9, fontWeight: 'bold', marginTop: 2 },
   empty: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { color: '#666', fontSize: 16, marginTop: 12 },
+  // Reward Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center' },
+  modal: { backgroundColor: '#1a1a1a', borderRadius: 24, marginHorizontal: 24, padding: 24, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFD700' },
+  rewardContent: { alignItems: 'center' },
+  rewardTrophy: { marginBottom: 16 },
+  trophyCircle: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
+  rewardPosition: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 4 },
+  rewardWeek: { color: '#888', fontSize: 13, marginBottom: 16 },
+  rewardDesc: { color: '#4CAF50', fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
+  claimBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FFD700', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, width: '100%' },
+  claimBtnText: { color: '#000', fontSize: 18, fontWeight: 'bold' },
 });
