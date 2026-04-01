@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useRouter } from 'expo-router';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -46,6 +47,7 @@ interface AdBoost {
 
 export default function Jobs() {
   const { token, refreshUser } = useAuth();
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJob, setCurrentJob] = useState<CurrentJob | null>(null);
   const [adBoost, setAdBoost] = useState<AdBoost>({ active: false, multiplier: 1, ads_watched: 0, seconds_remaining: 0 });
@@ -358,6 +360,18 @@ export default function Jobs() {
                 </Text>
               </View>
 
+              {/* Courses Link */}
+              <TouchableOpacity
+                style={styles.coursesLink}
+                onPress={() => router.push('/(tabs)/courses')}
+              >
+                <Ionicons name="school" size={20} color="#4CAF50" />
+                <Text style={styles.coursesLinkText}>
+                  Fazer Cursos para Aumentar Ganhos Permanentemente
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#4CAF50" />
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.resignButton} onPress={handleResign}>
                 <Text style={styles.resignButtonText}>Pedir Demissão</Text>
               </TouchableOpacity>
@@ -368,9 +382,12 @@ export default function Jobs() {
         {/* Available Jobs */}
         {!currentJob && (
           <>
-            <Text style={styles.sectionTitle}>
-              Vagas Disponíveis ({jobs.length})
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                Vagas Disponíveis ({jobs.length})
+              </Text>
+              <Ionicons name="briefcase-outline" size={24} color="#4CAF50" />
+            </View>
 
             {jobs.map(job => (
               <View key={job.id} style={styles.jobCard}>
@@ -640,6 +657,30 @@ const styles = StyleSheet.create({
   progressText: {
     color: '#888',
     fontSize: 12,
+  },
+  coursesLink: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    marginBottom: 12,
+  },
+  coursesLinkText: {
+    flex: 1,
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginHorizontal: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,

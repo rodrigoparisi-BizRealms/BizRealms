@@ -35,10 +35,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="courses"
+        options={{
+          title: 'Cursos',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="school" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="map"
         options={{
           title: 'Mapa',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size}) => (
             <Ionicons name="map" size={size} color={color} />
           ),
         }}
