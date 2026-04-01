@@ -68,10 +68,11 @@ export default function PersonalitySelection() {
       // Get stored data
       const avatarColor = await AsyncStorage.getItem('avatar_color') || 'green';
       const avatarIcon = await AsyncStorage.getItem('avatar_icon') || 'person';
+      const avatarPhoto = await AsyncStorage.getItem('avatar_photo');
       const background = await AsyncStorage.getItem('background') || 'trabalhador';
       const dream = await AsyncStorage.getItem('dream') || 'carreira';
 
-      console.log('[Personality] Sending data:', { avatarColor, avatarIcon, background, dream });
+      console.log('[Personality] Sending data:', { avatarColor, avatarIcon, hasPhoto: !!avatarPhoto, background, dream });
 
       // Send to backend
       const response = await axios.post(
@@ -79,6 +80,7 @@ export default function PersonalitySelection() {
         {
           avatar_color: avatarColor,
           avatar_icon: avatarIcon,
+          avatar_photo: avatarPhoto,
           background: background,
           dream: dream,
           personality: personality,
@@ -91,7 +93,7 @@ export default function PersonalitySelection() {
       console.log('[Personality] Profile completed successfully:', response.data);
 
       // Clear temp storage
-      await AsyncStorage.multiRemove(['avatar_color', 'avatar_icon', 'background', 'dream']);
+      await AsyncStorage.multiRemove(['avatar_color', 'avatar_icon', 'avatar_photo', 'background', 'dream']);
       console.log('[Personality] Temp storage cleared');
 
       // Refresh user data - this will update onboarding_completed

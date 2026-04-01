@@ -74,6 +74,7 @@ class User(BaseModel):
     onboarding_completed: bool = False
     avatar_color: str = "green"  # green, blue, purple, orange, red, yellow
     avatar_icon: str = "person"  # Ionicons name
+    avatar_photo: Optional[str] = None  # base64 encoded photo from gallery
     background: str = ""  # ex-militar, universitário, herdeiro, etc.
     dream: str = ""  # carreira, empreendedor, investidor, freelancer
     personality: dict = Field(default_factory=lambda: {
@@ -149,6 +150,7 @@ class CertificationCreate(BaseModel):
 class CharacterProfileUpdate(BaseModel):
     avatar_color: str
     avatar_icon: str
+    avatar_photo: Optional[str] = None  # base64 photo
     background: str
     dream: str
     personality: dict
@@ -570,6 +572,7 @@ async def complete_character_profile(
                 'onboarding_completed': True,
                 'avatar_color': profile_data.avatar_color,
                 'avatar_icon': profile_data.avatar_icon,
+                'avatar_photo': profile_data.avatar_photo,
                 'background': profile_data.background,
                 'dream': profile_data.dream,
                 'personality': profile_data.personality,

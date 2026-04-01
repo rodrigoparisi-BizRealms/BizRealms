@@ -5,11 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 
 const COLORS = [
   { id: 'green', name: 'Verde', color: '#4CAF50' },
@@ -33,11 +36,40 @@ export default function AvatarSelection() {
   const router = useRouter();
   const [selectedColor, setSelectedColor] = useState('green');
   const [selectedIcon, setSelectedIcon] = useState('person');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
 
   const handleNext = async () => {
     await AsyncStorage.setItem('avatar_color', selectedColor);
     await AsyncStorage.setItem('avatar_icon', selectedIcon);
+    if (photoBase64) {
+      await AsyncStorage.setItem('avatar_photo', photoBase64);
+    }
     router.push('/(onboarding)/background');
+  };
+
+  const pickImage = async () => {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permissão Necessária', 'Precisamos de permissão para acessar sua galeria');
+      return;
+    }
+
+    // Pick image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5, // Compress to reduce size
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      setPhotoUri(result.assets[0].uri);
+      setPhotoBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
   };
 
   const selectedColorData = COLORS.find(c => c.id === selectedColor);
@@ -59,52 +91,80 @@ export default function AvatarSelection() {
 
         {/* Preview */}
         <View style={styles.previewContainer}>
-          <View
-            style={[
-              styles.avatarPreview,
-              { backgroundColor: selectedColorData?.color || '#4CAF50' },
-            ]}
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+          ) : (
+            <View
+              style={[
+                styles.avatarPreview,
+                { backgroundColor: selectedColorData?.color || '#4CAF50' },
+              ]}
+            >
+              <Ionicons name={selectedIcon as any} size={80} color="#fff" />
+            </View>
+          )}
+        </View>
+
+        {/* Photo Upload Button */}
+        <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+          <Ionicons name="camera" size={20} color="#fff" />
+          <Text style={styles.photoButtonText}>
+            {photoUri ? 'Trocar Foto' : 'Usar Minha Foto'}
+          </Text>
+        </TouchableOpacity>
+
+        {photoUri && (
+          <TouchableOpacity
+            style={styles.removePhotoButton}
+            onPress={() => {
+              setPhotoUri(null);
+              setPhotoBase64(null);
+            }}
           >
-            <Ionicons name={selectedIcon as any} size={80} color="#fff" />
-          </View>
-        </View>
+            <Text style={styles.removePhotoText}>Usar Avatar ao Invés</Text>
+          </TouchableOpacity>
+        )}
 
-        {/* Color Selection */}
-        <Text style={styles.sectionTitle}>Cor</Text>
-        <View style={styles.colorGrid}>
-          {COLORS.map(color => (
-            <TouchableOpacity
-              key={color.id}
-              style={[
-                styles.colorOption,
-                { backgroundColor: color.color },
-                selectedColor === color.id && styles.colorOptionSelected,
-              ]}
-              onPress={() => setSelectedColor(color.id)}
-            >
-              {selectedColor === color.id && (
-                <Ionicons name="checkmark" size={24} color="#fff" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+        {!photoUri && (
+          <>
+            {/* Color Selection */}
+            <Text style={styles.sectionTitle}>Cor</Text>
+            <View style={styles.colorGrid}>
+              {COLORS.map(color => (
+                <TouchableOpacity
+                  key={color.id}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color.color },
+                    selectedColor === color.id && styles.colorOptionSelected,
+                  ]}
+                  onPress={() => setSelectedColor(color.id)}
+                >
+                  {selectedColor === color.id && (
+                    <Ionicons name="checkmark" size={24} color="#fff" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
 
-        {/* Icon Selection */}
-        <Text style={styles.sectionTitle}>Ícone</Text>
-        <View style={styles.iconGrid}>
-          {ICONS.map(icon => (
-            <TouchableOpacity
-              key={icon.id}
-              style={[
-                styles.iconOption,
-                selectedIcon === icon.id && styles.iconOptionSelected,
-              ]}
-              onPress={() => setSelectedIcon(icon.id)}
-            >
-              <Ionicons name={icon.name} size={32} color={selectedIcon === icon.id ? '#4CAF50' : '#fff'} />
-            </TouchableOpacity>
-          ))}
-        </View>
+            {/* Icon Selection */}
+            <Text style={styles.sectionTitle}>Ícone</Text>
+            <View style={styles.iconGrid}>
+              {ICONS.map(icon => (
+                <TouchableOpacity
+                  key={icon.id}
+                  style={[
+                    styles.iconOption,
+                    selectedIcon === icon.id && styles.iconOptionSelected,
+                  ]}
+                  onPress={() => setSelectedIcon(icon.id)}
+                >
+                  <Ionicons name={icon.name} size={32} color={selectedIcon === icon.id ? '#4CAF50' : '#fff'} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Next Button */}
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
@@ -167,6 +227,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  photoPreview: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+  },
+  photoButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  photoButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  removePhotoButton: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  removePhotoText: {
+    color: '#888',
+    fontSize: 14,
   },
   sectionTitle: {
     fontSize: 20,
