@@ -15,32 +15,41 @@
 - ✅ Sistema de níveis baseado em XP
 - ✅ Barra de progresso de experiência
 - ✅ Dinheiro inicial: R$ 1.000
+- ✅ Upload de foto de perfil com zoom/corte (expo-image-picker)
+- ✅ Exibição de habilidades com barras de progresso
+- ✅ Botões de deletar educação e certificações
 
 #### 📚 Sistema de Currículo
-- ✅ Adicionar educação (Ensino Médio, Graduação, Mestrado, Doutorado)
-- ✅ Ganho de XP baseado no nível de educação (500 XP por nível)
-- ✅ Sistema de habilidades (5 skills: liderança, comunicação, técnico, financeiro, negociação)
-- ✅ Aumento automático de skills baseado na área de educação
+- ✅ Adicionar/remover educação
+- ✅ Adicionar/remover certificações
+- ✅ Seletor visual de nível educacional
+- ✅ Seletor visual de boost de certificação
 
-#### 🏆 Sistema de Certificações
-- ✅ Adicionar certificações
-- ✅ Boost de habilidades (1-10)
-- ✅ Ganho de XP baseado no boost (boost * 100 XP)
+## ✅ FASE 3 COMPLETA: Sistema de Empregos
 
-#### 📊 Dashboard
-- ✅ Visão geral de dinheiro
-- ✅ Barra de progresso de experiência
-- ✅ Estatísticas (educação, certificações, empregos, meses de experiência)
-- ✅ Visualização de habilidades com barras de progresso
-- ✅ Pull-to-refresh
+#### 💼 Sistema de Empregos
+- ✅ Listagem de vagas com requisitos
+- ✅ Candidatura a vagas com cálculo de compatibilidade
+- ✅ Aprovação automática (≥70% match)
+- ✅ Aceitar ofertas de emprego
+- ✅ Renda passiva automática (acumula ao longo do tempo)
+- ✅ Coletar ganhos acumulados
+- ✅ Pedir demissão
+- ✅ Status de candidatura visível (Pendente, Aprovada)
+- ✅ Separação Emprego Atual vs Vagas Disponíveis
+- ✅ Ofertas aceitas com botão "Aceitar Vaga"
 
-#### 🎨 UI/UX
-- ✅ Design mobile-first com tema escuro
-- ✅ Navegação por tabs (Início, Empregos, Mapa, Investimentos, Perfil)
-- ✅ Modais de bottom sheet para adicionar educação/certificações
-- ✅ Ícones do Ionicons
-- ✅ Feedback visual com alerts
-- ✅ Safe area handling
+#### 📺 Sistema de Ad-Boost
+- ✅ Assistir propagandas para multiplicar ganhos
+- ✅ Multiplicador até 10x
+- ✅ Timer de boost com countdown
+- ✅ Barra de progresso da propaganda
+
+#### 📚 Sistema de Cursos
+- ✅ Cursos disponíveis com custos e requisitos
+- ✅ Boost permanente de ganhos
+- ✅ Boost de habilidades
+- ✅ Tracking de cursos completados
 
 ### Tecnologias Utilizadas:
 - **Frontend**: Expo, React Native, React Navigation, Zustand, Axios

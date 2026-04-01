@@ -458,8 +458,10 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
     # Calculate total work experience in months
     months_experience = 0
     for exp in current_user.get('work_experience', []):
-        start = exp['start_date']
-        end = exp.get('end_date', datetime.utcnow())
+        start = exp.get('start_date')
+        end = exp.get('end_date') or datetime.utcnow()
+        if start is None:
+            continue
         if isinstance(start, str):
             start = datetime.fromisoformat(start.replace('Z', '+00:00'))
         if isinstance(end, str):
@@ -790,8 +792,10 @@ def calculate_job_match(user: dict, requirements: dict) -> float:
     # Check experience
     user_exp_months = 0
     for exp in user.get('work_experience', []):
-        start = exp['start_date']
-        end = exp.get('end_date', datetime.utcnow())
+        start = exp.get('start_date')
+        end = exp.get('end_date') or datetime.utcnow()
+        if start is None:
+            continue
         if isinstance(start, str):
             start = datetime.fromisoformat(start.replace('Z', '+00:00'))
         if isinstance(end, str):
