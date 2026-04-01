@@ -161,6 +161,56 @@ class DreamOption(BaseModel):
     description: str
     suggested_path: str
 
+class Job(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    company: str
+    description: str
+    salary: float
+    location: str
+    requirements: dict = Field(default_factory=lambda: {
+        "education_level": 1,  # 1-4
+        "experience_months": 0,
+        "skills": {}  # {"liderança": 3, "técnico": 5}
+    })
+    status: str = "open"  # open, closed
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class JobApplication(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    job_id: str
+    status: str = "pending"  # pending, accepted, rejected
+    match_score: float = 0.0
+    applied_at: datetime = Field(default_factory=datetime.utcnow)
+
+class Course(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str
+    duration_hours: int
+    cost: float
+    skill_boost: dict = Field(default_factory=dict)  # {"técnico": 1}
+    education_level_boost: int = 0  # 0 or 1
+    category: str = "professional"  # professional, technical, management
+
+class UserCourse(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    course_id: str
+    completed: bool = False
+    enrolled_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: Optional[datetime] = None
+
+class JobApplyRequest(BaseModel):
+    job_id: str
+
+class CourseEnrollRequest(BaseModel):
+    course_id: str
+
+class WorkRequest(BaseModel):
+    hours: int = 8  # Horas trabalhadas
+
 # ==================== HELPER FUNCTIONS ====================
 
 def hash_password(password: str) -> str:
@@ -521,6 +571,392 @@ async def complete_character_profile(
         "skills": current_skills,
         "xp_multiplier": background_bonus["xp"]
     }
+
+# JOB SYSTEM ROUTES
+@api_router.get("/jobs")
+async def get_jobs(location: Optional[str] = None, min_salary: Optional[float] = None):
+    """Get available job listings"""
+    # Create some sample jobs if none exist
+    job_count = await db.jobs.count_documents({})
+    if job_count == 0:
+        await seed_jobs()
+    
+    # Build query
+    query = {"status": "open"}
+    if location:
+        query["location"] = {"$regex": location, "$options": "i"}
+    if min_salary:
+        query["salary"] = {"$gte": min_salary}
+    
+    jobs = await db.jobs.find(query).to_list(50)
+    for job in jobs:
+        del job['_id']
+    
+    return jobs
+
+async def seed_jobs():
+    """Create initial job listings"""
+    jobs = [
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Assistente Administrativo",
+            "company": "Tech Solutions Ltda",
+            "description": "Auxiliar nas atividades administrativas e de escritório",
+            "salary": 2500.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 1, "experience_months": 0, "skills": {"comunicação": 2}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Analista de Sistemas Jr",
+            "company": "Digital Innovations",
+            "description": "Desenvolvimento e manutenção de sistemas",
+            "salary": 4500.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 2, "experience_months": 6, "skills": {"técnico": 4}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Gerente de Projetos",
+            "company": "Corporate Solutions",
+            "description": "Gerenciar equipes e projetos estratégicos",
+            "salary": 8000.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 2, "experience_months": 24, "skills": {"liderança": 5, "comunicação": 4}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Vendedor",
+            "company": "ComercioMax",
+            "description": "Vendas diretas e atendimento ao cliente",
+            "salary": 2000.0,
+            "location": "Rio de Janeiro, Brazil",
+            "requirements": {"education_level": 1, "experience_months": 0, "skills": {"comunicação": 3, "negociação": 2}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Analista Financeiro",
+            "company": "Invest Bank",
+            "description": "Análise de investimentos e relatórios financeiros",
+            "salary": 6000.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 2, "experience_months": 12, "skills": {"financeiro": 5, "analítico": 4}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Estagiário",
+            "company": "StartUp Hub",
+            "description": "Apoio em diversas áreas da empresa",
+            "salary": 1200.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 2, "experience_months": 0, "skills": {}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        }
+    ]
+    await db.jobs.insert_many(jobs)
+
+@api_router.post("/jobs/apply")
+async def apply_to_job(request: JobApplyRequest, current_user: dict = Depends(get_current_user)):
+    """Apply to a job"""
+    # Get job
+    job = await db.jobs.find_one({"id": request.job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Vaga não encontrada")
+    
+    # Check if already applied
+    existing_application = await db.job_applications.find_one({
+        "user_id": current_user['id'],
+        "job_id": request.job_id
+    })
+    if existing_application:
+        raise HTTPException(status_code=400, detail="Você já se candidatou a esta vaga")
+    
+    # Check if user already has a job
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    if current_job:
+        raise HTTPException(status_code=400, detail="Você já está empregado. Peça demissão primeiro.")
+    
+    # Calculate match score
+    match_score = calculate_job_match(current_user, job['requirements'])
+    
+    # Auto-approve if match >= 70%
+    status = "accepted" if match_score >= 70 else "pending"
+    
+    application = JobApplication(
+        user_id=current_user['id'],
+        job_id=request.job_id,
+        status=status,
+        match_score=match_score
+    )
+    
+    await db.job_applications.insert_one(application.dict())
+    
+    return {
+        "message": "Candidatura enviada!" if status == "pending" else "Parabéns! Você foi aprovado!",
+        "status": status,
+        "match_score": match_score,
+        "job": job
+    }
+
+def calculate_job_match(user: dict, requirements: dict) -> float:
+    """Calculate how well user matches job requirements"""
+    score = 0
+    max_score = 0
+    
+    # Check education level
+    user_edu_level = 0
+    for edu in user.get('education', []):
+        user_edu_level = max(user_edu_level, edu.get('level', 0))
+    
+    req_edu = requirements.get('education_level', 0)
+    if req_edu > 0:
+        max_score += 30
+        if user_edu_level >= req_edu:
+            score += 30
+        elif user_edu_level == req_edu - 1:
+            score += 15
+    
+    # Check experience
+    user_exp_months = 0
+    for exp in user.get('work_experience', []):
+        start = exp['start_date']
+        end = exp.get('end_date', datetime.utcnow())
+        if isinstance(start, str):
+            start = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        if isinstance(end, str):
+            end = datetime.fromisoformat(end.replace('Z', '+00:00'))
+        user_exp_months += (end.year - start.year) * 12 + (end.month - start.month)
+    
+    req_exp = requirements.get('experience_months', 0)
+    if req_exp > 0:
+        max_score += 20
+        if user_exp_months >= req_exp:
+            score += 20
+        elif user_exp_months >= req_exp * 0.7:
+            score += 10
+    
+    # Check skills
+    req_skills = requirements.get('skills', {})
+    if req_skills:
+        max_score += 50
+        user_skills = user.get('skills', {})
+        for skill, required_level in req_skills.items():
+            user_level = user_skills.get(skill, 0)
+            if user_level >= required_level:
+                score += 50 / len(req_skills)
+            elif user_level >= required_level * 0.7:
+                score += 25 / len(req_skills)
+    
+    # If no requirements, 100% match
+    if max_score == 0:
+        return 100.0
+    
+    return (score / max_score) * 100
+
+@api_router.post("/jobs/accept")
+async def accept_job_offer(request: JobApplyRequest, current_user: dict = Depends(get_current_user)):
+    """Accept a job offer"""
+    # Get application
+    application = await db.job_applications.find_one({
+        "user_id": current_user['id'],
+        "job_id": request.job_id,
+        "status": "accepted"
+    })
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Oferta não encontrada ou não aprovada")
+    
+    # Get job
+    job = await db.jobs.find_one({"id": request.job_id})
+    
+    # Create work experience entry
+    work_exp = WorkExperience(
+        company=job['company'],
+        position=job['title'],
+        start_date=datetime.utcnow(),
+        is_current=True,
+        salary=job['salary'],
+        experience_gained=0
+    )
+    
+    # Update user
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {'$push': {'work_experience': work_exp.dict()}}
+    )
+    
+    # Store in separate collection for current job tracking
+    await db.work_experiences.insert_one({
+        **work_exp.dict(),
+        "user_id": current_user['id'],
+        "job_id": request.job_id,
+        "days_worked": 0,
+        "last_work_date": None
+    })
+    
+    return {
+        "message": f"Parabéns! Você agora trabalha como {job['title']} na {job['company']}!",
+        "salary": job['salary']
+    }
+
+@api_router.post("/jobs/work")
+async def work_shift(request: WorkRequest, current_user: dict = Depends(get_current_user)):
+    """Work and earn money"""
+    # Get current job
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    
+    if not current_job:
+        raise HTTPException(status_code=400, detail="Você não está empregado")
+    
+    # Check if already worked today
+    last_work = current_job.get('last_work_date')
+    today = datetime.utcnow().date()
+    
+    if last_work and isinstance(last_work, datetime) and last_work.date() == today:
+        raise HTTPException(status_code=400, detail="Você já trabalhou hoje. Volte amanhã!")
+    
+    # Calculate earnings (daily salary based on hours)
+    daily_salary = (current_job['salary'] / 30) * (request.hours / 8)
+    
+    # Calculate XP gain (based on background multiplier)
+    base_xp = request.hours * 10
+    # Get user's XP multiplier from their background
+    # For now, use 1.0, but this should come from user's background
+    xp_gain = int(base_xp * 1.0)
+    
+    # Update user money and XP
+    new_money = current_user.get('money', 0) + daily_salary
+    new_exp = current_user.get('experience_points', 0) + xp_gain
+    new_level = calculate_level(new_exp)
+    
+    await db.users.update_one(
+        {'id': current_user['id']},
+        {
+            '$set': {
+                'money': new_money,
+                'experience_points': new_exp,
+                'level': new_level
+            }
+        }
+    )
+    
+    # Update job tracking
+    days_worked = current_job.get('days_worked', 0) + 1
+    await db.work_experiences.update_one(
+        {'_id': current_job['_id']},
+        {
+            '$set': {
+                'last_work_date': datetime.utcnow(),
+                'days_worked': days_worked
+            }
+        }
+    )
+    
+    # Check for promotion (every 30 days, 10% raise)
+    promotion_message = None
+    if days_worked % 30 == 0 and days_worked > 0:
+        new_salary = current_job['salary'] * 1.1
+        await db.work_experiences.update_one(
+            {'_id': current_job['_id']},
+            {'$set': {'salary': new_salary}}
+        )
+        promotion_message = f"Promoção! Seu salário aumentou para R$ {new_salary:.2f}/mês!"
+    
+    return {
+        "message": f"Você trabalhou {request.hours} horas!",
+        "earned": daily_salary,
+        "xp_gained": xp_gain,
+        "new_level": new_level,
+        "new_money": new_money,
+        "days_worked": days_worked,
+        "promotion": promotion_message
+    }
+
+@api_router.post("/jobs/resign")
+async def resign_from_job(current_user: dict = Depends(get_current_user)):
+    """Resign from current job"""
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    
+    if not current_job:
+        raise HTTPException(status_code=400, detail="Você não está empregado")
+    
+    # Update work experience to mark as ended
+    await db.work_experiences.update_one(
+        {'_id': current_job['_id']},
+        {
+            '$set': {
+                'is_current': False,
+                'end_date': datetime.utcnow()
+            }
+        }
+    )
+    
+    # Update user's work_experience array
+    await db.users.update_one(
+        {
+            'id': current_user['id'],
+            'work_experience.id': current_job['id']
+        },
+        {
+            '$set': {
+                'work_experience.$.is_current': False,
+                'work_experience.$.end_date': datetime.utcnow()
+            }
+        }
+    )
+    
+    return {"message": "Você pediu demissão. Boa sorte na próxima oportunidade!"}
+
+@api_router.get("/jobs/my-applications")
+async def get_my_applications(current_user: dict = Depends(get_current_user)):
+    """Get user's job applications"""
+    applications = await db.job_applications.find({"user_id": current_user['id']}).to_list(100)
+    
+    # Enrich with job details
+    for app in applications:
+        job = await db.jobs.find_one({"id": app['job_id']})
+        app['job'] = job
+        del app['_id']
+    
+    return applications
+
+@api_router.get("/jobs/current")
+async def get_current_job(current_user: dict = Depends(get_current_user)):
+    """Get user's current job"""
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    
+    if not current_job:
+        return None
+    
+    # Get job details
+    job = await db.jobs.find_one({"id": current_job.get('job_id')})
+    current_job['job_details'] = job
+    del current_job['_id']
+    
+    return current_job
 
 # Include the router in the main app
 app.include_router(api_router)
