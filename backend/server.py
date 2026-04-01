@@ -769,7 +769,7 @@ def calculate_job_match(user: dict, requirements: dict) -> float:
 
 @api_router.post("/jobs/accept")
 async def accept_job_offer(request: JobApplyRequest, current_user: dict = Depends(get_current_user)):
-    """Accept a job offer"""
+    """Accept a job offer and start working automatically"""
     # Get application
     application = await db.job_applications.find_one({
         "user_id": current_user['id'],
@@ -805,17 +805,18 @@ async def accept_job_offer(request: JobApplyRequest, current_user: dict = Depend
         "user_id": current_user['id'],
         "job_id": request.job_id,
         "days_worked": 0,
-        "last_work_date": None
+        "last_collection_date": datetime.utcnow()  # Track when user last collected earnings
     })
     
     return {
-        "message": f"Parabéns! Você agora trabalha como {job['title']} na {job['company']}!",
-        "salary": job['salary']
+        "message": f"Parabéns! Você agora trabalha como {job['title']} na {job['company']}! Seus ganhos chegam automaticamente todos os dias.",
+        "salary": job['salary'],
+        "daily_earnings": job['salary'] / 30
     }
 
-@api_router.post("/jobs/work")
-async def work_shift(request: WorkRequest, current_user: dict = Depends(get_current_user)):
-    """Work and earn money"""
+@api_router.get("/jobs/collect-earnings")
+async def collect_earnings(current_user: dict = Depends(get_current_user)):
+    """Collect accumulated earnings from current job"""
     # Get current job
     current_job = await db.work_experiences.find_one({
         "user_id": current_user['id'],
@@ -825,24 +826,30 @@ async def work_shift(request: WorkRequest, current_user: dict = Depends(get_curr
     if not current_job:
         raise HTTPException(status_code=400, detail="Você não está empregado")
     
-    # Check if already worked today
-    last_work = current_job.get('last_work_date')
-    today = datetime.utcnow().date()
+    # Calculate days since last collection
+    last_collection = current_job.get('last_collection_date', current_job['start_date'])
+    if isinstance(last_collection, str):
+        last_collection = datetime.fromisoformat(last_collection.replace('Z', '+00:00'))
     
-    if last_work and isinstance(last_work, datetime) and last_work.date() == today:
-        raise HTTPException(status_code=400, detail="Você já trabalhou hoje. Volte amanhã!")
+    now = datetime.utcnow()
+    days_elapsed = (now - last_collection).total_seconds() / 86400  # Convert to days
     
-    # Calculate earnings (daily salary based on hours)
-    daily_salary = (current_job['salary'] / 30) * (request.hours / 8)
+    if days_elapsed < 0.1:  # Less than ~2.4 hours
+        return {
+            "message": "Você já coletou seus ganhos recentemente. Volte mais tarde!",
+            "earnings": 0,
+            "days_elapsed": 0
+        }
     
-    # Calculate XP gain (based on background multiplier)
-    base_xp = request.hours * 10
-    # Get user's XP multiplier from their background
-    # For now, use 1.0, but this should come from user's background
-    xp_gain = int(base_xp * 1.0)
+    # Calculate earnings (can accumulate multiple days)
+    daily_salary = current_job['salary'] / 30
+    total_earnings = daily_salary * days_elapsed
+    
+    # Calculate XP gain
+    xp_gain = int(80 * days_elapsed)
     
     # Update user money and XP
-    new_money = current_user.get('money', 0) + daily_salary
+    new_money = current_user.get('money', 0) + total_earnings
     new_exp = current_user.get('experience_points', 0) + xp_gain
     new_level = calculate_level(new_exp)
     
@@ -858,20 +865,20 @@ async def work_shift(request: WorkRequest, current_user: dict = Depends(get_curr
     )
     
     # Update job tracking
-    days_worked = current_job.get('days_worked', 0) + 1
+    new_days_worked = current_job.get('days_worked', 0) + int(days_elapsed)
     await db.work_experiences.update_one(
         {'_id': current_job['_id']},
         {
             '$set': {
-                'last_work_date': datetime.utcnow(),
-                'days_worked': days_worked
+                'last_collection_date': now,
+                'days_worked': new_days_worked
             }
         }
     )
     
     # Check for promotion (every 30 days, 10% raise)
     promotion_message = None
-    if days_worked % 30 == 0 and days_worked > 0:
+    if new_days_worked % 30 == 0 and new_days_worked > current_job.get('days_worked', 0):
         new_salary = current_job['salary'] * 1.1
         await db.work_experiences.update_one(
             {'_id': current_job['_id']},
@@ -880,12 +887,13 @@ async def work_shift(request: WorkRequest, current_user: dict = Depends(get_curr
         promotion_message = f"Promoção! Seu salário aumentou para R$ {new_salary:.2f}/mês!"
     
     return {
-        "message": f"Você trabalhou {request.hours} horas!",
-        "earned": daily_salary,
+        "message": f"Você coletou seus ganhos de {days_elapsed:.1f} dias de trabalho!",
+        "earnings": total_earnings,
         "xp_gained": xp_gain,
         "new_level": new_level,
         "new_money": new_money,
-        "days_worked": days_worked,
+        "days_elapsed": days_elapsed,
+        "days_worked": new_days_worked,
         "promotion": promotion_message
     }
 

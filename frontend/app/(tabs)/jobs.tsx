@@ -106,7 +106,10 @@ export default function Jobs() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert('Sucesso! 🎊', response.data.message);
+      Alert.alert(
+        'Sucesso! 🎊', 
+        response.data.message + `\n\nGanho diário: R$ ${response.data.daily_earnings.toFixed(2)}`
+      );
       await loadData();
       await refreshUser();
     } catch (error: any) {
@@ -114,26 +117,30 @@ export default function Jobs() {
     }
   };
 
-  const handleWork = async () => {
+  const handleCollectEarnings = async () => {
     setWorking(true);
     try {
-      const response = await axios.post(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/jobs/work`,
-        { hours: 8 },
+      const response = await axios.get(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/jobs/collect-earnings`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const message = `${response.data.message}\n\n` +
-        `💰 Ganhou: R$ ${response.data.earned.toFixed(2)}\n` +
-        `⭐ XP: +${response.data.xp_gained}\n` +
-        `📅 Dias trabalhados: ${response.data.days_worked}` +
-        (response.data.promotion ? `\n\n🎉 ${response.data.promotion}` : '');
+      if (response.data.earnings === 0) {
+        Alert.alert('Aviso', response.data.message);
+      } else {
+        const message = `${response.data.message}\n\n` +
+          `💰 Ganhos: R$ ${response.data.earnings.toFixed(2)}\n` +
+          `⭐ XP: +${response.data.xp_gained}\n` +
+          `📅 Dias trabalhados: ${response.data.days_worked}` +
+          (response.data.promotion ? `\n\n🎉 ${response.data.promotion}` : '');
 
-      Alert.alert('Trabalho Concluído!', message);
+        Alert.alert('Ganhos Coletados!', message);
+      }
+      
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao trabalhar');
+      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao coletar ganhos');
     } finally {
       setWorking(false);
     }
@@ -211,14 +218,21 @@ export default function Jobs() {
             <View style={styles.currentJobActions}>
               <TouchableOpacity
                 style={[styles.workButton, working && styles.workButtonDisabled]}
-                onPress={handleWork}
+                onPress={handleCollectEarnings}
                 disabled={working}
               >
-                <Ionicons name="hammer" size={20} color="#fff" />
+                <Ionicons name="cash" size={20} color="#fff" />
                 <Text style={styles.workButtonText}>
-                  {working ? 'Trabalhando...' : 'Trabalhar Hoje'}
+                  {working ? 'Coletando...' : 'Coletar Ganhos'}
                 </Text>
               </TouchableOpacity>
+
+              <View style={styles.infoCard}>
+                <Ionicons name="information-circle" size={16} color="#2196F3" />
+                <Text style={styles.infoText}>
+                  Seus ganhos acumulam automaticamente. Colete a qualquer momento!
+                </Text>
+              </View>
 
               <TouchableOpacity style={styles.resignButton} onPress={handleResign}>
                 <Text style={styles.resignButtonText}>Pedir Demissão</Text>
@@ -406,6 +420,21 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a2a3a',
+    borderRadius: 8,
+    padding: 12,
+    gap: 8,
+    marginBottom: 12,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#aaa',
+    lineHeight: 16,
   },
   sectionTitle: {
     fontSize: 20,
