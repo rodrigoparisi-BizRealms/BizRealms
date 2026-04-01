@@ -45,6 +45,98 @@ export default function Profile() {
     router.replace('/(auth)/login');
   };
 
+  const handleChangePhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permissão Necessária', 'Precisamos de permissão para acessar sua galeria');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Photo = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setNewPhoto(base64Photo);
+      setShowPhotoModal(true);
+    }
+  };
+
+  const handleSavePhoto = async () => {
+    if (!newPhoto) return;
+
+    try {
+      await axios.put(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/user/avatar-photo`,
+        { avatar_photo: newPhoto },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Alert.alert('Sucesso!', 'Foto atualizada com sucesso!');
+      await refreshUser();
+      setShowPhotoModal(false);
+      setNewPhoto(null);
+    } catch (error: any) {
+      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao atualizar foto');
+    }
+  };
+
+  const handleDeleteEducation = (eduId: string) => {
+    Alert.alert(
+      'Deletar Educação?',
+      'Tem certeza que deseja remover esta educação do seu perfil?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Deletar', style: 'destructive', onPress: () => confirmDeleteEducation(eduId) },
+      ]
+    );
+  };
+
+  const confirmDeleteEducation = async (eduId: string) => {
+    try {
+      await axios.delete(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/user/education/${eduId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Alert.alert('Sucesso!', 'Educação removida com sucesso!');
+      await refreshUser();
+    } catch (error: any) {
+      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao remover educação');
+    }
+  };
+
+  const handleDeleteCertification = (certId: string) => {
+    Alert.alert(
+      'Deletar Certificação?',
+      'Tem certeza que deseja remover esta certificação do seu perfil?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Deletar', style: 'destructive', onPress: () => confirmDeleteCertification(certId) },
+      ]
+    );
+  };
+
+  const confirmDeleteCertification = async (certId: string) => {
+    try {
+      await axios.delete(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/user/certification/${certId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Alert.alert('Sucesso!', 'Certificação removida com sucesso!');
+      await refreshUser();
+    } catch (error: any) {
+      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao remover certificação');
+    }
+  };
+
   const handleAddEducation = async () => {
     if (!eduDegree || !eduField || !eduInstitution || !eduYear) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
