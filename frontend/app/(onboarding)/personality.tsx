@@ -88,18 +88,18 @@ export default function PersonalitySelection() {
       // Refresh user data
       await refreshUser();
 
-      // Show success
-      Alert.alert(
-        'Personagem Criado! 🎉',
-        `Bem-vindo ao Business Empire!\n\nDinheiro inicial: R$ ${response.data.money.toLocaleString('pt-BR')}\n\nComece sua jornada agora!`,
-        [
-          {
-            text: 'Começar!',
-            onPress: () => router.replace('/(tabs)/home'),
-          },
-        ]
-      );
+      // Navigate immediately
+      router.replace('/(tabs)/home');
+
+      // Show success toast
+      setTimeout(() => {
+        Alert.alert(
+          'Personagem Criado! 🎉',
+          `Bem-vindo ao Business Empire!\n\nDinheiro inicial: R$ ${response.data.money.toLocaleString('pt-BR')}\n\nComece sua jornada agora!`
+        );
+      }, 500);
     } catch (error: any) {
+      console.error('Error completing profile:', error);
       Alert.alert('Erro', error.response?.data?.detail || 'Erro ao criar personagem');
     } finally {
       setLoading(false);
