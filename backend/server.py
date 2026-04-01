@@ -118,6 +118,12 @@ class UserResponse(BaseModel):
     id: str
     email: str
     name: str
+    onboarding_completed: bool
+    avatar_color: str
+    avatar_icon: str
+    background: str
+    dream: str
+    personality: dict
     money: float
     experience_points: int
     level: int

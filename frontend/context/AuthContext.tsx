@@ -8,6 +8,12 @@ interface User {
   id: string;
   email: string;
   name: string;
+  onboarding_completed: boolean;
+  avatar_color?: string;
+  avatar_icon?: string;
+  background?: string;
+  dream?: string;
+  personality?: any;
   money: number;
   experience_points: number;
   level: number;
