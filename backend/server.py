@@ -898,9 +898,9 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
     days_elapsed = (now - last_collection).total_seconds() / 86400  # Convert to days
     
-    if days_elapsed < 0.1:  # Less than ~2.4 hours
+    if days_elapsed < 0.001:  # Less than ~1.4 minutes
         return {
-            "message": "Você já coletou seus ganhos recentemente. Volte mais tarde!",
+            "message": "Você já coletou seus ganhos recentemente. Aguarde pelo menos 1 minuto!",
             "earnings": 0,
             "days_elapsed": 0
         }
@@ -908,6 +908,21 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     # Calculate earnings (can accumulate multiple days)
     daily_salary = current_job['salary'] / 30
     total_earnings = daily_salary * days_elapsed
+    
+    # Apply ad boost multiplier if active
+    boost_multiplier = 1.0
+    ad_boost = await db.ad_boosts.find_one({"user_id": current_user['id']})
+    if ad_boost:
+        expires_at = ad_boost.get('expires_at')
+        if expires_at and expires_at > now:
+            boost_multiplier = ad_boost.get('multiplier', 1.0)
+            total_earnings *= boost_multiplier
+    
+    # Apply courses earnings boost
+    user_courses = await db.user_courses.find({"user_id": current_user['id']}).to_list(100)
+    courses_boost = sum(c.get('earnings_boost', 0) for c in user_courses)
+    if courses_boost > 0:
+        total_earnings *= (1 + courses_boost)
     
     # Calculate XP gain
     xp_gain = int(80 * days_elapsed)
@@ -952,12 +967,14 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     
     return {
         "message": f"Você coletou seus ganhos de {days_elapsed:.1f} dias de trabalho!",
-        "earnings": total_earnings,
+        "earnings": round(total_earnings, 2),
         "xp_gained": xp_gain,
         "new_level": new_level,
-        "new_money": new_money,
-        "days_elapsed": days_elapsed,
+        "new_money": round(new_money, 2),
+        "days_elapsed": round(days_elapsed, 2),
         "days_worked": new_days_worked,
+        "boost_multiplier": boost_multiplier,
+        "courses_boost": round(courses_boost, 2),
         "promotion": promotion_message
     }
 
@@ -1201,7 +1218,7 @@ async def get_courses():
             "level_required": 5
         },
         {
-            "id": "negocia cao-vendas",
+            "id": "negociacao-vendas",
             "name": "Negociação e Vendas",
             "description": "Técnicas avançadas de fechamento",
             "cost": 600,

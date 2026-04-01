@@ -184,11 +184,20 @@ export default function Jobs() {
       if (response.data.earnings === 0) {
         Alert.alert('Aviso', response.data.message);
       } else {
-        const message = `${response.data.message}\n\n` +
+        let message = `${response.data.message}\n\n` +
           `Ganhos: R$ ${response.data.earnings.toFixed(2)}\n` +
           `XP: +${response.data.xp_gained}\n` +
-          `Dias trabalhados: ${response.data.days_worked}` +
-          (response.data.promotion ? `\n\n${response.data.promotion}` : '');
+          `Dias trabalhados: ${response.data.days_worked}`;
+        
+        if (response.data.boost_multiplier > 1) {
+          message += `\nBoost Propaganda: ${response.data.boost_multiplier}x`;
+        }
+        if (response.data.courses_boost > 0) {
+          message += `\nBoost Cursos: +${(response.data.courses_boost * 100).toFixed(0)}%`;
+        }
+        if (response.data.promotion) {
+          message += `\n\n${response.data.promotion}`;
+        }
 
         Alert.alert('Ganhos Coletados!', message);
       }

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -74,18 +75,25 @@ export default function Home() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View
-              style={[
-                styles.avatar,
-                { backgroundColor: getAvatarColor(user.avatar_color || 'green') },
-              ]}
-            >
-              <Ionicons
-                name={(user.avatar_icon || 'person') as any}
-                size={32}
-                color="#fff"
+            {(user as any).avatar_photo ? (
+              <Image
+                source={{ uri: (user as any).avatar_photo }}
+                style={styles.avatarImage}
               />
-            </View>
+            ) : (
+              <View
+                style={[
+                  styles.avatar,
+                  { backgroundColor: getAvatarColor(user.avatar_color || 'green') },
+                ]}
+              >
+                <Ionicons
+                  name={(user.avatar_icon || 'person') as any}
+                  size={32}
+                  color="#fff"
+                />
+              </View>
+            )}
             <View>
               <Text style={styles.greeting}>Olá, {user.name}!</Text>
               <Text style={styles.location}>
@@ -210,6 +218,13 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
   },
   greeting: {
     fontSize: 28,

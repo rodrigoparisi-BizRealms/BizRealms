@@ -227,11 +227,10 @@ export default function Courses() {
                     (!canAfford || !hasLevel) && styles.enrollButtonDisabled,
                   ]}
                   onPress={() => handleEnroll(course)}
-                  disabled={!canAfford || !hasLevel}
                 >
                   <Ionicons name="school" size={20} color="#fff" />
                   <Text style={styles.enrollButtonText}>
-                    {!hasLevel ? 'Nível Insuficiente' : !canAfford ? 'Dinheiro Insuficiente' : 'Fazer Curso'}
+                    {!hasLevel ? `Requer Nível ${course.level_required}` : !canAfford ? 'Dinheiro Insuficiente' : 'Fazer Curso'}
                   </Text>
                 </TouchableOpacity>
               )}
