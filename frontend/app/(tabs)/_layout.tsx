@@ -9,13 +9,18 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: '#2a2a2a',
           borderTopColor: '#3a3a3a',
-          height: 60,
-          paddingBottom: 8,
+          height: 58,
+          paddingBottom: 6,
+          paddingTop: 4,
         },
         tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#888',
+        tabBarInactiveTintColor: '#666',
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 9,
+          fontWeight: '600',
+        },
+        tabBarIconStyle: {
+          marginBottom: -2,
         },
       }}
     >
@@ -24,7 +29,7 @@ export default function TabsLayout() {
         options={{
           title: 'Início',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="home" size={20} color={color} />
           ),
         }}
       />
@@ -33,7 +38,7 @@ export default function TabsLayout() {
         options={{
           title: 'Empregos',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="briefcase" size={size} color={color} />
+            <Ionicons name="briefcase" size={20} color={color} />
           ),
         }}
       />
@@ -42,16 +47,7 @@ export default function TabsLayout() {
         options={{
           title: 'Empresas',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="business" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="patrimonio"
-        options={{
-          title: 'Patrimônio',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="diamond" size={size} color={color} />
+            <Ionicons name="business" size={20} color={color} />
           ),
         }}
       />
@@ -60,7 +56,17 @@ export default function TabsLayout() {
         options={{
           title: 'Investir',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trending-up" size={size} color={color} />
+            <Ionicons name="trending-up" size={20} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="store"
+        options={{
+          title: 'Loja',
+          tabBarActiveTintColor: '#E91E63',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="storefront" size={20} color={color} />
           ),
         }}
       />
@@ -69,11 +75,12 @@ export default function TabsLayout() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="person" size={20} color={color} />
           ),
         }}
       />
-      {/* Hidden tabs - accessible via links */}
+      {/* Hidden tabs - accessible via links from other screens */}
+      <Tabs.Screen name="patrimonio" options={{ href: null }} />
       <Tabs.Screen name="courses" options={{ href: null }} />
       <Tabs.Screen name="map" options={{ href: null }} />
     </Tabs>

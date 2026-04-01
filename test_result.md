@@ -445,6 +445,29 @@ metadata:
         agent: "testing"
         comment: "✅ VERIFIED: Assets system fully functional. All 4 endpoints tested successfully: GET /api/assets/store (22 assets across 3 categories: veiculo, imovel, luxo), GET /api/assets/owned (proper appreciation calculation, profit/loss tracking), POST /api/assets/buy (proper insufficient funds validation), POST /api/assets/sell (sold Moto CG 160 for R$ 14,250.00 with -R$ 750.00 depreciation loss, appreciation calculation working correctly). Asset appreciation/depreciation system working perfectly with time-based value calculations."
 
+  - task: "Game Store System - Purchase endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Game Store system fully functional. All endpoints tested successfully: ✅ GET /api/store/items (12 items across 3 categories: dinheiro=5, xp=3, ganhos=4) ✅ Category filtering working (dinheiro, xp, ganhos) ✅ POST /api/store/purchase (money packs, XP boosts, earnings boosts all working with MOCK payment system) ✅ GET /api/store/purchases (purchase history tracking) ✅ Error handling: invalid items return 404. Money increases, XP increases, and ad boost activation all verified. Purchase history properly recorded. MOCK payment system working correctly with transaction IDs."
+
+  - task: "Ad Boost System - 1 hour duration"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Ad Boost 1-hour duration system working perfectly. ✅ POST /api/ads/watch (requires active job, creates 1-hour boost, multiplier increases up to 10x) ✅ GET /api/ads/current-boost (returns active status, multiplier, seconds remaining ~3600) ✅ Duration verification: exactly 1 hour (3600 seconds) ✅ Multiplier progression: starts at 2x, increases by 1x per ad watched ✅ Multiplier consistency: no decay, stays constant for full duration ✅ Ads watched counter working correctly. Tested with test_jobs@businessempire.com user who has active employment. System handles existing boosts properly by extending time and increasing multiplier."
 test_plan:
   current_focus: []
   stuck_tasks: []
@@ -472,3 +495,5 @@ agent_communication:
     message: "🎉 INVESTMENT SYSTEM TESTING COMPLETE! ✅ Comprehensive testing of all investment endpoints completed successfully. ALL ENDPOINTS WORKING PERFECTLY: ✅ GET /api/investments/market (22 assets with tickers, prices, daily changes, sparklines) ✅ Category filtering: crypto (5 assets), acoes (8 B3 stocks), fundos (4), commodities (5) ✅ GET /api/investments/asset/{id}/history (30-day price history with volume) ✅ POST /api/investments/buy (asset purchases with averaging for multiple buys) ✅ POST /api/investments/sell (partial sales with P&L calculations) ✅ GET /api/investments/portfolio (holdings with current prices, profit/loss tracking) ✅ GET /api/investments/transactions (complete buy/sell history) ✅ Error handling: insufficient funds properly rejected, selling more than held properly rejected ✅ Price simulation: deterministic random walk with drift working correctly ✅ Previous endpoints still working: user stats, jobs, courses. Investment system is production-ready with full functionality including market data, trading operations, portfolio tracking, and proper error handling."
   - agent: "testing"
     message: "🎉 COMPANIES & ASSETS SYSTEMS TESTING COMPLETE! ✅ Comprehensive testing of all Companies and Assets endpoints completed successfully. ALL ENDPOINTS WORKING PERFECTLY: COMPANIES SYSTEM: ✅ GET /api/companies/available (24 companies, proper ObjectId handling) ✅ GET /api/companies/owned (user owns 1 company) ✅ POST /api/companies/collect-revenue (R$ 0.79 collected) ✅ POST /api/companies/ad-boost (6h boost activated for 1 company) ✅ POST /api/companies/buy (proper insufficient funds validation) ✅ POST /api/companies/create (proper cost validation R$ 5,000) ✅ POST /api/companies/merge (proper same segment validation) ASSETS SYSTEM: ✅ GET /api/assets/store (22 assets across 3 categories: veiculo, imovel, luxo) ✅ GET /api/assets/owned (proper appreciation calculation, profit/loss tracking) ✅ POST /api/assets/buy (proper insufficient funds validation) ✅ POST /api/assets/sell (sold Moto CG 160 for R$ 14,250.00 with -R$ 750.00 depreciation, appreciation system working correctly) ✅ Asset appreciation/depreciation calculations working perfectly with time-based value changes. All business logic, error handling, and financial calculations verified. Both systems are production-ready."
+  - agent: "testing"
+    message: "🎉 GAME STORE & AD BOOST TESTING COMPLETE! ✅ Comprehensive testing of Game Store and Ad Boost systems completed successfully. GAME STORE SYSTEM: ✅ GET /api/store/items (12 items: 5 money packs, 3 XP boosts, 4 earnings boosts) ✅ Category filtering working perfectly (dinheiro, xp, ganhos) ✅ POST /api/store/purchase (all purchase types working: money packs increase user money, XP boosts increase experience points and level, earnings boosts activate ad multipliers) ✅ GET /api/store/purchases (purchase history tracking with transaction IDs) ✅ MOCK payment system working correctly with proper transaction recording ✅ Error handling: invalid items return 404 as expected. AD BOOST SYSTEM (1-HOUR DURATION): ✅ POST /api/ads/watch (requires active job, creates exactly 1-hour boost ~3600 seconds) ✅ GET /api/ads/current-boost (returns active status, multiplier, precise seconds remaining) ✅ Multiplier progression: starts at 2x, increases by 1x per ad watched, max 10x ✅ Duration consistency: exactly 1 hour, no decay, multiplier stays constant ✅ Proper handling of existing boosts (extends time, increases multiplier). Both systems are production-ready with full functionality verified."

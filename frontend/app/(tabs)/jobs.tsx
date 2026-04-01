@@ -281,13 +281,22 @@ export default function Jobs() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert(
-        'Boost Ativado!',
-        `${response.data.message}\n\n` +
+      const secs = response.data.seconds_remaining;
+      const hrs = Math.floor(secs / 3600);
+      const mins = Math.floor((secs % 3600) / 60);
+      const durStr = hrs > 0 ? `${hrs}h${mins.toString().padStart(2, '0')}m` : `${mins} min`;
+
+      const title = 'Boost Ativado!';
+      const msg = `${response.data.message}\n\n` +
         `Multiplicador: ${response.data.multiplier}x\n` +
         `Ganho diário: R$ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
-        `Duração: ${response.data.seconds_remaining}s`
-      );
+        `Duração restante: ${durStr}`;
+
+      if (Platform.OS === 'web') {
+        window.alert(`${title}\n\n${msg}`);
+      } else {
+        Alert.alert(title, msg);
+      }
 
       await loadData();
     } catch (error: any) {
@@ -299,8 +308,10 @@ export default function Jobs() {
   };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
+    if (hrs > 0) return `${hrs}h${mins.toString().padStart(2, '0')}m`;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -394,7 +405,7 @@ export default function Jobs() {
                 >
                   <Ionicons name="play-circle" size={20} color="#fff" />
                   <Text style={styles.adButtonText}>
-                    {adBoost.multiplier >= 10 ? 'Boost MAX!' : `Assistir Propaganda (+1x)`}
+                    {adBoost.multiplier >= 10 ? 'Boost MAX!' : `Assistir Propaganda (+1x por 1h)`}
                   </Text>
                 </TouchableOpacity>
               ) : (

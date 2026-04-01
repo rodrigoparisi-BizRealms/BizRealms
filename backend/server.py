@@ -122,22 +122,22 @@ class UserResponse(BaseModel):
     id: str
     email: str
     name: str
-    onboarding_completed: bool
-    avatar_color: str
-    avatar_icon: str
+    onboarding_completed: bool = False
+    avatar_color: str = "green"
+    avatar_icon: str = "person"
     avatar_photo: Optional[str] = None
-    background: str
-    dream: str
-    personality: dict
-    money: float
-    experience_points: int
-    level: int
-    location: str
-    education: List[Education]
-    certifications: List[Certification]
-    work_experience: List[WorkExperience]
-    skills: dict
-    created_at: datetime
+    background: str = ""
+    dream: str = ""
+    personality: dict = {}
+    money: float = 1000.0
+    experience_points: int = 0
+    level: int = 1
+    location: str = ""
+    education: List[Education] = []
+    certifications: List[Certification] = []
+    work_experience: List[WorkExperience] = []
+    skills: dict = {}
+    created_at: Optional[datetime] = None
 
 class EducationCreate(BaseModel):
     degree: str
@@ -1041,16 +1041,15 @@ async def watch_ad(current_user: dict = Depends(get_current_user)):
             expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
         
         if expires_at > now:
-            # Still active, increase multiplier
+            # Still active, increase multiplier and reset timer to 1 hour
             new_multiplier = min(10.0, ad_boost.get('multiplier', 1.0) + 1.0)
             new_ads_watched = ad_boost.get('ads_watched', 0) + 1
-            # Add 60 seconds per ad
-            new_expires_at = expires_at + timedelta(seconds=60)
+            new_expires_at = now + timedelta(hours=1)
         else:
-            # Expired, reset
+            # Expired, reset to 2x with fresh 1 hour
             new_multiplier = 2.0
             new_ads_watched = 1
-            new_expires_at = now + timedelta(seconds=60)
+            new_expires_at = now + timedelta(hours=1)
         
         await db.ad_boosts.update_one(
             {'_id': ad_boost['_id']},
@@ -1063,10 +1062,10 @@ async def watch_ad(current_user: dict = Depends(get_current_user)):
             }
         )
     else:
-        # Create new boost
+        # Create new boost - 1 hour duration
         new_multiplier = 2.0
         new_ads_watched = 1
-        new_expires_at = now + timedelta(seconds=60)
+        new_expires_at = now + timedelta(hours=1)
         
         boost = AdBoost(
             user_id=current_user['id'],
@@ -1079,13 +1078,14 @@ async def watch_ad(current_user: dict = Depends(get_current_user)):
     # Calculate boosted daily earnings
     daily_salary = current_job['salary'] / 30
     boosted_daily = daily_salary * new_multiplier
+    seconds_remaining = int((new_expires_at - now).total_seconds())
     
     return {
-        "message": f"Propaganda assistida! Seus ganhos aumentaram {new_multiplier}x!",
+        "message": f"Propaganda assistida! Seus ganhos aumentaram {new_multiplier}x por 1 hora!",
         "multiplier": new_multiplier,
         "ads_watched": new_ads_watched,
         "expires_at": new_expires_at.isoformat(),
-        "seconds_remaining": 60 * new_ads_watched if new_ads_watched <= 10 else 600,
+        "seconds_remaining": seconds_remaining,
         "daily_earnings_normal": daily_salary,
         "daily_earnings_boosted": boosted_daily,
         "boost_value": boosted_daily - daily_salary
@@ -1118,20 +1118,16 @@ async def get_current_boost(current_user: dict = Depends(get_current_user)):
             "seconds_remaining": 0
         }
     
-    seconds_remaining = (expires_at - now).total_seconds()
-    
-    # Calculate current multiplier based on decay
-    # Loses 1x every 60 seconds
-    time_passed = (now - ad_boost.get('created_at', now)).total_seconds()
-    decay_amount = int(time_passed / 60)
-    current_multiplier = max(1.0, ad_boost.get('multiplier', 1.0) - decay_amount)
+    seconds_remaining = int((expires_at - now).total_seconds())
+    # Multiplier stays constant for the full duration (no decay)
+    current_multiplier = ad_boost.get('multiplier', 1.0)
     
     return {
         "active": True,
         "multiplier": current_multiplier,
-        "max_multiplier": ad_boost.get('multiplier', 1.0),
+        "max_multiplier": current_multiplier,
         "ads_watched": ad_boost.get('ads_watched', 0),
-        "seconds_remaining": int(seconds_remaining),
+        "seconds_remaining": seconds_remaining,
         "expires_at": expires_at.isoformat()
     }
 
@@ -2281,6 +2277,146 @@ async def sell_asset_item(request: dict, current_user: dict = Depends(get_curren
         "profit": round(profit, 2),
         "new_balance": round(new_money, 2),
     }
+
+# ==================== GAME STORE (LOJA DO JOGO) ====================
+
+STORE_ITEMS = [
+    # Money Packs
+    {"id": "pack_starter", "category": "dinheiro", "name": "Pacote Iniciante", "description": "Dê o primeiro passo no mundo dos negócios", "game_reward": {"money": 10000}, "price_brl": 4.90, "icon": "cash", "color": "#4CAF50", "popular": False},
+    {"id": "pack_empreendedor", "category": "dinheiro", "name": "Pacote Empreendedor", "description": "Capital para abrir seu primeiro negócio", "game_reward": {"money": 50000}, "price_brl": 19.90, "icon": "cash", "color": "#4CAF50", "popular": True, "best_value": False},
+    {"id": "pack_investidor", "category": "dinheiro", "name": "Pacote Investidor", "description": "Invista pesado e diversifique seus ativos", "game_reward": {"money": 200000}, "price_brl": 49.90, "icon": "wallet", "color": "#2196F3", "popular": False, "best_value": False},
+    {"id": "pack_magnata", "category": "dinheiro", "name": "Pacote Magnata", "description": "Dinheiro suficiente para dominar o mercado", "game_reward": {"money": 1000000}, "price_brl": 99.90, "icon": "diamond", "color": "#FFD700", "popular": False, "best_value": True},
+    {"id": "pack_bilionario", "category": "dinheiro", "name": "Pacote Bilionário", "description": "O poder de um verdadeiro bilionário nas suas mãos", "game_reward": {"money": 5000000}, "price_brl": 199.90, "icon": "trophy", "color": "#FF6B6B", "popular": False, "best_value": False},
+    # XP Boosts
+    {"id": "xp_small", "category": "xp", "name": "Boost XP Pequeno", "description": "Ganhe +5.000 XP instantaneamente", "game_reward": {"xp": 5000}, "price_brl": 2.90, "icon": "star", "color": "#FF9800", "popular": False},
+    {"id": "xp_medium", "category": "xp", "name": "Boost XP Médio", "description": "Ganhe +25.000 XP e suba vários níveis", "game_reward": {"xp": 25000}, "price_brl": 9.90, "icon": "star", "color": "#FF9800", "popular": True},
+    {"id": "xp_large", "category": "xp", "name": "Boost XP Grande", "description": "Ganhe +100.000 XP e desbloqueie itens premium", "game_reward": {"xp": 100000}, "price_brl": 29.90, "icon": "rocket", "color": "#FF9800", "popular": False, "best_value": True},
+    # Earnings Boosts (time-limited multipliers)
+    {"id": "earnings_2x_1h", "category": "ganhos", "name": "Boost 2x (1 hora)", "description": "Dobre todos os seus ganhos por 1 hora", "game_reward": {"earnings_multiplier": 2.0, "duration_hours": 1}, "price_brl": 1.90, "icon": "flash", "color": "#E91E63", "popular": False},
+    {"id": "earnings_3x_3h", "category": "ganhos", "name": "Boost 3x (3 horas)", "description": "Triplique todos os seus ganhos por 3 horas", "game_reward": {"earnings_multiplier": 3.0, "duration_hours": 3}, "price_brl": 4.90, "icon": "flash", "color": "#E91E63", "popular": True},
+    {"id": "earnings_5x_6h", "category": "ganhos", "name": "Boost 5x (6 horas)", "description": "Quintuplique seus ganhos por 6 horas inteiras!", "game_reward": {"earnings_multiplier": 5.0, "duration_hours": 6}, "price_brl": 9.90, "icon": "flash", "color": "#E91E63", "popular": False, "best_value": True},
+    {"id": "earnings_10x_12h", "category": "ganhos", "name": "Boost 10x (12 horas)", "description": "O boost MÁXIMO! 10x ganhos por 12 horas", "game_reward": {"earnings_multiplier": 10.0, "duration_hours": 12}, "price_brl": 19.90, "icon": "rocket", "color": "#E91E63", "popular": False},
+]
+
+@api_router.get("/store/items")
+async def get_store_items(category: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Get all items available in the game store"""
+    items = STORE_ITEMS
+    if category:
+        items = [i for i in items if i['category'] == category]
+    return items
+
+@api_router.post("/store/purchase")
+async def purchase_store_item(request: dict, current_user: dict = Depends(get_current_user)):
+    """Purchase a store item (MOCK payment - real payment integration pending)"""
+    item_id = request.get('item_id')
+    payment_method = request.get('payment_method', 'credit_card')  # credit_card, pix
+
+    # Find the item
+    item = next((i for i in STORE_ITEMS if i['id'] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado na loja")
+
+    user = await db.users.find_one({"id": current_user['id']})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # ============ MOCK PAYMENT ============
+    # In production, this would integrate with Stripe/payment processor
+    # For now, we simulate a successful payment
+    payment_success = True
+    transaction_id = f"MOCK_{uuid.uuid4().hex[:12].upper()}"
+    # ======================================
+
+    if not payment_success:
+        raise HTTPException(status_code=402, detail="Falha no pagamento")
+
+    # Record purchase
+    purchase = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "item_id": item_id,
+        "item_name": item['name'],
+        "category": item['category'],
+        "price_brl": item['price_brl'],
+        "payment_method": payment_method,
+        "transaction_id": transaction_id,
+        "status": "completed",
+        "created_at": datetime.utcnow(),
+    }
+    await db.store_purchases.insert_one(purchase)
+
+    reward = item['game_reward']
+    update_ops: dict = {}
+    messages = []
+
+    # Apply reward based on category
+    if 'money' in reward:
+        new_money = user['money'] + reward['money']
+        update_ops['money'] = new_money
+        messages.append(f"+R$ {reward['money']:,.0f} adicionados à sua conta!")
+
+    if 'xp' in reward:
+        new_xp = user.get('experience_points', 0) + reward['xp']
+        new_level = (new_xp // 1000) + 1
+        update_ops['experience_points'] = new_xp
+        update_ops['level'] = new_level
+        messages.append(f"+{reward['xp']:,} XP! Agora nível {new_level}")
+
+    if 'earnings_multiplier' in reward:
+        now = datetime.utcnow()
+        duration_hours = reward.get('duration_hours', 1)
+        expires_at = now + timedelta(hours=duration_hours)
+
+        # Set or update ad boost with the purchased multiplier
+        existing_boost = await db.ad_boosts.find_one({"user_id": current_user['id']})
+        if existing_boost:
+            # Stack: use the higher multiplier and extend time
+            old_expires = existing_boost.get('expires_at', now)
+            if isinstance(old_expires, str):
+                old_expires = datetime.fromisoformat(old_expires.replace('Z', '+00:00'))
+            new_expires = max(old_expires, expires_at)
+            new_mult = max(existing_boost.get('multiplier', 1.0), reward['earnings_multiplier'])
+            await db.ad_boosts.update_one(
+                {"_id": existing_boost['_id']},
+                {"$set": {"multiplier": new_mult, "expires_at": new_expires}}
+            )
+        else:
+            boost = AdBoost(
+                user_id=current_user['id'],
+                multiplier=reward['earnings_multiplier'],
+                ads_watched=0,
+                expires_at=expires_at
+            )
+            await db.ad_boosts.insert_one(boost.dict())
+        messages.append(f"Boost {reward['earnings_multiplier']}x ativado por {duration_hours}h!")
+
+    if update_ops:
+        await db.users.update_one({"id": current_user['id']}, {"$set": update_ops})
+
+    return {
+        "success": True,
+        "message": " | ".join(messages),
+        "item": item['name'],
+        "transaction_id": transaction_id,
+        "payment_method": payment_method,
+        "price_brl": item['price_brl'],
+        "rewards_applied": reward,
+        "mock_payment": True,  # Flag to indicate payment is simulated
+    }
+
+@api_router.get("/store/purchases")
+async def get_store_purchases(current_user: dict = Depends(get_current_user)):
+    """Get user's purchase history"""
+    purchases = await db.store_purchases.find(
+        {"user_id": current_user['id']}
+    ).sort("created_at", -1).to_list(50)
+    for p in purchases:
+        if '_id' in p:
+            del p['_id']
+        if isinstance(p.get('created_at'), datetime):
+            p['created_at'] = p['created_at'].isoformat()
+    return purchases
 
 # Include the router in the main app
 app.include_router(api_router)
