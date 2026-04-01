@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import axios from 'axios';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -27,42 +29,76 @@ const getAvatarColor = (color: string) => {
   return colors[color] || '#4CAF50';
 };
 
+const formatMoney = (value: number) => {
+  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
+  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+};
+
 export default function Home() {
   const { user, token, refreshUser } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<any>(null);
+  const [portfolio, setPortfolio] = useState<any>(null);
+  const [companies, setCompanies] = useState<any>(null);
+  const [assets, setAssets] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
+  const loadAllData = useCallback(async () => {
+    if (!token) return;
+    const h = { Authorization: `Bearer ${token}` };
     try {
-      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/user/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setStats(response.data);
-    } catch (error) {
-      console.error('Error loading stats:', error);
+      const [statsRes, portfolioRes, companiesRes, assetsRes] = await Promise.all([
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/user/stats`, { headers: h }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/portfolio`, { headers: h }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/owned`, { headers: h }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/owned`, { headers: h }).catch(() => null),
+      ]);
+      if (statsRes) setStats(statsRes.data);
+      if (portfolioRes) setPortfolio(portfolioRes.data);
+      if (companiesRes) setCompanies(companiesRes.data);
+      if (assetsRes) setAssets(assetsRes.data);
+    } catch (e) {
+      console.error('Error loading dashboard:', e);
     }
-  };
+  }, [token]);
+
+  useEffect(() => { loadAllData(); }, [loadAllData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshUser();
-    await loadStats();
+    await loadAllData();
     setRefreshing(false);
   };
 
   if (!user || !stats) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.loadingText}>Carregando...</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Carregando...</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   const levelProgress = (stats.experience_points % 1000) / 10;
+
+  // Calculate total net worth
+  const cashMoney = user.money || 0;
+  const investmentValue = portfolio?.summary?.total_current_value || 0;
+  const companiesRevenue = companies?.total_monthly_revenue || 0;
+  const assetsValue = assets?.summary?.total_value || 0;
+  const totalNetWorth = cashMoney + investmentValue + assetsValue;
+
+  const investmentProfit = portfolio?.summary?.total_profit || 0;
+  const investmentProfitPct = portfolio?.summary?.total_profit_pct || 0;
+  const numPositions = portfolio?.summary?.num_positions || 0;
+
+  const numCompanies = companies?.count || 0;
+  const numAssets = assets?.summary?.count || 0;
+  const assetsProfit = assets?.summary?.total_profit || 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,26 +130,43 @@ export default function Home() {
                 />
               </View>
             )}
-            <View>
-              <Text style={styles.greeting}>Olá, {user.name}!</Text>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={styles.greeting} numberOfLines={1}>Olá, {user.name}!</Text>
               <Text style={styles.location}>
-                <Ionicons name="location" size={16} color="#888" /> {user.location}
+                <Ionicons name="location" size={14} color="#888" /> {user.location}
               </Text>
             </View>
           </View>
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>Nível {stats.level}</Text>
+            <Text style={styles.levelText}>Nv {stats.level}</Text>
           </View>
         </View>
 
-        {/* Money Card */}
-        <View style={styles.moneyCard}>
-          <Ionicons name="wallet" size={32} color="#4CAF50" />
-          <View style={styles.moneyInfo}>
-            <Text style={styles.moneyLabel}>Dinheiro</Text>
-            <Text style={styles.moneyValue}>
-              R$ {user.money.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </Text>
+        {/* Net Worth Card */}
+        <View style={styles.netWorthCard}>
+          <View style={styles.netWorthHeader}>
+            <Ionicons name="trophy" size={22} color="#FFD700" />
+            <Text style={styles.netWorthLabel}>Patrimônio Líquido Total</Text>
+          </View>
+          <Text style={styles.netWorthValue}>
+            R$ {totalNetWorth.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </Text>
+          <View style={styles.netWorthBreakdown}>
+            <View style={styles.breakdownItem}>
+              <View style={[styles.breakdownDot, { backgroundColor: '#4CAF50' }]} />
+              <Text style={styles.breakdownLabel}>Caixa</Text>
+              <Text style={styles.breakdownValue}>{formatMoney(cashMoney)}</Text>
+            </View>
+            <View style={styles.breakdownItem}>
+              <View style={[styles.breakdownDot, { backgroundColor: '#2196F3' }]} />
+              <Text style={styles.breakdownLabel}>Investimentos</Text>
+              <Text style={styles.breakdownValue}>{formatMoney(investmentValue)}</Text>
+            </View>
+            <View style={styles.breakdownItem}>
+              <View style={[styles.breakdownDot, { backgroundColor: '#9C27B0' }]} />
+              <Text style={styles.breakdownLabel}>Bens</Text>
+              <Text style={styles.breakdownValue}>{formatMoney(assetsValue)}</Text>
+            </View>
           </View>
         </View>
 
@@ -129,6 +182,198 @@ export default function Home() {
             <View style={[styles.progressFill, { width: `${levelProgress}%` }]} />
           </View>
         </View>
+
+        {/* Investment Portfolio Panel */}
+        <TouchableOpacity
+          style={styles.panelCard}
+          onPress={() => router.push('/(tabs)/investments')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(33,150,243,0.15)' }]}>
+                <Ionicons name="trending-up" size={20} color="#2196F3" />
+              </View>
+              <Text style={styles.panelTitle}>Investimentos</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          {numPositions > 0 ? (
+            <>
+              <View style={styles.panelMainRow}>
+                <View>
+                  <Text style={styles.panelBigValue}>{formatMoney(investmentValue)}</Text>
+                  <Text style={styles.panelSubLabel}>Valor atual</Text>
+                </View>
+                <View style={[
+                  styles.profitBadge,
+                  { backgroundColor: investmentProfit >= 0 ? 'rgba(76,175,80,0.15)' : 'rgba(244,67,54,0.15)' }
+                ]}>
+                  <Ionicons
+                    name={investmentProfit >= 0 ? 'arrow-up' : 'arrow-down'}
+                    size={14}
+                    color={investmentProfit >= 0 ? '#4CAF50' : '#F44336'}
+                  />
+                  <Text style={[
+                    styles.profitText,
+                    { color: investmentProfit >= 0 ? '#4CAF50' : '#F44336' }
+                  ]}>
+                    {investmentProfit >= 0 ? '+' : ''}{investmentProfitPct.toFixed(1)}%
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.panelDetailRow}>
+                <View style={styles.panelDetail}>
+                  <Text style={styles.detailLabel}>Posições</Text>
+                  <Text style={styles.detailValue}>{numPositions}</Text>
+                </View>
+                <View style={styles.panelDetail}>
+                  <Text style={styles.detailLabel}>Investido</Text>
+                  <Text style={styles.detailValue}>{formatMoney(portfolio?.summary?.total_invested || 0)}</Text>
+                </View>
+                <View style={styles.panelDetail}>
+                  <Text style={styles.detailLabel}>Lucro/Prej.</Text>
+                  <Text style={[styles.detailValue, { color: investmentProfit >= 0 ? '#4CAF50' : '#F44336' }]}>
+                    {investmentProfit >= 0 ? '+' : ''}{formatMoney(Math.abs(investmentProfit))}
+                  </Text>
+                </View>
+              </View>
+              {/* Mini Holdings List */}
+              {portfolio?.holdings?.slice(0, 3).map((h: any) => (
+                <View key={h.asset_id} style={styles.miniHolding}>
+                  <Text style={styles.miniTicker}>{h.ticker || h.asset_name}</Text>
+                  <Text style={styles.miniQty}>{h.quantity?.toFixed(h.quantity < 1 ? 4 : 2)}</Text>
+                  <Text style={[
+                    styles.miniProfit,
+                    { color: (h.profit || 0) >= 0 ? '#4CAF50' : '#F44336' }
+                  ]}>
+                    {(h.profit_pct || 0) >= 0 ? '+' : ''}{(h.profit_pct || 0).toFixed(1)}%
+                  </Text>
+                </View>
+              ))}
+              {(portfolio?.holdings?.length || 0) > 3 && (
+                <Text style={styles.seeMore}>+{portfolio.holdings.length - 3} mais...</Text>
+              )}
+            </>
+          ) : (
+            <View style={styles.panelEmpty}>
+              <Text style={styles.panelEmptyText}>Nenhum investimento ainda</Text>
+              <Text style={styles.panelEmptyHint}>Comece investindo em ações, cripto e mais</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Companies Panel */}
+        <TouchableOpacity
+          style={styles.panelCard}
+          onPress={() => router.push('/(tabs)/companies')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                <Ionicons name="business" size={20} color="#4CAF50" />
+              </View>
+              <Text style={styles.panelTitle}>Empresas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          {numCompanies > 0 ? (
+            <>
+              <View style={styles.panelMainRow}>
+                <View>
+                  <Text style={[styles.panelBigValue, { color: '#4CAF50' }]}>{formatMoney(companiesRevenue)}/mês</Text>
+                  <Text style={styles.panelSubLabel}>Receita mensal</Text>
+                </View>
+                <View style={[styles.profitBadge, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                  <Ionicons name="business" size={14} color="#4CAF50" />
+                  <Text style={[styles.profitText, { color: '#4CAF50' }]}>{numCompanies} empresa{numCompanies > 1 ? 's' : ''}</Text>
+                </View>
+              </View>
+              {/* Mini Companies List */}
+              {companies?.companies?.slice(0, 3).map((c: any) => (
+                <View key={c.id} style={styles.miniHolding}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
+                    <View style={[styles.miniIcon, { backgroundColor: c.color || '#4CAF50' }]}>
+                      <Ionicons name={(c.icon || 'business') as any} size={12} color="#fff" />
+                    </View>
+                    <Text style={styles.miniTicker} numberOfLines={1}>{c.name}</Text>
+                  </View>
+                  <Text style={[styles.miniProfit, { color: '#4CAF50' }]}>
+                    R$ {(c.effective_revenue || c.monthly_revenue || 0).toLocaleString('pt-BR')}/mês
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : (
+            <View style={styles.panelEmpty}>
+              <Text style={styles.panelEmptyText}>Nenhuma empresa</Text>
+              <Text style={styles.panelEmptyHint}>Compre ou crie empresas para gerar renda passiva</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Assets Panel */}
+        <TouchableOpacity
+          style={styles.panelCard}
+          onPress={() => router.push('/(tabs)/patrimonio')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(156,39,176,0.15)' }]}>
+                <Ionicons name="diamond" size={20} color="#9C27B0" />
+              </View>
+              <Text style={styles.panelTitle}>Bens e Imóveis</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          {numAssets > 0 ? (
+            <>
+              <View style={styles.panelMainRow}>
+                <View>
+                  <Text style={[styles.panelBigValue, { color: '#9C27B0' }]}>{formatMoney(assetsValue)}</Text>
+                  <Text style={styles.panelSubLabel}>Valor total</Text>
+                </View>
+                <View style={[
+                  styles.profitBadge,
+                  { backgroundColor: assetsProfit >= 0 ? 'rgba(76,175,80,0.15)' : 'rgba(244,67,54,0.15)' }
+                ]}>
+                  <Ionicons
+                    name={assetsProfit >= 0 ? 'arrow-up' : 'arrow-down'}
+                    size={14}
+                    color={assetsProfit >= 0 ? '#4CAF50' : '#F44336'}
+                  />
+                  <Text style={[
+                    styles.profitText,
+                    { color: assetsProfit >= 0 ? '#4CAF50' : '#F44336' }
+                  ]}>
+                    {assetsProfit >= 0 ? '+' : ''}{formatMoney(Math.abs(assetsProfit))}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.panelDetailRow}>
+                <View style={styles.panelDetail}>
+                  <Text style={styles.detailLabel}>Itens</Text>
+                  <Text style={styles.detailValue}>{numAssets}</Text>
+                </View>
+                <View style={styles.panelDetail}>
+                  <Text style={styles.detailLabel}>Investido</Text>
+                  <Text style={styles.detailValue}>{formatMoney(assets?.summary?.total_invested || 0)}</Text>
+                </View>
+                <View style={styles.panelDetail}>
+                  <Text style={styles.detailLabel}>Status</Text>
+                  <Text style={[styles.detailValue, { color: '#FFD700' }]}>+{assets?.summary?.total_status_boost || 0}</Text>
+                </View>
+              </View>
+            </>
+          ) : (
+            <View style={styles.panelEmpty}>
+              <Text style={styles.panelEmptyText}>Nenhum bem adquirido</Text>
+              <Text style={styles.panelEmptyHint}>Compre veículos, imóveis e itens de luxo</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
@@ -170,19 +415,6 @@ export default function Home() {
             </View>
           ))}
         </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actionsSection}>
-          <Text style={styles.sectionTitle}>Ações Rápidas</Text>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="add-circle" size={24} color="#4CAF50" />
-            <Text style={styles.actionText}>Adicionar Educação</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="ribbon" size={24} color="#FF9800" />
-            <Text style={styles.actionText}>Obter Certificação</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -195,161 +427,327 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingBottom: 32,
   },
   loadingText: {
-    color: '#fff',
+    color: '#888',
     textAlign: 'center',
-    marginTop: 32,
+    marginTop: 12,
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: '#4CAF50',
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
   },
   location: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#888',
-    marginTop: 4,
+    marginTop: 2,
   },
   levelBadge: {
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginLeft: 8,
   },
   levelText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
   },
-  moneyCard: {
+  // Net Worth Card
+  netWorthCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
     padding: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+  },
+  netWorthHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    gap: 8,
+    marginBottom: 8,
   },
-  moneyInfo: {
-    marginLeft: 16,
-  },
-  moneyLabel: {
+  netWorthLabel: {
     color: '#888',
     fontSize: 14,
   },
-  moneyValue: {
-    color: '#4CAF50',
+  netWorthValue: {
+    color: '#FFD700',
     fontSize: 28,
     fontWeight: 'bold',
+    marginBottom: 12,
   },
+  netWorthBreakdown: {
+    gap: 8,
+  },
+  breakdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  breakdownDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  breakdownLabel: {
+    color: '#888',
+    fontSize: 13,
+    flex: 1,
+  },
+  breakdownValue: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  // Experience
   expCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 12,
   },
   expHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   expLabel: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   expValue: {
     color: '#888',
-    fontSize: 14,
+    fontSize: 13,
   },
   progressBar: {
-    height: 8,
+    height: 6,
     backgroundColor: '#3a3a3a',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#4CAF50',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-  },
-  statCard: {
+  // Panel Cards
+  panelCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
     padding: 16,
+    marginBottom: 12,
+  },
+  panelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  panelTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  panelIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  panelTitle: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  panelMainRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  panelBigValue: {
+    color: '#2196F3',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  panelSubLabel: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  profitBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  profitText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  panelDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  panelDetail: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  detailLabel: {
+    color: '#666',
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  detailValue: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  panelEmpty: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  panelEmptyText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  panelEmptyHint: {
+    color: '#555',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  // Mini Holdings
+  miniHolding: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  miniTicker: {
+    color: '#ccc',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  miniQty: {
+    color: '#888',
+    fontSize: 12,
+    marginHorizontal: 12,
+  },
+  miniProfit: {
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  miniIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  seeMore: {
+    color: '#555',
+    fontSize: 12,
+    textAlign: 'center',
+    paddingTop: 8,
+  },
+  // Stats Grid
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 12,
+  },
+  statCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 14,
     flex: 1,
     minWidth: '46%',
     alignItems: 'center',
   },
   statValue: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginTop: 8,
+    marginTop: 6,
   },
   statLabel: {
     color: '#888',
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
   },
+  // Skills
   skillsCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     marginBottom: 16,
   },
   sectionTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   skillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   skillName: {
     color: '#fff',
-    width: 120,
-    fontSize: 14,
+    width: 110,
+    fontSize: 13,
   },
   skillBar: {
     flex: 1,
-    height: 8,
+    height: 6,
     backgroundColor: '#3a3a3a',
-    borderRadius: 4,
-    marginHorizontal: 12,
+    borderRadius: 3,
+    marginHorizontal: 10,
     overflow: 'hidden',
   },
   skillFill: {
@@ -358,24 +756,8 @@ const styles = StyleSheet.create({
   },
   skillLevel: {
     color: '#888',
-    width: 40,
+    width: 36,
     textAlign: 'right',
-  },
-  actionsSection: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 16,
-    padding: 20,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3a3a3a',
-  },
-  actionText: {
-    color: '#fff',
-    fontSize: 16,
-    marginLeft: 12,
+    fontSize: 13,
   },
 });
