@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useSounds } from '../../hooks/useSounds';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -30,16 +31,12 @@ const getAvatarColor = (color: string) => {
   return colors[color] || '#4CAF50';
 };
 
-const formatMoney = (value: number) => {
-  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
-  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-};
-
 export default function Home() {
   const { user, token, refreshUser } = useAuth();
   const router = useRouter();
   const { play } = useSounds();
+  const { t, formatMoney } = useLanguage();
+  const fm = (v: number) => formatMoney(v, true);
   const [stats, setStats] = useState<any>(null);
   const [portfolio, setPortfolio] = useState<any>(null);
   const [companies, setCompanies] = useState<any>(null);
@@ -82,7 +79,7 @@ export default function Home() {
       <SafeAreaView style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>Carregando...</Text>
+          <Text style={styles.loadingText}>{t('general.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -136,14 +133,14 @@ export default function Home() {
               </View>
             )}
             <View style={{ flexShrink: 1 }}>
-              <Text style={styles.greeting} numberOfLines={1}>Olá, {user.name}!</Text>
+              <Text style={styles.greeting} numberOfLines={1}>{t('home.greeting')}, {user.name}!</Text>
               <Text style={styles.location}>
                 <Ionicons name="location" size={14} color="#888" /> {user.location}
               </Text>
             </View>
           </View>
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>Nv {stats.level}</Text>
+            <Text style={styles.levelText}>{t('home.lv')} {stats.level}</Text>
           </View>
         </View>
 
@@ -151,26 +148,26 @@ export default function Home() {
         <View style={styles.netWorthCard}>
           <View style={styles.netWorthHeader}>
             <Ionicons name="trophy" size={22} color="#FFD700" />
-            <Text style={styles.netWorthLabel}>Patrimônio Líquido Total</Text>
+            <Text style={styles.netWorthLabel}>{t('home.netWorth')}</Text>
           </View>
           <Text style={styles.netWorthValue}>
-            R$ {totalNetWorth.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatMoney(totalNetWorth)}
           </Text>
           <View style={styles.netWorthBreakdown}>
             <View style={styles.breakdownItem}>
               <View style={[styles.breakdownDot, { backgroundColor: '#4CAF50' }]} />
-              <Text style={styles.breakdownLabel}>Caixa</Text>
-              <Text style={styles.breakdownValue}>{formatMoney(cashMoney)}</Text>
+              <Text style={styles.breakdownLabel}>{t('home.cash')}</Text>
+              <Text style={styles.breakdownValue}>{fm(cashMoney)}</Text>
             </View>
             <View style={styles.breakdownItem}>
               <View style={[styles.breakdownDot, { backgroundColor: '#2196F3' }]} />
-              <Text style={styles.breakdownLabel}>Investimentos</Text>
-              <Text style={styles.breakdownValue}>{formatMoney(investmentValue)}</Text>
+              <Text style={styles.breakdownLabel}>{t('home.investmentsLabel')}</Text>
+              <Text style={styles.breakdownValue}>{fm(investmentValue)}</Text>
             </View>
             <View style={styles.breakdownItem}>
               <View style={[styles.breakdownDot, { backgroundColor: '#9C27B0' }]} />
-              <Text style={styles.breakdownLabel}>Bens</Text>
-              <Text style={styles.breakdownValue}>{formatMoney(assetsValue)}</Text>
+              <Text style={styles.breakdownLabel}>{t('home.assetsLabel')}</Text>
+              <Text style={styles.breakdownValue}>{fm(assetsValue)}</Text>
             </View>
           </View>
         </View>
@@ -178,7 +175,7 @@ export default function Home() {
         {/* Experience Progress */}
         <View style={styles.expCard}>
           <View style={styles.expHeader}>
-            <Text style={styles.expLabel}>Experiência</Text>
+            <Text style={styles.expLabel}>{t('home.experience')}</Text>
             <Text style={styles.expValue}>
               {stats.experience_points} / {stats.next_level_exp} XP
             </Text>
@@ -199,7 +196,7 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
                 <Ionicons name="trophy" size={20} color="#FFD700" />
               </View>
-              <Text style={styles.panelTitle}>Ranking Semanal</Text>
+              <Text style={styles.panelTitle}>{t('home.weeklyRanking')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
@@ -211,13 +208,13 @@ export default function Home() {
                     #{rankings.current_user.position}
                   </Text>
                   <Text style={styles.panelSubLabel}>
-                    de {rankings.total_players} jogador{rankings.total_players > 1 ? 'es' : ''}
+                    {t('home.ofPlayers')} {rankings.total_players} {t('home.players')}
                   </Text>
                 </View>
                 <View style={[styles.profitBadge, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
                   <Ionicons name="trophy" size={14} color="#FFD700" />
                   <Text style={[styles.profitText, { color: '#FFD700' }]}>
-                    {formatMoney(rankings.current_user.total_net_worth)}
+                    {fm(rankings.current_user.total_net_worth)}
                   </Text>
                 </View>
               </View>
@@ -231,17 +228,17 @@ export default function Home() {
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
                   </Text>
                   <Text style={styles.miniTicker} numberOfLines={1}>
-                    {r.user_id === user?.id ? 'Você' : r.name}
+                    {r.user_id === user?.id ? t('home.you') : r.name}
                   </Text>
                   <Text style={[styles.miniProfit, { color: '#FFD700' }]}>
-                    {formatMoney(r.total_net_worth)}
+                    {fm(r.total_net_worth)}
                   </Text>
                 </View>
               ))}
             </View>
           ) : (
             <View style={styles.panelEmpty}>
-              <Text style={styles.panelEmptyText}>Ranking disponível em breve</Text>
+              <Text style={styles.panelEmptyText}>{t('home.rankAvailable')}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -257,13 +254,13 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(30,136,229,0.15)' }]}>
                 <Ionicons name="card" size={20} color="#1E88E5" />
               </View>
-              <Text style={styles.panelTitle}>Banco On-line</Text>
+              <Text style={styles.panelTitle}>{t('home.bank')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
           <View style={styles.panelEmpty}>
-            <Text style={[styles.panelEmptyText, { color: '#1E88E5' }]}>Cartão de Crédito, Milhas e Empréstimos</Text>
-            <Text style={styles.panelEmptyHint}>Gerencie suas finanças e acumule milhas</Text>
+            <Text style={[styles.panelEmptyText, { color: '#1E88E5' }]}>{t('home.bankDesc')}</Text>
+            <Text style={styles.panelEmptyHint}>{t('home.bankHint')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -278,13 +275,13 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
                 <Ionicons name="school" size={20} color="#4CAF50" />
               </View>
-              <Text style={styles.panelTitle}>Cursos Harvard & MIT</Text>
+              <Text style={styles.panelTitle}>{t('home.courses')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
           <View style={styles.panelEmpty}>
-            <Text style={[styles.panelEmptyText, { color: '#4CAF50' }]}>Boost permanente nos ganhos</Text>
-            <Text style={styles.panelEmptyHint}>14 cursos de universidades top do mundo</Text>
+            <Text style={[styles.panelEmptyText, { color: '#4CAF50' }]}>{t('home.coursesDesc')}</Text>
+            <Text style={styles.panelEmptyHint}>{t('home.coursesHint')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -299,13 +296,13 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(156,39,176,0.15)' }]}>
                 <Ionicons name="musical-notes" size={20} color="#9C27B0" />
               </View>
-              <Text style={styles.panelTitle}>Música</Text>
+              <Text style={styles.panelTitle}>{t('home.music')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
           <View style={styles.panelEmpty}>
-            <Text style={[styles.panelEmptyText, { color: '#9C27B0' }]}>Lo-fi, Jazz, Motivação e mais</Text>
-            <Text style={styles.panelEmptyHint}>Ouça enquanto joga - Spotify e YouTube</Text>
+            <Text style={[styles.panelEmptyText, { color: '#9C27B0' }]}>{t('home.musicDesc')}</Text>
+            <Text style={styles.panelEmptyHint}>{t('home.musicHint')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -320,13 +317,13 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
                 <Ionicons name="sparkles" size={20} color="#FFD700" />
               </View>
-              <Text style={styles.panelTitle}>Coach IA</Text>
+              <Text style={styles.panelTitle}>{t('home.coach')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
           <View style={styles.panelEmpty}>
-            <Text style={[styles.panelEmptyText, { color: '#FFD700' }]}>Mentor virtual de negócios</Text>
-            <Text style={styles.panelEmptyHint}>Dicas personalizadas com inteligência artificial</Text>
+            <Text style={[styles.panelEmptyText, { color: '#FFD700' }]}>{t('home.coachDesc')}</Text>
+            <Text style={styles.panelEmptyHint}>{t('home.coachHint')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -341,7 +338,7 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(33,150,243,0.15)' }]}>
                 <Ionicons name="trending-up" size={20} color="#2196F3" />
               </View>
-              <Text style={styles.panelTitle}>Investimentos</Text>
+              <Text style={styles.panelTitle}>{t('home.investments')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>

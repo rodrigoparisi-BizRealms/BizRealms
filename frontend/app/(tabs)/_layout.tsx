@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function TabsLayout() {
+  const { t } = useLanguage();
   return (
     <Tabs
       screenOptions={{
@@ -27,7 +29,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Início',
+          title: t('nav.home'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={20} color={color} />
           ),
@@ -36,7 +38,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="jobs"
         options={{
-          title: 'Empregos',
+          title: t('nav.jobs'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="briefcase" size={20} color={color} />
           ),
@@ -45,7 +47,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="companies"
         options={{
-          title: 'Empresas',
+          title: t('nav.companies'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="business" size={20} color={color} />
           ),
@@ -54,7 +56,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="investments"
         options={{
-          title: 'Investir',
+          title: t('nav.investments'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trending-up" size={20} color={color} />
           ),
@@ -63,7 +65,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="store"
         options={{
-          title: 'Loja',
+          title: t('nav.store'),
           tabBarActiveTintColor: '#E91E63',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="storefront" size={20} color={color} />
@@ -73,7 +75,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: t('nav.profile'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={20} color={color} />
           ),
