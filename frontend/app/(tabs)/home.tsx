@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { useSounds } from '../../hooks/useSounds';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -38,6 +39,7 @@ const formatMoney = (value: number) => {
 export default function Home() {
   const { user, token, refreshUser } = useAuth();
   const router = useRouter();
+  const { play } = useSounds();
   const [stats, setStats] = useState<any>(null);
   const [portfolio, setPortfolio] = useState<any>(null);
   const [companies, setCompanies] = useState<any>(null);
@@ -189,7 +191,7 @@ export default function Home() {
         {/* Rankings Panel */}
         <TouchableOpacity
           style={[styles.panelCard, { borderWidth: 1, borderColor: '#FFD70030' }]}
-          onPress={() => router.push('/rankings')}
+          onPress={() => { play('click'); router.push('/rankings'); }}
           activeOpacity={0.7}
         >
           <View style={styles.panelHeader}>
@@ -247,7 +249,7 @@ export default function Home() {
         {/* Bank Panel */}
         <TouchableOpacity
           style={[styles.panelCard, { borderWidth: 1, borderColor: '#1E88E530' }]}
-          onPress={() => router.push('/(tabs)/bank')}
+          onPress={() => { play('click'); router.push('/(tabs)/bank'); }}
           activeOpacity={0.7}
         >
           <View style={styles.panelHeader}>
@@ -268,7 +270,7 @@ export default function Home() {
         {/* Courses Panel */}
         <TouchableOpacity
           style={[styles.panelCard, { borderWidth: 1, borderColor: '#4CAF5030' }]}
-          onPress={() => router.push('/(tabs)/courses')}
+          onPress={() => { play('click'); router.push('/(tabs)/courses'); }}
           activeOpacity={0.7}
         >
           <View style={styles.panelHeader}>
@@ -289,7 +291,7 @@ export default function Home() {
         {/* Investment Portfolio Panel */}
         <TouchableOpacity
           style={styles.panelCard}
-          onPress={() => router.push('/(tabs)/investments')}
+          onPress={() => { play('click'); router.push('/(tabs)/investments'); }}
           activeOpacity={0.7}
         >
           <View style={styles.panelHeader}>
@@ -369,7 +371,7 @@ export default function Home() {
         {/* Companies Panel */}
         <TouchableOpacity
           style={styles.panelCard}
-          onPress={() => router.push('/(tabs)/companies')}
+          onPress={() => { play('click'); router.push('/(tabs)/companies'); }}
           activeOpacity={0.7}
         >
           <View style={styles.panelHeader}>
@@ -419,7 +421,7 @@ export default function Home() {
         {/* Assets Panel */}
         <TouchableOpacity
           style={styles.panelCard}
-          onPress={() => router.push('/(tabs)/patrimonio')}
+          onPress={() => { play('click'); router.push('/(tabs)/patrimonio'); }}
           activeOpacity={0.7}
         >
           <View style={styles.panelHeader}>

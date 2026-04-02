@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useSounds } from '../../hooks/useSounds';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -39,6 +40,7 @@ export default function Companies() {
   // Offers
   const [offers, setOffers] = useState<any[]>([]);
   const [respondingOffer, setRespondingOffer] = useState<string | null>(null);
+  const { play } = useSounds();
 
   const FRANCHISE_SEGMENTS = ['restaurante', 'loja', 'fabrica'];
 
@@ -67,6 +69,7 @@ export default function Companies() {
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/sell`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
         showAlert('Empresa Vendida!', r.data.message);
+        play('sell');
         await loadData(); await refreshUser();
       } catch (e: any) {
         showAlert('Erro', e.response?.data?.detail || 'Erro ao vender');
@@ -87,6 +90,7 @@ export default function Companies() {
           try {
             const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/offers/respond`, { offer_id: offerId, action: 'accept' }, { headers: { Authorization: `Bearer ${token}` } });
             showAlert('Venda Concluída!', r.data.message);
+            play('sell');
             await loadData(); await refreshUser();
           } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro ao aceitar oferta'); }
           finally { setRespondingOffer(null); }

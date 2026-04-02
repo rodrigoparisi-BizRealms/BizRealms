@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
+import { useSounds } from '../../hooks/useSounds';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -33,6 +34,7 @@ const TRIP_ICONS: Record<string, string> = {
 export default function Bank() {
   const { token, user, refreshUser } = useAuth();
   const router = useRouter();
+  const { play } = useSounds();
   const [bankData, setBankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,6 +87,7 @@ export default function Bank() {
         amount, description: purchaseDesc || 'Compra no cartão',
       }, { headers });
       showAlert('Compra Realizada!', r.data.message);
+      play('purchase');
       setShowPurchaseModal(false);
       setPurchaseAmount(''); setPurchaseDesc('');
       await loadBankData();
@@ -102,6 +105,7 @@ export default function Bank() {
         amount: amount || 0,
       }, { headers });
       showAlert('Fatura Paga!', r.data.message);
+      play('success');
       setShowPayBillModal(false);
       setPayBillAmount('');
       await loadBankData(); await refreshUser();
@@ -119,6 +123,7 @@ export default function Bank() {
           trip_id: tripId,
         }, { headers });
         showAlert('Viagem Resgatada!', r.data.message);
+        play('levelup');
         await loadBankData(); await refreshUser();
       } catch (e: any) {
         showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar');
@@ -137,6 +142,7 @@ export default function Bank() {
         amount, type: loanType, months,
       }, { headers });
       showAlert('Empréstimo Aprovado!', r.data.message);
+      play('coin');
       setShowLoanModal(false);
       setLoanAmount('');
       await loadBankData(); await refreshUser();
