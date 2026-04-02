@@ -309,6 +309,27 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
+        {/* AI Coach Panel */}
+        <TouchableOpacity
+          style={[styles.panelCard, { borderWidth: 1, borderColor: '#FFD70030' }]}
+          onPress={() => { play('click'); router.push('/(tabs)/coaching'); }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
+                <Ionicons name="sparkles" size={20} color="#FFD700" />
+              </View>
+              <Text style={styles.panelTitle}>Coach IA</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          <View style={styles.panelEmpty}>
+            <Text style={[styles.panelEmptyText, { color: '#FFD700' }]}>Mentor virtual de negócios</Text>
+            <Text style={styles.panelEmptyHint}>Dicas personalizadas com inteligência artificial</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Investment Portfolio Panel */}
         <TouchableOpacity
           style={styles.panelCard}

@@ -4025,6 +4025,96 @@ async def respond_to_offer(request: dict, current_user: dict = Depends(get_curre
     }
 
 
+# ==================== AI COACHING ====================
+
+COACHING_SYSTEM_PROMPT = """Você é o Coach Virtual de Negócios do jogo Business Empire: RichMan. 
+Você é um mentor experiente, motivador e direto. Fale em português do Brasil.
+Analise os dados do jogador e dê conselhos estratégicos personalizados.
+Seja breve (max 3-4 parágrafos), use emojis ocasionalmente, e sempre termine com uma dica acionável.
+Você pode sugerir: investir em ações/cripto, comprar empresas, fazer cursos, usar o banco, comprar imóveis.
+Adapte o tom ao nível do jogador: iniciante (nível 1-10), intermediário (10-30), avançado (30+)."""
+
+@api_router.post("/coaching/advice")
+async def get_coaching_advice(request: dict, current_user: dict = Depends(get_current_user)):
+    """Get AI coaching advice based on player stats"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    user_question = request.get('question', 'Me dê dicas para crescer no jogo')
+    
+    user = await db.users.find_one({"id": current_user['id']})
+    companies = await db.user_companies.find({"user_id": current_user['id']}).to_list(500)
+    investments = await db.user_investments.find({"user_id": current_user['id']}).to_list(100)
+    assets = await db.user_assets.find({"user_id": current_user['id']}).to_list(100)
+    courses = await db.user_courses.find({"user_id": current_user['id']}).to_list(50)
+    loans = await db.bank_loans.find({"user_id": current_user['id'], "status": "active"}).to_list(10)
+    
+    inv_value = sum(i.get('current_value', i.get('amount', 0) * i.get('current_price', i.get('purchase_price', 0))) for i in investments)
+    comp_revenue = sum(c.get('monthly_revenue', 0) for c in companies)
+    comp_value = sum(c.get('purchase_price', 0) for c in companies)
+    asset_value = sum(a.get('current_value', a.get('purchase_price', 0)) for a in assets)
+    total_debt = sum(l.get('remaining_balance', 0) for l in loans)
+    
+    player_context = f"""
+DADOS DO JOGADOR:
+- Nome: {user.get('username', 'Jogador')}
+- Nível: {user.get('level', 1)} | XP: {user.get('experience', 0)}
+- Dinheiro: R$ {user.get('money', 0):,.2f}
+- Empresas: {len(companies)} (receita mensal: R$ {comp_revenue:,.2f}, valor total: R$ {comp_value:,.2f})
+- Investimentos: {len(investments)} (valor: R$ {inv_value:,.2f})
+- Imóveis/Bens: {len(assets)} (valor: R$ {asset_value:,.2f})
+- Cursos feitos: {len(courses)}
+- Dívidas: R$ {total_debt:,.2f}
+- Patrimônio líquido: R$ {(user.get('money', 0) + inv_value + comp_value + asset_value - total_debt):,.2f}
+- Habilidades: {user.get('skills', {})}
+
+PERGUNTA DO JOGADOR: {user_question}
+"""
+    
+    try:
+        llm_key = os.getenv('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"coaching-{current_user['id']}-{datetime.utcnow().strftime('%Y%m%d%H')}",
+            system_message=COACHING_SYSTEM_PROMPT,
+        )
+        chat.with_model("openai", "gpt-4.1-mini")
+        
+        msg = UserMessage(text=player_context)
+        response = await chat.send_message(msg)
+        
+        await db.coaching_history.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user['id'],
+            "question": user_question,
+            "response": response,
+            "player_level": user.get('level', 1),
+            "created_at": datetime.utcnow(),
+        })
+        
+        return {"success": True, "advice": response, "player_level": user.get('level', 1)}
+    except Exception as e:
+        logger.error(f"Coaching AI error: {e}")
+        level = user.get('level', 1)
+        if level < 10:
+            fallback = "Foque em fazer cursos para aumentar seus ganhos e completar trabalhos para subir de nível. Invista em empresas pequenas para começar!"
+        elif level < 30:
+            fallback = "Diversifique! Compre ações e cripto, invista em imóveis e expanda suas franquias. Use o banco para empréstimos estratégicos."
+        else:
+            fallback = "Você já é um magnata! Foque em fusões de empresas, investimentos de alto risco e complete os cursos avançados de Harvard."
+        return {"success": True, "advice": fallback, "player_level": level, "fallback": True}
+
+
+@api_router.get("/coaching/history")
+async def get_coaching_history(current_user: dict = Depends(get_current_user)):
+    """Get coaching conversation history"""
+    history = await db.coaching_history.find(
+        {"user_id": current_user['id']}
+    ).sort("created_at", -1).to_list(20)
+    for h in history:
+        h.pop('_id', None)
+        h['created_at'] = h['created_at'].isoformat() if isinstance(h.get('created_at'), datetime) else str(h.get('created_at', ''))
+    return {"history": history}
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
