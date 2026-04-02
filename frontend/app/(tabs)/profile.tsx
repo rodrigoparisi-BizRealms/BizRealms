@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
@@ -23,6 +24,7 @@ const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Profile() {
   const { user, token, logout, refreshUser } = useAuth();
+  const { locale, setLocale, languages } = useLanguage();
   const router = useRouter();
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -553,6 +555,30 @@ export default function Profile() {
                   </Text>
                 </View>
               </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Language Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="language" size={22} color="#2196F3" />
+            <Text style={styles.sectionTitle}>Idioma / Language</Text>
+          </View>
+          <View style={[styles.card, { padding: 12 }]}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {languages.map(lang => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, backgroundColor: '#2a2a2a', borderWidth: 2, borderColor: locale === lang.code ? '#2196F3' : 'transparent' },
+                  ]}
+                  onPress={() => setLocale(lang.code)}
+                >
+                  <Text style={{ fontSize: 18 }}>{lang.flag}</Text>
+                  <Text style={{ color: locale === lang.code ? '#2196F3' : '#ccc', fontSize: 13, fontWeight: locale === lang.code ? 'bold' : 'normal' }}>{lang.name}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </View>
