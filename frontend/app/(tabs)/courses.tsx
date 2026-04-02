@@ -25,6 +25,9 @@ interface Course {
   skill_boost: Record<string, number>;
   duration: string;
   level_required: number;
+  institution?: string;
+  category?: string;
+  icon?: string;
 }
 
 interface MyCourse {
@@ -191,69 +194,75 @@ export default function Courses() {
           const completed = isCompleted(course.id);
           const canAfford = (user?.money || 0) >= course.cost;
           const hasLevel = (user?.level || 1) >= course.level_required;
+          const isLocked = !hasLevel;
 
           return (
-            <View key={course.id} style={[styles.courseCard, completed && styles.courseCardCompleted]}>
+            <View key={course.id} style={[styles.courseCard, completed && styles.courseCardCompleted, isLocked && styles.courseCardLocked]}>
+              {isLocked && (
+                <View style={styles.lockedOverlay}>
+                  <Ionicons name="lock-closed" size={20} color="#F44336" />
+                  <Text style={styles.lockedText}>Nível {course.level_required}</Text>
+                </View>
+              )}
               <View style={styles.courseHeader}>
                 <View style={styles.courseTitleContainer}>
-                  <Text style={styles.courseName}>{course.name}</Text>
+                  <View style={[styles.courseIconBg, { backgroundColor: isLocked ? '#3a3a3a' : '#4CAF5020' }]}>
+                    <Ionicons name={(course.icon || 'school') as any} size={20} color={isLocked ? '#666' : '#4CAF50'} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.courseName, isLocked && { color: '#666' }]}>{course.name}</Text>
+                    {course.institution && (
+                      <Text style={styles.courseInstitution}>{course.institution}</Text>
+                    )}
+                  </View>
                   {completed && (
                     <View style={styles.completedBadge}>
                       <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                      <Text style={styles.completedText}>Concluído</Text>
                     </View>
                   )}
                 </View>
-                <Text style={[styles.courseCost, !canAfford && !completed && styles.courseCostExpensive]}>
-                  R$ {course.cost.toLocaleString('pt-BR')}
-                </Text>
               </View>
 
-              <Text style={styles.courseDescription}>{course.description}</Text>
+              <Text style={[styles.courseDescription, isLocked && { color: '#555' }]}>{course.description}</Text>
 
               <View style={styles.benefitsContainer}>
-                <View style={styles.benefitItem}>
-                  <Ionicons name="trending-up" size={16} color="#4CAF50" />
-                  <Text style={styles.benefitText}>
-                    +{(course.earnings_boost * 100).toFixed(0)}% ganhos permanentes
-                  </Text>
-                </View>
-
-                {Object.entries(course.skill_boost).map(([skill, boost]) => (
-                  <View key={skill} style={styles.benefitItem}>
-                    <Ionicons name="star" size={16} color="#FF9800" />
-                    <Text style={styles.benefitText}>
-                      +{boost} {skill.charAt(0).toUpperCase() + skill.slice(1)}
-                    </Text>
-                  </View>
-                ))}
-
-                <View style={styles.benefitItem}>
-                  <Ionicons name="time" size={16} color="#888" />
-                  <Text style={styles.benefitText}>{course.duration}</Text>
-                </View>
-
-                {course.level_required > 1 && (
+                <View style={styles.benefitRow}>
                   <View style={styles.benefitItem}>
-                    <Ionicons name="lock-closed" size={16} color={hasLevel ? '#888' : '#F44336'} />
-                    <Text style={[styles.benefitText, !hasLevel && styles.requirementNotMet]}>
-                      Requer nível {course.level_required}
+                    <Ionicons name="trending-up" size={14} color={isLocked ? '#555' : '#4CAF50'} />
+                    <Text style={[styles.benefitText, isLocked && { color: '#555' }]}>
+                      +{(course.earnings_boost * 100).toFixed(0)}% ganhos
                     </Text>
                   </View>
-                )}
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="cash" size={14} color={!canAfford && !completed && !isLocked ? '#F44336' : isLocked ? '#555' : '#FFD700'} />
+                    <Text style={[styles.benefitText, !canAfford && !completed && !isLocked && { color: '#F44336' }, isLocked && { color: '#555' }]}>
+                      R$ {course.cost.toLocaleString('pt-BR')}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.skillChips}>
+                  {Object.entries(course.skill_boost).map(([skill, boost]) => (
+                    <View key={skill} style={[styles.skillChip, isLocked && { backgroundColor: '#2a2a2a' }]}>
+                      <Text style={[styles.skillChipText, isLocked && { color: '#555' }]}>
+                        +{boost} {skill.charAt(0).toUpperCase() + skill.slice(1)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
 
-              {!completed && (
+              {!completed && !isLocked && (
                 <TouchableOpacity
                   style={[
                     styles.enrollButton,
-                    (!canAfford || !hasLevel) && styles.enrollButtonDisabled,
+                    !canAfford && styles.enrollButtonDisabled,
                   ]}
                   onPress={() => handleEnroll(course)}
                 >
-                  <Ionicons name="school" size={20} color="#fff" />
+                  <Ionicons name="school" size={18} color="#fff" />
                   <Text style={styles.enrollButtonText}>
-                    {!hasLevel ? `Requer Nível ${course.level_required}` : !canAfford ? 'Dinheiro Insuficiente' : 'Fazer Curso'}
+                    {!canAfford ? 'Dinheiro Insuficiente' : 'Fazer Curso'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -342,51 +351,72 @@ const styles = StyleSheet.create({
   courseCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 12,
   },
   courseCardCompleted: {
     opacity: 0.7,
     borderWidth: 1,
     borderColor: '#4CAF50',
   },
-  courseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+  courseCardLocked: {
+    opacity: 0.6,
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  courseTitleContainer: {
-    flex: 1,
+  lockedOverlay: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    backgroundColor: '#F4433620',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  lockedText: {
+    color: '#F44336',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  courseHeader: {
+    marginBottom: 8,
+  },
+  courseTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  courseIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   courseName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
   },
+  courseInstitution: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
+  },
   completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#2a4a2a',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   completedText: {
     fontSize: 12,
     color: '#4CAF50',
     fontWeight: 'bold',
-  },
-  courseCost: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
-  courseCostExpensive: {
-    color: '#F44336',
   },
   courseDescription: {
     fontSize: 14,
@@ -396,16 +426,37 @@ const styles = StyleSheet.create({
   },
   benefitsContainer: {
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   benefitText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#aaa',
+  },
+  skillChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  skillChip: {
+    backgroundColor: '#FF980015',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  skillChipText: {
+    color: '#FF9800',
+    fontSize: 12,
+    fontWeight: '600',
   },
   requirementNotMet: {
     color: '#F44336',

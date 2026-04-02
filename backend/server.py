@@ -1233,68 +1233,194 @@ async def get_current_job(current_user: dict = Depends(get_current_user)):
 # COURSES SYSTEM
 @api_router.get("/courses")
 async def get_courses():
-    """Get available courses"""
+    """Get available courses - Harvard-inspired real courses"""
     courses = [
+        # Level 1-5: Basic courses
         {
-            "id": "excel-avancado",
-            "name": "Excel Avançado",
-            "description": "Domine planilhas e automação",
+            "id": "cs50-intro",
+            "name": "CS50: Intro to Computer Science",
+            "description": "Curso de Harvard - Fundamentos de programação e pensamento computacional",
+            "institution": "Harvard University",
             "cost": 500,
-            "earnings_boost": 0.10,  # 10% permanent boost
+            "earnings_boost": 0.08,
             "skill_boost": {"técnico": 1},
             "duration": "Instantâneo",
-            "level_required": 1
+            "level_required": 1,
+            "category": "tecnologia",
+            "icon": "laptop",
         },
         {
-            "id": "gestao-projetos",
-            "name": "Gestão de Projetos",
-            "description": "Aprenda metodologias ágeis e PMI",
-            "cost": 1200,
-            "earnings_boost": 0.20,  # 20% permanent boost
-            "skill_boost": {"liderança": 2},
+            "id": "excel-avancado",
+            "name": "Excel & Análise de Dados",
+            "description": "Domine planilhas, fórmulas avançadas e automação com VBA",
+            "institution": "MIT OpenCourseWare",
+            "cost": 600,
+            "earnings_boost": 0.10,
+            "skill_boost": {"técnico": 1},
             "duration": "Instantâneo",
-            "level_required": 3
+            "level_required": 1,
+            "category": "tecnologia",
+            "icon": "grid",
+        },
+        {
+            "id": "negotiation-mastery",
+            "name": "Negociação e Persuasão",
+            "description": "Técnicas de negociação de alto impacto - Yale School of Management",
+            "institution": "Yale University",
+            "cost": 700,
+            "earnings_boost": 0.12,
+            "skill_boost": {"negociação": 2},
+            "duration": "Instantâneo",
+            "level_required": 2,
+            "category": "negocios",
+            "icon": "people",
+        },
+        {
+            "id": "financial-markets",
+            "name": "Financial Markets",
+            "description": "Curso de Robert Shiller sobre mercados financeiros globais",
+            "institution": "Yale University",
+            "cost": 800,
+            "earnings_boost": 0.12,
+            "skill_boost": {"financeiro": 2},
+            "duration": "Instantâneo",
+            "level_required": 3,
+            "category": "financas",
+            "icon": "trending-up",
         },
         {
             "id": "ingles-negocios",
-            "name": "Inglês para Negócios",
-            "description": "Comunicação profissional internacional",
-            "cost": 800,
-            "earnings_boost": 0.15,  # 15% permanent boost
+            "name": "Business English Communication",
+            "description": "Comunicação profissional internacional para executivos",
+            "institution": "Cambridge University",
+            "cost": 900,
+            "earnings_boost": 0.15,
             "skill_boost": {"comunicação": 2},
             "duration": "Instantâneo",
-            "level_required": 2
+            "level_required": 3,
+            "category": "comunicacao",
+            "icon": "language",
+        },
+        # Level 5-10: Intermediate courses
+        {
+            "id": "gestao-projetos",
+            "name": "Gestão de Projetos (PMP/Agile)",
+            "description": "Metodologias ágeis, Scrum, Kanban e PMBOK - Stanford Online",
+            "institution": "Stanford University",
+            "cost": 1500,
+            "earnings_boost": 0.18,
+            "skill_boost": {"liderança": 2},
+            "duration": "Instantâneo",
+            "level_required": 5,
+            "category": "gestao",
+            "icon": "clipboard",
         },
         {
             "id": "analise-dados",
-            "name": "Análise de Dados",
-            "description": "Power BI, Python e visualização",
-            "cost": 1500,
-            "earnings_boost": 0.25,  # 25% permanent boost
+            "name": "Data Science & Machine Learning",
+            "description": "Python, Power BI, ML e visualização de dados avançada",
+            "institution": "Harvard University",
+            "cost": 2000,
+            "earnings_boost": 0.22,
             "skill_boost": {"técnico": 2, "financeiro": 1},
             "duration": "Instantâneo",
-            "level_required": 5
+            "level_required": 7,
+            "category": "tecnologia",
+            "icon": "analytics",
         },
         {
-            "id": "negociacao-vendas",
-            "name": "Negociação e Vendas",
-            "description": "Técnicas avançadas de fechamento",
-            "cost": 600,
-            "earnings_boost": 0.12,  # 12% permanent boost
-            "skill_boost": {"negociação": 2},
+            "id": "marketing-digital",
+            "name": "Digital Marketing Strategy",
+            "description": "SEO, Growth Hacking, Social Media e funis de conversão",
+            "institution": "Wharton School (UPenn)",
+            "cost": 1800,
+            "earnings_boost": 0.20,
+            "skill_boost": {"comunicação": 2, "negociação": 1},
             "duration": "Instantâneo",
-            "level_required": 1
+            "level_required": 8,
+            "category": "negocios",
+            "icon": "megaphone",
         },
+        # Level 10-20: Advanced courses
         {
             "id": "lideranca-estrategica",
-            "name": "Liderança Estratégica",
-            "description": "MBA executivo resumido",
-            "cost": 3000,
-            "earnings_boost": 0.40,  # 40% permanent boost
-            "skill_boost": {"liderança": 3, "financeiro": 2},
+            "name": "Strategic Leadership & Management",
+            "description": "MBA executivo resumido - liderança em ambientes complexos",
+            "institution": "Harvard Business School",
+            "cost": 3500,
+            "earnings_boost": 0.30,
+            "skill_boost": {"liderança": 3, "financeiro": 1},
             "duration": "Instantâneo",
-            "level_required": 10
-        }
+            "level_required": 10,
+            "category": "gestao",
+            "icon": "trophy",
+        },
+        {
+            "id": "private-equity",
+            "name": "Private Equity & Venture Capital",
+            "description": "Análise de investimentos, valuation e fundraising",
+            "institution": "Harvard Business School",
+            "cost": 4000,
+            "earnings_boost": 0.28,
+            "skill_boost": {"financeiro": 3},
+            "duration": "Instantâneo",
+            "level_required": 12,
+            "category": "financas",
+            "icon": "cash",
+        },
+        {
+            "id": "innovation-entrepreneurship",
+            "name": "Innovation & Entrepreneurship",
+            "description": "De startup a IPO - metodologia Lean e Design Thinking",
+            "institution": "MIT Sloan",
+            "cost": 5000,
+            "earnings_boost": 0.35,
+            "skill_boost": {"liderança": 2, "técnico": 2},
+            "duration": "Instantâneo",
+            "level_required": 15,
+            "category": "negocios",
+            "icon": "bulb",
+        },
+        # Level 20+: Elite courses
+        {
+            "id": "global-economics",
+            "name": "Global Economics & Policy",
+            "description": "Macroeconomia global, políticas monetárias e geopolítica",
+            "institution": "Harvard Kennedy School",
+            "cost": 8000,
+            "earnings_boost": 0.40,
+            "skill_boost": {"financeiro": 3, "comunicação": 2},
+            "duration": "Instantâneo",
+            "level_required": 20,
+            "category": "financas",
+            "icon": "globe",
+        },
+        {
+            "id": "corporate-governance",
+            "name": "Corporate Governance & Ethics",
+            "description": "Governança corporativa, compliance e ESG para CEOs",
+            "institution": "Stanford GSB",
+            "cost": 10000,
+            "earnings_boost": 0.45,
+            "skill_boost": {"liderança": 3, "negociação": 2},
+            "duration": "Instantâneo",
+            "level_required": 25,
+            "category": "gestao",
+            "icon": "shield-checkmark",
+        },
+        {
+            "id": "executive-mba",
+            "name": "Executive MBA Program",
+            "description": "Programa completo de MBA executivo - o curso definitivo",
+            "institution": "Harvard Business School",
+            "cost": 25000,
+            "earnings_boost": 0.60,
+            "skill_boost": {"liderança": 3, "financeiro": 3, "comunicação": 2, "negociação": 2},
+            "duration": "Instantâneo",
+            "level_required": 40,
+            "category": "gestao",
+            "icon": "school",
+        },
     ]
     return courses
 
@@ -1310,19 +1436,16 @@ async def enroll_course(request: CourseEnrollRequest, current_user: dict = Depen
     if existing:
         raise HTTPException(status_code=400, detail="Você já fez este curso!")
     
-    # Get course details (in real app, this would be from DB)
-    courses_list = [
-        {"id": "excel-avancado", "name": "Excel Avançado", "cost": 500, "earnings_boost": 0.10, "skill_boost": {"técnico": 1}},
-        {"id": "gestao-projetos", "name": "Gestão de Projetos", "cost": 1200, "earnings_boost": 0.20, "skill_boost": {"liderança": 2}},
-        {"id": "ingles-negocios", "name": "Inglês para Negócios", "cost": 800, "earnings_boost": 0.15, "skill_boost": {"comunicação": 2}},
-        {"id": "analise-dados", "name": "Análise de Dados", "cost": 1500, "earnings_boost": 0.25, "skill_boost": {"técnico": 2, "financeiro": 1}},
-        {"id": "negociacao-vendas", "name": "Negociação e Vendas", "cost": 600, "earnings_boost": 0.12, "skill_boost": {"negociação": 2}},
-        {"id": "lideranca-estrategica", "name": "Liderança Estratégica", "cost": 3000, "earnings_boost": 0.40, "skill_boost": {"liderança": 3, "financeiro": 2}}
-    ]
-    
-    course = next((c for c in courses_list if c['id'] == request.course_id), None)
+    # Get course details from the full courses list
+    all_courses = (await get_courses())
+    course = next((c for c in all_courses if c['id'] == request.course_id), None)
     if not course:
         raise HTTPException(status_code=404, detail="Curso não encontrado")
+    
+    # Check level requirement
+    user_level = current_user.get('level', 1)
+    if user_level < course.get('level_required', 1):
+        raise HTTPException(status_code=400, detail=f"Requer nível {course['level_required']}. Seu nível: {user_level}")
     
     # Check if user has enough money
     if current_user.get('money', 0) < course['cost']:

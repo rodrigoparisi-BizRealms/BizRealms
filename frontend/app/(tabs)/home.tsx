@@ -265,6 +265,27 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
+        {/* Courses Panel */}
+        <TouchableOpacity
+          style={[styles.panelCard, { borderWidth: 1, borderColor: '#4CAF5030' }]}
+          onPress={() => router.push('/(tabs)/courses')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                <Ionicons name="school" size={20} color="#4CAF50" />
+              </View>
+              <Text style={styles.panelTitle}>Cursos Harvard & MIT</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          <View style={styles.panelEmpty}>
+            <Text style={[styles.panelEmptyText, { color: '#4CAF50' }]}>Boost permanente nos ganhos</Text>
+            <Text style={styles.panelEmptyHint}>14 cursos de universidades top do mundo</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Investment Portfolio Panel */}
         <TouchableOpacity
           style={styles.panelCard}
