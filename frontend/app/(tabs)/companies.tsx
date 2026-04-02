@@ -226,7 +226,7 @@ export default function Companies() {
           {owned.length > 0 && (
             <View style={s.revenueCard}>
               <Text style={s.revenueLabel}>{t('companies.revenue')}</Text>
-              <Text style={s.revenueValue}>R$ {totalRevenue.toLocaleString('pt-BR')}/mês</Text>
+              <Text style={s.revenueValue}>{formatMoney(totalRevenue)}/{t('general.month')}</Text>
               {hasBoostActive && <View style={s.boostBadge}><Ionicons name="flash" size={14} color="#000" /><Text style={s.boostText}>2x BOOST ATIVO</Text></View>}
               <View style={s.actionRow}>
                 <TouchableOpacity style={[s.collectBtn, collecting && s.disabled]} onPress={handleCollect} disabled={collecting}>
@@ -262,7 +262,7 @@ export default function Companies() {
                 <View style={[s.companyIcon, { backgroundColor: c.color }]}><Ionicons name={c.icon as any} size={20} color="#fff" /></View>
                 <View style={s.companyInfo}><Text style={s.companyName}>{c.name}</Text><Text style={s.companySegment}>{SEGMENT_LABELS[c.segment] || c.segment} • Nível {c.level || 1}</Text></View>
                 <View style={s.companyRevenue}>
-                  <Text style={s.revText}>R$ {c.effective_revenue?.toLocaleString('pt-BR')}</Text>
+                  <Text style={s.revText}>{formatMoney(c.effective_revenue || 0)}</Text>
                   <Text style={s.revLabel}>/mês</Text>
                   {c.ad_boost_active && <Text style={s.boostMini}>2x!</Text>}
                 </View>
@@ -270,7 +270,7 @@ export default function Companies() {
               <Text style={s.companyDesc}>{c.description}</Text>
               <View style={s.companyMeta}>
                 <Text style={s.metaText}>👥 {c.employees} func.</Text>
-                <Text style={s.metaText}>💰 Total: R$ {(c.total_collected || 0).toLocaleString('pt-BR', {maximumFractionDigits: 0})}</Text>
+                <Text style={s.metaText}>💰 Total: {formatMoney(c.total_collected || 0)}</Text>
               </View>
               {c.is_franchise && (
                 <View style={s.franchiseBadge}><Ionicons name="git-branch" size={14} color="#9C27B0" /><Text style={s.franchiseBadgeText}>Franquia de {c.parent_company_name}</Text></View>
@@ -408,11 +408,11 @@ export default function Companies() {
                   <Text style={s.buyName}>{c.name}</Text>
                   <Text style={s.buySegment}>{SEGMENT_LABELS[c.segment]}</Text>
                 </View>
-                <Text style={s.buyPrice}>R$ {c.price.toLocaleString('pt-BR')}</Text>
+                <Text style={s.buyPrice}>{formatMoney(c.price)}</Text>
               </View>
               <Text style={s.buyDesc}>{c.description}</Text>
               <View style={s.buyMeta}>
-                <Text style={s.metaText}>💵 R$ {c.monthly_revenue.toLocaleString('pt-BR')}/mês</Text>
+                <Text style={s.metaText}>💵 {formatMoney(c.monthly_revenue)}/{t('general.month')}</Text>
                 <Text style={s.metaText}>👥 {c.employees} func.</Text>
                 <Text style={s.metaText}>📊 Nível {c.level_required}</Text>
               </View>

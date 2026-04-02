@@ -245,7 +245,7 @@ export default function Music() {
           style={[s.categoryChip, activeCategory === 'all' && s.categoryChipActive]}
           onPress={() => setActiveCategory('all')}
         >
-          <Text style={[s.categoryChipText, activeCategory === 'all' && s.categoryChipTextActive]}>Todas</Text>
+          <Text style={[s.categoryChipText, activeCategory === 'all' && s.categoryChipTextActive]}>{t('music.all')}</Text>
         </TouchableOpacity>
         {(Object.keys(CATEGORY_LABELS) as PlaylistCategory[]).map(cat => (
           <TouchableOpacity
@@ -302,7 +302,7 @@ export default function Music() {
 
         {/* External App Links */}
         <View style={s.externalSection}>
-          <Text style={s.externalTitle}>Abrir em App Externo</Text>
+          <Text style={s.externalTitle}>{t('music.openExternal')}</Text>
           <View style={s.externalRow}>
             <TouchableOpacity
               style={[s.externalCard, { borderColor: '#1DB954' }]}

@@ -199,6 +199,8 @@ export default {
     youHave: 'You own',
     confirm: 'Confirm',
     noTransactions: 'No transactions yet',
+    generateEvent: 'Generate Market Event',
+    goToMarket: 'Go to Market',
     date: 'Date',
     type: 'Type',
     asset: 'Asset',
@@ -448,6 +450,8 @@ export default {
     remove: 'Remove',
     delete: 'Remove',
     add: 'Add',
+    month: 'mo',
+    skills: 'Skills',
   },
   currency: {
     symbol: '$',

@@ -204,6 +204,8 @@ export default {
     youHave: 'Você possui',
     confirm: 'Confirmar',
     noTransactions: 'Nenhuma transação ainda',
+    generateEvent: 'Gerar Evento de Mercado',
+    goToMarket: 'Ir para o Mercado',
     date: 'Data',
     type: 'Tipo',
     asset: 'Ativo',
@@ -464,6 +466,8 @@ export default {
     remove: 'Remover',
     delete: 'Remover',
     add: 'Adicionar',
+    month: 'mês',
+    skills: 'Habilidades',
   },
   // Currency
   currency: {

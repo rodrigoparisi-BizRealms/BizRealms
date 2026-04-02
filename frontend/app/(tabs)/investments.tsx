@@ -73,12 +73,12 @@ interface AssetHistory {
 type CategoryType = 'all' | 'acoes' | 'crypto' | 'fundos' | 'commodities';
 type ViewMode = 'market' | 'portfolio';
 
-const CATEGORIES: { key: CategoryType; label: string; icon: string }[] = [
-  { key: 'all', label: 'all', icon: 'grid' },
-  { key: 'acoes', label: 'Ações', icon: 'trending-up' },
-  { key: 'crypto', label: 'Crypto', icon: 'logo-bitcoin' },
-  { key: 'fundos', label: 'Fundos', icon: 'business' },
-  { key: 'commodities', label: 'Commod.', icon: 'diamond' },
+const CATEGORIES: { key: CategoryType; labelKey: string; icon: string }[] = [
+  { key: 'all', labelKey: 'investments.categories.all', icon: 'grid' },
+  { key: 'acoes', labelKey: 'investments.categories.acoes', icon: 'trending-up' },
+  { key: 'crypto', labelKey: 'investments.categories.crypto', icon: 'logo-bitcoin' },
+  { key: 'fundos', labelKey: 'investments.categories.fundos', icon: 'business' },
+  { key: 'commodities', labelKey: 'investments.categories.commodities', icon: 'diamond' },
 ];
 
 function SparklineChart({ data, width, height, color }: { data: number[]; width: number; height: number; color: string }) {
@@ -274,7 +274,7 @@ export default function Investments() {
 
       showAlert(
         tradeType === 'buy' ? 'Compra Realizada!' : 'Venda Realizada!',
-        res.data.message + `\n\nNovo saldo: R$ ${res.data.new_balance.toLocaleString('pt-BR')}`
+        res.data.message + `\n\n${t('investments.availableBalance')}: ${fmtCurrency(res.data.new_balance)}`
       );
 
       setShowTradeModal(false);
@@ -293,10 +293,7 @@ export default function Investments() {
 
   const filteredAssets = category === 'all' ? assets : assets.filter(a => a.category === category);
 
-  const formatCurrency = (val: number) => {
-    if (val >= 1000) return `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    return `R$ ${val.toFixed(2)}`;
-  };
+  const formatCurrency = (val: number) => fmtCurrency(val);
 
   if (loading) {
     return (
@@ -408,7 +405,7 @@ export default function Investments() {
             {marketEvents.length === 0 && (
               <TouchableOpacity style={styles.triggerEventBtn} onPress={handleTriggerEvent} disabled={triggeringEvent}>
                 <Ionicons name="newspaper" size={18} color="#FFD700" />
-                <Text style={styles.triggerEventText}>{triggeringEvent ? 'Aguarde...' : 'Gerar Evento de Mercado'}</Text>
+                <Text style={styles.triggerEventText}>{triggeringEvent ? t('general.loading') : t('investments.generateEvent')}</Text>
               </TouchableOpacity>
             )}
 
@@ -430,7 +427,7 @@ export default function Investments() {
                       styles.categoryTabText,
                       category === cat.key && styles.categoryTabTextActive
                     ]}>
-                      {cat.label}
+                      {t(cat.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -529,7 +526,7 @@ export default function Investments() {
                   Comece a investir comprando ações, cripto ou fundos no mercado
                 </Text>
                 <TouchableOpacity style={styles.goToMarket} onPress={() => setViewMode('market')}>
-                  <Text style={styles.goToMarketText}>Ir para o Mercado</Text>
+                  <Text style={styles.goToMarketText}>{t('investments.goToMarket')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (

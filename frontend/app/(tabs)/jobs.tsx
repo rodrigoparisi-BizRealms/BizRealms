@@ -371,7 +371,7 @@ export default function Jobs() {
 
             <View style={styles.salaryRow}>
               <Text style={styles.currentJobSalary}>
-                R$ {currentJob.salary.toLocaleString('pt-BR')}/mês
+                {formatMoney(currentJob.salary)}/{t('general.month')}
               </Text>
               <Text style={styles.dailyEarnings}>
                 R$ {((currentJob.salary / 30) * (adBoost.active ? adBoost.multiplier : 1)).toFixed(2)}/dia
@@ -465,7 +465,7 @@ export default function Jobs() {
                   </Text>
                   {app.job?.salary && (
                     <Text style={styles.acceptedSalary}>
-                      R$ {app.job.salary.toLocaleString('pt-BR')}/mês
+                      {formatMoney(app.job.salary)}/{t('general.month')}
                     </Text>
                   )}
                 </View>
@@ -512,7 +512,7 @@ export default function Jobs() {
                       <Text style={styles.jobCompany}>{job.company}</Text>
                     </View>
                     <Text style={[styles.jobSalary, job.is_premium && { color: '#FFD700' }]}>
-                      R$ {job.salary.toLocaleString('pt-BR')}
+                      {formatMoney(job.salary)}
                     </Text>
                   </View>
 
