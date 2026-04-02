@@ -288,6 +288,27 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
+        {/* Music Panel */}
+        <TouchableOpacity
+          style={[styles.panelCard, { borderWidth: 1, borderColor: '#9C27B030' }]}
+          onPress={() => { play('click'); router.push('/(tabs)/music'); }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(156,39,176,0.15)' }]}>
+                <Ionicons name="musical-notes" size={20} color="#9C27B0" />
+              </View>
+              <Text style={styles.panelTitle}>Música</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          <View style={styles.panelEmpty}>
+            <Text style={[styles.panelEmptyText, { color: '#9C27B0' }]}>Lo-fi, Jazz, Motivação e mais</Text>
+            <Text style={styles.panelEmptyHint}>Ouça enquanto joga - Spotify e YouTube</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Investment Portfolio Panel */}
         <TouchableOpacity
           style={styles.panelCard}
