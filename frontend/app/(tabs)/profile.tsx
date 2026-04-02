@@ -24,7 +24,7 @@ const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Profile() {
   const { user, token, logout, refreshUser } = useAuth();
-  const { locale, setLocale, languages } = useLanguage();
+  const { locale, setLocale, languages, t, formatMoney } = useLanguage();
   const router = useRouter();
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -372,14 +372,14 @@ export default function Profile() {
               <Text style={styles.levelText}>Nível {user.level}</Text>
             </View>
             <View style={styles.moneyBadge}>
-              <Text style={styles.moneyText}>R$ {(user.money || 0).toLocaleString('pt-BR')}</Text>
+              <Text style={styles.moneyText}>{formatMoney(user.money || 0)}</Text>
             </View>
           </View>
 
           {avatarPhoto && (
             <TouchableOpacity style={styles.removePhotoButton} onPress={handleRemovePhoto}>
               <Ionicons name="trash-outline" size={14} color="#F44336" />
-              <Text style={styles.removePhotoText}>Remover foto</Text>
+              <Text style={styles.removePhotoText}>{t('profile.removePhoto')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -387,7 +387,7 @@ export default function Profile() {
         {/* Skills Section */}
         {user.skills && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Habilidades</Text>
+            <Text style={styles.sectionTitle}>{t('profile.skills')}</Text>
             <View style={styles.skillsGrid}>
               {Object.entries(user.skills).map(([skill, value]: [string, any]) => (
                 <View key={skill} style={styles.skillItem}>
@@ -410,13 +410,13 @@ export default function Profile() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="school" size={22} color="#2196F3" />
-            <Text style={styles.sectionTitle}>Educação</Text>
+            <Text style={styles.sectionTitle}>{t('profile.education')}</Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => setShowEducationModal(true)}
             >
               <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.addButtonText}>Adicionar</Text>
+              <Text style={styles.addButtonText}>{t('profile.add')}</Text>
             </TouchableOpacity>
           </View>
           {user.education && user.education.length > 0 ? (
@@ -443,8 +443,8 @@ export default function Profile() {
           ) : (
             <View style={styles.emptyCard}>
               <Ionicons name="school-outline" size={32} color="#555" />
-              <Text style={styles.emptyText}>Nenhuma educação adicionada</Text>
-              <Text style={styles.emptySubtext}>Adicione educação para ganhar XP e desbloquear vagas</Text>
+              <Text style={styles.emptyText}>{t('profile.noEducation')}</Text>
+              <Text style={styles.emptySubtext}>{t('profile.noEducationHint')}</Text>
             </View>
           )}
         </View>
@@ -453,7 +453,7 @@ export default function Profile() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="ribbon" size={22} color="#FF9800" />
-            <Text style={styles.sectionTitle}>Certificações</Text>
+            <Text style={styles.sectionTitle}>{t('profile.certifications')}</Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => setShowCertModal(true)}
@@ -484,8 +484,8 @@ export default function Profile() {
           ) : (
             <View style={styles.emptyCard}>
               <Ionicons name="ribbon-outline" size={32} color="#555" />
-              <Text style={styles.emptyText}>Nenhuma certificação adicionada</Text>
-              <Text style={styles.emptySubtext}>Certificações aumentam suas habilidades</Text>
+              <Text style={styles.emptyText}>{t('profile.noCert')}</Text>
+              <Text style={styles.emptySubtext}>{t('profile.noCertHint')}</Text>
             </View>
           )}
         </View>
@@ -494,7 +494,7 @@ export default function Profile() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="briefcase" size={22} color="#9C27B0" />
-            <Text style={styles.sectionTitle}>Experiência</Text>
+            <Text style={styles.sectionTitle}>{t('profile.experience')}</Text>
           </View>
           {user.work_experience && user.work_experience.length > 0 ? (
             user.work_experience.map((exp: any) => (
@@ -517,8 +517,8 @@ export default function Profile() {
           ) : (
             <View style={styles.emptyCard}>
               <Ionicons name="briefcase-outline" size={32} color="#555" />
-              <Text style={styles.emptyText}>Nenhuma experiência ainda</Text>
-              <Text style={styles.emptySubtext}>Candidate-se a vagas na aba Empregos</Text>
+              <Text style={styles.emptyText}>{t('profile.noExperience')}</Text>
+              <Text style={styles.emptySubtext}>{t('profile.noExperienceHint')}</Text>
             </View>
           )}
         </View>
@@ -527,10 +527,10 @@ export default function Profile() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="person-circle" size={22} color="#4CAF50" />
-            <Text style={styles.sectionTitle}>Dados Pessoais</Text>
+            <Text style={styles.sectionTitle}>{t('profile.personalData')}</Text>
             <TouchableOpacity style={styles.addButton} onPress={openPersonalData}>
               <Ionicons name="create" size={20} color="#fff" />
-              <Text style={styles.addButtonText}>Editar</Text>
+              <Text style={styles.addButtonText}>{t('profile.edit')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>
@@ -563,7 +563,7 @@ export default function Profile() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="language" size={22} color="#2196F3" />
-            <Text style={styles.sectionTitle}>Idioma / Language</Text>
+            <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
           </View>
           <View style={[styles.card, { padding: 12 }]}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -587,7 +587,7 @@ export default function Profile() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="wallet" size={22} color="#FFD700" />
-            <Text style={styles.sectionTitle}>Chave PIX (Premiação Real)</Text>
+            <Text style={styles.sectionTitle}>{t('profile.pixKey')}</Text>
             <TouchableOpacity style={[styles.addButton, { backgroundColor: '#FFD700' }]} onPress={openPixModal}>
               <Ionicons name="create" size={20} color="#000" />
               <Text style={[styles.addButtonText, { color: '#000' }]}>{(user as any)?.pix_key ? 'Editar' : 'Cadastrar'}</Text>
@@ -618,7 +618,7 @@ export default function Profile() {
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out" size={24} color="#F44336" />
-          <Text style={styles.logoutText}>Sair</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -631,7 +631,7 @@ export default function Profile() {
       >
         <View style={styles.photoModalOverlay}>
           <View style={styles.photoModalContent}>
-            <Text style={styles.photoModalTitle}>Nova Foto de Perfil</Text>
+            <Text style={styles.photoModalTitle}>{t('profile.newPhoto')}</Text>
 
             {newPhoto && (
               <Image source={{ uri: newPhoto }} style={styles.photoPreview} />
@@ -675,14 +675,14 @@ export default function Profile() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Adicionar Educação</Text>
+              <Text style={styles.modalTitle}>{t('profile.addEducation')}</Text>
               <TouchableOpacity onPress={() => setShowEducationModal(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Grau</Text>
+              <Text style={styles.label}>{t('profile.degree')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: Graduação em..."
@@ -691,7 +691,7 @@ export default function Profile() {
                 onChangeText={setEduDegree}
               />
 
-              <Text style={styles.label}>Área/Campo</Text>
+              <Text style={styles.label}>{t('profile.field')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: Administração, Tecnologia..."
@@ -700,7 +700,7 @@ export default function Profile() {
                 onChangeText={setEduField}
               />
 
-              <Text style={styles.label}>Instituição</Text>
+              <Text style={styles.label}>{t('profile.institution')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Nome da universidade/escola"
@@ -709,7 +709,7 @@ export default function Profile() {
                 onChangeText={setEduInstitution}
               />
 
-              <Text style={styles.label}>Ano de Conclusão</Text>
+              <Text style={styles.label}>{t('profile.yearCompleted')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="2024"
@@ -719,7 +719,7 @@ export default function Profile() {
                 keyboardType="number-pad"
               />
 
-              <Text style={styles.label}>Nível</Text>
+              <Text style={styles.label}>{t('profile.levelLabel')}</Text>
               <View style={styles.levelSelector}>
                 {getEducationLevelOptions().map(opt => (
                   <TouchableOpacity
@@ -763,14 +763,14 @@ export default function Profile() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Adicionar Certificação</Text>
+              <Text style={styles.modalTitle}>{t('profile.addCert')}</Text>
               <TouchableOpacity onPress={() => setShowCertModal(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Nome da Certificação</Text>
+              <Text style={styles.label}>{t('profile.certName')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: PMP, AWS Certified..."
@@ -779,7 +779,7 @@ export default function Profile() {
                 onChangeText={setCertName}
               />
 
-              <Text style={styles.label}>Emissor</Text>
+              <Text style={styles.label}>{t('profile.issuer')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Organização que emitiu"
@@ -788,7 +788,7 @@ export default function Profile() {
                 onChangeText={setCertIssuer}
               />
 
-              <Text style={styles.label}>Boost de Habilidade (1-10)</Text>
+              <Text style={styles.label}>{t('profile.skillBoost')}</Text>
               <View style={styles.boostSelector}>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                   <TouchableOpacity
@@ -869,7 +869,7 @@ export default function Profile() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Chave PIX</Text>
+                <Text style={styles.modalTitle}>{t('profile.pixKeyLabel')}</Text>
                 <TouchableOpacity onPress={() => setShowPixModal(false)}>
                   <Ionicons name="close" size={28} color="#fff" />
                 </TouchableOpacity>
@@ -878,7 +878,7 @@ export default function Profile() {
                 Configure sua chave PIX para receber premiações em dinheiro real dos rankings mensais.
               </Text>
 
-              <Text style={styles.inputLabel}>Tipo de Chave</Text>
+              <Text style={styles.inputLabel}>{t('profile.pixType')}</Text>
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
                 {[
                   { key: 'cpf', label: 'CPF' },

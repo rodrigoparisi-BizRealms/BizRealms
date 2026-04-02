@@ -9,10 +9,9 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useSounds } from '../../hooks/useSounds';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-
-const formatMoney = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const showAlert = (title: string, msg: string) => {
   if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
@@ -35,6 +34,7 @@ export default function Bank() {
   const { token, user, refreshUser } = useAuth();
   const router = useRouter();
   const { play } = useSounds();
+  const { t, formatMoney } = useLanguage();
   const [bankData, setBankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -153,7 +153,7 @@ export default function Bank() {
 
   // Pay Loan Installment
   const handlePayLoan = (loanId: string, payment: number) => {
-    confirmAction('Pagar Parcela', `Pagar parcela de ${formatMoney(payment)}?`, async () => {
+    confirmAction(t('bank.payInstallment'), `${t('bank.payInstallment')} ${formatMoney(payment)}?`, async () => {
       setActionLoading(true);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/loan/pay`, {
@@ -188,7 +188,7 @@ export default function Bank() {
       <SafeAreaView style={s.container}>
         <View style={s.center}>
           <ActivityIndicator size="large" color="#1E88E5" />
-          <Text style={s.loadingText}>Carregando banco...</Text>
+          <Text style={s.loadingText}>{t('general.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -208,24 +208,24 @@ export default function Bank() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.title}>Banco On-line</Text>
+        <Text style={s.title}>{t('bank.title')}</Text>
         <Ionicons name="business" size={28} color="#1E88E5" />
       </View>
 
       {/* Tab Selector */}
       <View style={s.tabRow}>
         {([
-          { key: 'overview', icon: 'wallet', label: 'Visão Geral' },
-          { key: 'card', icon: 'card', label: 'Cartão' },
-          { key: 'loans', icon: 'cash', label: 'Empréstimos' },
-        ] as const).map(t => (
+          { key: 'overview', icon: 'wallet', label: t('bank.overview') },
+          { key: 'card', icon: 'card', label: t('bank.card') },
+          { key: 'loans', icon: 'cash', label: t('bank.loans') },
+        ] as const).map(tab => (
           <TouchableOpacity
-            key={t.key}
-            style={[s.tab, activeTab === t.key && s.tabActive]}
-            onPress={() => setActiveTab(t.key)}
+            key={tab.key}
+            style={[s.tab, activeTab === tab.key && s.tabActive]}
+            onPress={() => setActiveTab(tab.key)}
           >
-            <Ionicons name={t.icon as any} size={18} color={activeTab === t.key ? '#fff' : '#888'} />
-            <Text style={[s.tabText, activeTab === t.key && s.tabTextActive]}>{t.label}</Text>
+            <Ionicons name={tab.icon as any} size={18} color={activeTab === tab.key ? '#fff' : '#888'} />
+            <Text style={[s.tabText, activeTab === tab.key && s.tabTextActive]}>{tab.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -241,19 +241,19 @@ export default function Bank() {
             <View style={s.balanceCard}>
               <View style={s.balanceHeader}>
                 <Ionicons name="wallet" size={24} color="#1E88E5" />
-                <Text style={s.balanceLabel}>Saldo Disponível</Text>
+                <Text style={s.balanceLabel}>{t('bank.balance')}</Text>
               </View>
               <Text style={s.balanceValue}>{formatMoney(balance)}</Text>
               <View style={s.balanceDivider} />
               <View style={s.balanceRow}>
                 <View style={s.balanceItem}>
-                  <Text style={s.balanceItemLabel}>Dívida Total</Text>
+                  <Text style={s.balanceItemLabel}>{t('bank.totalDebt')}</Text>
                   <Text style={[s.balanceItemValue, { color: totalDebt > 0 ? '#F44336' : '#4CAF50' }]}>
                     {formatMoney(totalDebt)}
                   </Text>
                 </View>
                 <View style={s.balanceItem}>
-                  <Text style={s.balanceItemLabel}>Patrimônio Líq.</Text>
+                  <Text style={s.balanceItemLabel}>{t('bank.netWorth')}</Text>
                   <Text style={[s.balanceItemValue, { color: '#FFD700' }]}>
                     {formatMoney(balance - totalDebt)}
                   </Text>
@@ -269,17 +269,17 @@ export default function Bank() {
                   <Text style={s.cardNumber}>{card.card_number}</Text>
                   <View style={s.cardBottom}>
                     <View>
-                      <Text style={s.cardLabel}>LIMITE</Text>
+                      <Text style={s.cardLabel}>{t('bank.limit')}</Text>
                       <Text style={s.cardVal}>{formatMoney(card.limit)}</Text>
                     </View>
                     <View>
-                      <Text style={s.cardLabel}>FATURA</Text>
+                      <Text style={s.cardLabel}>{t('bank.bill')}</Text>
                       <Text style={[s.cardVal, { color: card.balance_used > 0 ? '#FF6B6B' : '#4CAF50' }]}>
                         {formatMoney(card.balance_used || 0)}
                       </Text>
                     </View>
                     <View>
-                      <Text style={s.cardLabel}>MILHAS</Text>
+                      <Text style={s.cardLabel}>{t('bank.miles')}</Text>
                       <Text style={[s.cardVal, { color: '#FFD700' }]}>
                         {(card.miles_points || 0).toLocaleString('pt-BR')}
                       </Text>
@@ -295,25 +295,25 @@ export default function Bank() {
                 <View style={[s.quickIcon, { backgroundColor: '#1E88E520' }]}>
                   <Ionicons name="card" size={22} color="#1E88E5" />
                 </View>
-                <Text style={s.quickLabel}>Usar Cartão</Text>
+                <Text style={s.quickLabel}>{t('bank.useCard')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.quickBtn} onPress={() => setShowPayBillModal(true)}>
                 <View style={[s.quickIcon, { backgroundColor: '#4CAF5020' }]}>
                   <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
                 </View>
-                <Text style={s.quickLabel}>Pagar Fatura</Text>
+                <Text style={s.quickLabel}>{t('bank.payBill')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.quickBtn} onPress={() => setShowLoanModal(true)}>
                 <View style={[s.quickIcon, { backgroundColor: '#FF980020' }]}>
                   <Ionicons name="cash" size={22} color="#FF9800" />
                 </View>
-                <Text style={s.quickLabel}>Empréstimo</Text>
+                <Text style={s.quickLabel}>{t('bank.loan')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.quickBtn} onPress={() => setActiveTab('card')}>
                 <View style={[s.quickIcon, { backgroundColor: '#FFD70020' }]}>
                   <Ionicons name="airplane" size={22} color="#FFD700" />
                 </View>
-                <Text style={s.quickLabel}>Milhas</Text>
+                <Text style={s.quickLabel}>{t('bank.miles')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -325,7 +325,7 @@ export default function Bank() {
                   <View key={loan.id} style={s.loanMini}>
                     <View style={{ flex: 1 }}>
                       <Text style={s.loanMiniType}>
-                        {loan.type === 'small' ? 'Sem Garantia' : 'Com Garantia'}
+                        {loan.type === 'small' ? t('bank.noGuarantee') : t('bank.withGuarantee')}
                       </Text>
                       <Text style={s.loanMiniAmount}>
                         {formatMoney(loan.remaining_balance)} restante
@@ -352,11 +352,11 @@ export default function Bank() {
                   <Text style={[s.cardNumber, { fontSize: 20 }]}>{card.card_number}</Text>
                   <View style={s.cardBottom}>
                     <View>
-                      <Text style={s.cardLabel}>LIMITE TOTAL</Text>
+                      <Text style={s.cardLabel}>{t('bank.totalLimit')}</Text>
                       <Text style={s.cardVal}>{formatMoney(card.limit)}</Text>
                     </View>
                     <View>
-                      <Text style={s.cardLabel}>DISPONÍVEL</Text>
+                      <Text style={s.cardLabel}>{t('bank.available')}</Text>
                       <Text style={[s.cardVal, { color: '#4CAF50' }]}>
                         {formatMoney(card.limit - (card.balance_used || 0))}
                       </Text>
@@ -386,9 +386,9 @@ export default function Bank() {
 
             {/* Fatura info */}
             <View style={s.sectionCard}>
-              <Text style={s.sectionTitle}>Fatura Atual</Text>
+              <Text style={s.sectionTitle}>{t('bank.currentBill')}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                <Text style={s.faturaLabel}>Valor usado:</Text>
+                <Text style={s.faturaLabel}>{t('bank.used')}:</Text>
                 <Text style={[s.faturaValue, { color: (card?.balance_used || 0) > 0 ? '#F44336' : '#4CAF50' }]}>
                   {formatMoney(card?.balance_used || 0)}
                 </Text>
@@ -409,13 +409,13 @@ export default function Bank() {
             {/* Miles & Trips */}
             <View style={s.sectionCard}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={s.sectionTitle}>Programa de Milhas</Text>
+                <Text style={s.sectionTitle}>{t('bank.milesProgram')}</Text>
                 <View style={s.milesBadge}>
                   <Ionicons name="star" size={14} color="#FFD700" />
                   <Text style={s.milesCount}>{(card?.miles_points || 0).toLocaleString('pt-BR')}</Text>
                 </View>
               </View>
-              <Text style={s.milesHint}>Ganhe 1 milha a cada R$ 1 gasto no cartão</Text>
+              <Text style={s.milesHint}>{t('bank.milesHint')}</Text>
               {trips.map((trip: any) => {
                 const canRedeem = (card?.miles_points || 0) >= trip.miles_cost;
                 return (
@@ -435,7 +435,7 @@ export default function Bank() {
                         onPress={() => handleRedeemMiles(trip.id, trip.name, trip.miles_cost)}
                         disabled={!canRedeem || actionLoading}
                       >
-                        <Text style={s.redeemText}>{canRedeem ? 'Resgatar' : 'Insuficiente'}</Text>
+                        <Text style={s.redeemText}>{canRedeem ? t('bank.redeem') : t('bank.insufficient')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -450,17 +450,17 @@ export default function Bank() {
           <>
             {/* Loan Limits Info */}
             <View style={s.sectionCard}>
-              <Text style={s.sectionTitle}>Limites de Crédito</Text>
+              <Text style={s.sectionTitle}>{t('bank.creditLimits')}</Text>
               <View style={s.limitRow}>
                 <View style={s.limitItem}>
                   <Ionicons name="document-text" size={24} color="#FF9800" />
-                  <Text style={s.limitLabel}>Sem Garantia</Text>
+                  <Text style={s.limitLabel}>{t('bank.noGuarantee')}</Text>
                   <Text style={s.limitValue}>{formatMoney(loanLimits.small_no_guarantee || 0)}</Text>
                   <Text style={s.limitRate}>3.5% ao mês</Text>
                 </View>
                 <View style={s.limitItem}>
                   <Ionicons name="shield-checkmark" size={24} color="#4CAF50" />
-                  <Text style={s.limitLabel}>Com Garantia</Text>
+                  <Text style={s.limitLabel}>{t('bank.withGuarantee')}</Text>
                   <Text style={s.limitValue}>{formatMoney(loanLimits.large_with_guarantee || 0)}</Text>
                   <Text style={s.limitRate}>2% ao mês</Text>
                 </View>
@@ -470,7 +470,7 @@ export default function Bank() {
                 onPress={() => setShowLoanModal(true)}
               >
                 <Ionicons name="add-circle" size={18} color="#fff" />
-                <Text style={s.actionBtnText}>Solicitar Empréstimo</Text>
+                <Text style={s.actionBtnText}>{t('bank.requestLoan')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -480,8 +480,8 @@ export default function Bank() {
               {loans.length === 0 ? (
                 <View style={s.emptyLoans}>
                   <Ionicons name="checkmark-circle" size={48} color="#4CAF5050" />
-                  <Text style={s.emptyLoanText}>Nenhum empréstimo ativo</Text>
-                  <Text style={s.emptyLoanSub}>Você está livre de dívidas!</Text>
+                  <Text style={s.emptyLoanText}>{t('bank.noLoans')}</Text>
+                  <Text style={s.emptyLoanSub}>{t('bank.debtFree')}</Text>
                 </View>
               ) : loans.map((loan: any) => (
                 <View key={loan.id} style={s.loanCard}>
@@ -497,7 +497,7 @@ export default function Bank() {
                       <Text style={[s.loanTypeText, { 
                         color: loan.type === 'small' ? '#FF9800' : '#4CAF50' 
                       }]}>
-                        {loan.type === 'small' ? 'Sem Garantia' : 'Com Garantia'}
+                        {loan.type === 'small' ? t('bank.noGuarantee') : t('bank.withGuarantee')}
                       </Text>
                     </View>
                     <Text style={s.loanAmountSmall}>
@@ -507,17 +507,17 @@ export default function Bank() {
 
                   <View style={s.loanInfoRow}>
                     <View>
-                      <Text style={s.loanInfoLabel}>Valor Original</Text>
+                      <Text style={s.loanInfoLabel}>{t('bank.loanAmount')}</Text>
                       <Text style={s.loanInfoValue}>{formatMoney(loan.amount)}</Text>
                     </View>
                     <View>
-                      <Text style={s.loanInfoLabel}>Restante</Text>
+                      <Text style={s.loanInfoLabel}>{t('bank.remaining')}</Text>
                       <Text style={[s.loanInfoValue, { color: '#F44336' }]}>
                         {formatMoney(loan.remaining_balance)}
                       </Text>
                     </View>
                     <View>
-                      <Text style={s.loanInfoLabel}>Parcela</Text>
+                      <Text style={s.loanInfoLabel}>{t('bank.payInstallment')}</Text>
                       <Text style={s.loanInfoValue}>{formatMoney(loan.monthly_payment)}</Text>
                     </View>
                   </View>
@@ -541,14 +541,14 @@ export default function Bank() {
                       onPress={() => handlePayLoan(loan.id, loan.monthly_payment)}
                       disabled={actionLoading}
                     >
-                      <Text style={s.loanBtnText}>Pagar Parcela</Text>
+                      <Text style={s.loanBtnText}>{t('bank.payInstallment')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[s.loanBtn, { backgroundColor: '#4CAF50', flex: 1 }]}
                       onPress={() => handlePayoffLoan(loan.id, loan.discount_payoff || loan.remaining_balance)}
                       disabled={actionLoading}
                     >
-                      <Text style={s.loanBtnText}>Quitar Tudo</Text>
+                      <Text style={s.loanBtnText}>{t('bank.payAll')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -565,7 +565,7 @@ export default function Bank() {
         <View style={s.modalOverlay}>
           <View style={s.modal}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Compra no Cartão</Text>
+              <Text style={s.modalTitle}>{t('bank.purchase')}</Text>
               <TouchableOpacity onPress={() => setShowPurchaseModal(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
@@ -599,7 +599,7 @@ export default function Bank() {
               disabled={actionLoading}
             >
               {actionLoading ? <ActivityIndicator color="#fff" /> : (
-                <Text style={s.modalBtnText}>Confirmar Compra</Text>
+                <Text style={s.modalBtnText}>{t('bank.purchaseConfirm')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -655,7 +655,7 @@ export default function Bank() {
               </TouchableOpacity>
             </View>
 
-            <Text style={s.inputLabel}>Tipo de Empréstimo</Text>
+            <Text style={s.inputLabel}>{t('bank.loanType')}</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
               <TouchableOpacity
                 style={[s.typeBtn, loanType === 'small' && s.typeBtnActive]}
@@ -700,7 +700,7 @@ export default function Bank() {
 
             {loanAmount ? (
               <View style={s.loanPreview}>
-                <Text style={s.loanPreviewTitle}>Simulação:</Text>
+                <Text style={s.loanPreviewTitle}>{t('bank.simulation')}:</Text>
                 <Text style={s.loanPreviewText}>
                   Parcela estimada: {formatMoney(
                     (parseFloat(loanAmount) * Math.pow(1 + (loanType === 'small' ? 0.035 : 0.02), parseInt(loanMonths) || 12)) / (parseInt(loanMonths) || 12)

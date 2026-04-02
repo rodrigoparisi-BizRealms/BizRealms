@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polyline } from 'react-native-svg';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -73,7 +74,7 @@ type CategoryType = 'all' | 'acoes' | 'crypto' | 'fundos' | 'commodities';
 type ViewMode = 'market' | 'portfolio';
 
 const CATEGORIES: { key: CategoryType; label: string; icon: string }[] = [
-  { key: 'all', label: 'Todos', icon: 'grid' },
+  { key: 'all', label: 'all', icon: 'grid' },
   { key: 'acoes', label: 'Ações', icon: 'trending-up' },
   { key: 'crypto', label: 'Crypto', icon: 'logo-bitcoin' },
   { key: 'fundos', label: 'Fundos', icon: 'business' },
@@ -159,6 +160,7 @@ const chartStyles = StyleSheet.create({
 
 export default function Investments() {
   const { token, refreshUser } = useAuth();
+  const { t, formatMoney: fmtCurrency } = useLanguage();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -311,7 +313,7 @@ export default function Investments() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Investimentos</Text>
+        <Text style={styles.title}>{t('investments.title')}</Text>
         <Ionicons name="trending-up" size={28} color="#4CAF50" />
       </View>
 
@@ -323,7 +325,7 @@ export default function Investments() {
         >
           <Ionicons name="bar-chart" size={18} color={viewMode === 'market' ? '#fff' : '#888'} />
           <Text style={[styles.viewToggleText, viewMode === 'market' && styles.viewToggleTextActive]}>
-            Mercado
+            {t('investments.market')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -332,7 +334,7 @@ export default function Investments() {
         >
           <Ionicons name="wallet" size={18} color={viewMode === 'portfolio' ? '#fff' : '#888'} />
           <Text style={[styles.viewToggleText, viewMode === 'portfolio' && styles.viewToggleTextActive]}>
-            Portfólio
+            {t('investments.portfolio')}
           </Text>
           {holdings.length > 0 && (
             <View style={styles.badge}>
@@ -355,7 +357,7 @@ export default function Investments() {
             {summary && summary.num_positions > 0 && (
               <TouchableOpacity style={styles.miniPortfolio} onPress={() => setViewMode('portfolio')}>
                 <View>
-                  <Text style={styles.miniPortfolioLabel}>Meu Portfólio</Text>
+                  <Text style={styles.miniPortfolioLabel}>{t('investments.portfolio')}</Text>
                   <Text style={styles.miniPortfolioValue}>
                     {formatCurrency(summary.total_current_value)}
                   </Text>
@@ -501,7 +503,7 @@ export default function Investments() {
                 <Text style={styles.summaryValue}>{formatCurrency(summary.total_current_value)}</Text>
                 <View style={styles.summaryRow}>
                   <View style={styles.summaryItem}>
-                    <Text style={styles.summaryItemLabel}>Investido</Text>
+                    <Text style={styles.summaryItemLabel}>{t('investments.invested')}</Text>
                     <Text style={styles.summaryItemValue}>{formatCurrency(summary.total_invested)}</Text>
                   </View>
                   <View style={styles.summaryItem}>
@@ -566,11 +568,11 @@ export default function Investments() {
                           </Text>
                         </View>
                         <View style={styles.holdingDetail}>
-                          <Text style={styles.detailLabel}>Preço Médio</Text>
+                          <Text style={styles.detailLabel}>{t('investments.avgPrice')}</Text>
                           <Text style={styles.detailValue}>{formatCurrency(holding.avg_price)}</Text>
                         </View>
                         <View style={styles.holdingDetail}>
-                          <Text style={styles.detailLabel}>Preço Atual</Text>
+                          <Text style={styles.detailLabel}>{t('investments.currentPrice')}</Text>
                           <Text style={styles.detailValue}>{formatCurrency(holding.current_price)}</Text>
                         </View>
                       </View>
@@ -582,13 +584,13 @@ export default function Investments() {
                               style={styles.buyBtn}
                               onPress={() => openTradeModal(asset, 'buy')}
                             >
-                              <Text style={styles.buyBtnText}>Comprar</Text>
+                              <Text style={styles.buyBtnText}>{t('investments.buy')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.sellBtn}
                               onPress={() => openTradeModal(asset, 'sell')}
                             >
-                              <Text style={styles.sellBtnText}>Vender</Text>
+                              <Text style={styles.sellBtnText}>{t('investments.sell')}</Text>
                             </TouchableOpacity>
                           </>
                         )}

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSounds } from '../../hooks/useSounds';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -41,6 +42,7 @@ export default function Companies() {
   const [offers, setOffers] = useState<any[]>([]);
   const [respondingOffer, setRespondingOffer] = useState<string | null>(null);
   const { play } = useSounds();
+  const { t, formatMoney } = useLanguage();
 
   const FRANCHISE_SEGMENTS = ['restaurante', 'loja', 'fabrica'];
 
@@ -201,18 +203,18 @@ export default function Companies() {
 
   const hasBoostActive = owned.some(c => c.ad_boost_active);
 
-  if (loading) return (<SafeAreaView style={s.container}><View style={s.center}><ActivityIndicator size="large" color="#4CAF50" /><Text style={s.loadingText}>Carregando empresas...</Text></View></SafeAreaView>);
+  if (loading) return (<SafeAreaView style={s.container}><View style={s.center}><ActivityIndicator size="large" color="#4CAF50" /><Text style={s.loadingText}>{t('general.loading')}</Text></View></SafeAreaView>);
 
   return (
     <SafeAreaView style={s.container}>
-      <View style={s.header}><Text style={s.title}>Empresas</Text><Ionicons name="business" size={28} color="#4CAF50" /></View>
+      <View style={s.header}><Text style={s.title}>{t('companies.title')}</Text><Ionicons name="business" size={28} color="#4CAF50" /></View>
       {/* Mode Toggle */}
       <View style={s.toggle}>
         {(['owned', 'offers', 'buy', 'create'] as const).map(m => (
           <TouchableOpacity key={m} style={[s.toggleBtn, viewMode === m && s.toggleActive]} onPress={() => m === 'create' ? setShowCreate(true) : setViewMode(m)}>
             <Ionicons name={m === 'owned' ? 'business' : m === 'offers' ? 'mail' : m === 'buy' ? 'cart' : 'add-circle'} size={16} color={viewMode === m ? '#fff' : '#888'} />
             <Text style={[s.toggleText, viewMode === m && s.toggleTextActive]}>
-              {m === 'owned' ? `Minhas (${owned.length})` : m === 'offers' ? `Ofertas${offers.length > 0 ? ` (${offers.length})` : ''}` : m === 'buy' ? 'Comprar' : 'Criar'}
+              {m === 'owned' ? `${t('companies.mine')} (${owned.length})` : m === 'offers' ? `${t('companies.offers')}${offers.length > 0 ? ` (${offers.length})` : ''}` : m === 'buy' ? t('companies.buy') : t('companies.create')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -223,19 +225,19 @@ export default function Companies() {
         {viewMode === 'owned' && (<>
           {owned.length > 0 && (
             <View style={s.revenueCard}>
-              <Text style={s.revenueLabel}>Receita Mensal Total</Text>
+              <Text style={s.revenueLabel}>{t('companies.revenue')}</Text>
               <Text style={s.revenueValue}>R$ {totalRevenue.toLocaleString('pt-BR')}/mês</Text>
               {hasBoostActive && <View style={s.boostBadge}><Ionicons name="flash" size={14} color="#000" /><Text style={s.boostText}>2x BOOST ATIVO</Text></View>}
               <View style={s.actionRow}>
                 <TouchableOpacity style={[s.collectBtn, collecting && s.disabled]} onPress={handleCollect} disabled={collecting}>
                   <Ionicons name="cash" size={18} color="#fff" />
-                  <Text style={s.collectText}>{collecting ? 'Coletando...' : 'Coletar Receitas'}</Text>
+                  <Text style={s.collectText}>{collecting ? t('general.loading') : t('companies.collect')}</Text>
                 </TouchableOpacity>
               </View>
               {!watchingAd ? (
                 <TouchableOpacity style={s.adBtn} onPress={handleAdBoost}>
                   <Ionicons name="play-circle" size={18} color="#fff" />
-                  <Text style={s.adText}>Assistir Anúncio (2x por 6h)</Text>
+                  <Text style={s.adText}>{t('companies.watchAd')} (2x/6h)</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={s.adWatching}>
@@ -246,14 +248,14 @@ export default function Companies() {
               {owned.length >= 2 && (
                 <TouchableOpacity style={s.mergeBtn} onPress={() => setShowMerge(true)}>
                   <Ionicons name="git-merge" size={18} color="#2196F3" />
-                  <Text style={s.mergeText}>Fusão de Empresas (+30% receita)</Text>
+                  <Text style={s.mergeText}>{t('companies.merge')} (+30%)</Text>
                 </TouchableOpacity>
               )}
             </View>
           )}
           {owned.length === 0 ? (
-            <View style={s.empty}><Ionicons name="business-outline" size={64} color="#555" /><Text style={s.emptyTitle}>Nenhuma empresa</Text><Text style={s.emptySub}>Compre ou crie uma empresa para gerar renda passiva</Text>
-              <TouchableOpacity style={s.goBtn} onPress={() => setViewMode('buy')}><Text style={s.goBtnText}>Ver Empresas à Venda</Text></TouchableOpacity></View>
+            <View style={s.empty}><Ionicons name="business-outline" size={64} color="#555" /><Text style={s.emptyTitle}>{t('companies.noCompanies')}</Text><Text style={s.emptySub}>{t('companies.buyFirst')}</Text>
+              <TouchableOpacity style={s.goBtn} onPress={() => setViewMode('buy')}><Text style={s.goBtnText}>{t('companies.buy')}</Text></TouchableOpacity></View>
           ) : owned.map(c => (
             <View key={c.id} style={[s.companyCard, { borderLeftColor: c.color, borderLeftWidth: 4 }]}>
               <View style={s.companyHeader}>
@@ -276,13 +278,13 @@ export default function Companies() {
               {!c.is_franchise && FRANCHISE_SEGMENTS.includes(c.segment) && (
                 <TouchableOpacity style={[s.franchiseBtn, franchising === c.id && s.disabled]} onPress={() => handleCreateFranchise(c)} disabled={franchising === c.id}>
                   <Ionicons name="git-branch" size={16} color="#9C27B0" />
-                  <Text style={s.franchiseBtnText}>{franchising === c.id ? 'Criando...' : 'Criar Franquia (60% custo, 70% receita)'}</Text>
+                  <Text style={s.franchiseBtnText}>{franchising === c.id ? t('general.loading') : `${t('companies.createFranchise')} (60%, 70%)`}</Text>
                 </TouchableOpacity>
               )}
               {/* Sell Button */}
               <TouchableOpacity style={s.sellBtn} onPress={() => handleSellCompany(c)}>
                 <Ionicons name="cash-outline" size={16} color="#F44336" />
-                <Text style={s.sellBtnText}>Vender por R$ {Math.round((c.purchase_price || 0) * 0.8).toLocaleString('pt-BR')}</Text>
+                <Text style={s.sellBtnText}>{t('companies.sell')} {formatMoney(Math.round((c.purchase_price || 0) * 0.8))}</Text>
               </TouchableOpacity>
             </View>
           ))}
@@ -293,10 +295,10 @@ export default function Companies() {
           {offers.length === 0 ? (
             <View style={s.empty}>
               <Ionicons name="mail-outline" size={64} color="#555" />
-              <Text style={s.emptyTitle}>Nenhuma oferta</Text>
+              <Text style={s.emptyTitle}>{t('companies.noOffers')}</Text>
               <Text style={s.emptySub}>Novas ofertas surgem periodicamente para suas empresas. Volte mais tarde!</Text>
               <TouchableOpacity style={s.goBtn} onPress={() => { onRefresh(); }}>
-                <Text style={s.goBtnText}>Verificar Ofertas</Text>
+                <Text style={s.goBtnText}>{t('companies.checkOffers')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -319,7 +321,7 @@ export default function Companies() {
                       <View style={[s.offerTypeBadge, { backgroundColor: offer.reason_type === 'high' ? '#4CAF5020' : offer.reason_type === 'low' ? '#F4433620' : '#FF980020' }]}>
                         <Text style={s.offerEmoji}>{offer.reason_emoji || '📋'}</Text>
                         <Text style={[s.offerTypeText, { color: offer.reason_type === 'high' ? '#4CAF50' : offer.reason_type === 'low' ? '#F44336' : '#FF9800' }]}>
-                          {offer.reason_type === 'high' ? 'Boa Oferta' : offer.reason_type === 'low' ? 'Oferta Baixa' : 'Oferta Neutra'}
+                          {offer.reason_type === 'high' ? t('companies.goodOffer') : offer.reason_type === 'low' ? t('companies.lowOffer') : t('companies.neutralOffer')}
                         </Text>
                       </View>
                       <View style={s.offerTimer}>
@@ -342,14 +344,14 @@ export default function Companies() {
                     {/* Price comparison */}
                     <View style={s.offerPriceBlock}>
                       <View style={s.offerPriceItem}>
-                        <Text style={s.offerPriceLabel}>Você pagou</Text>
+                        <Text style={s.offerPriceLabel}>{t('companies.youPaid')}</Text>
                         <Text style={s.offerPriceOld}>R$ {(offer.purchase_price || 0).toLocaleString('pt-BR')}</Text>
                       </View>
                       <View style={s.offerArrow}>
                         <Ionicons name="arrow-forward" size={20} color="#888" />
                       </View>
                       <View style={s.offerPriceItem}>
-                        <Text style={s.offerPriceLabel}>Oferta</Text>
+                        <Text style={s.offerPriceLabel}>{t('companies.offer')}</Text>
                         <Text style={[s.offerPriceNew, { color: isGoodDeal ? '#4CAF50' : '#F44336' }]}>
                           R$ {(offer.offer_amount || 0).toLocaleString('pt-BR')}
                         </Text>
@@ -372,7 +374,7 @@ export default function Companies() {
                         onPress={() => handleOfferRespond(offer.id, 'decline', offer.buyer_name)}
                       >
                         <Ionicons name="close-circle" size={18} color="#F44336" />
-                        <Text style={s.offerDeclineText}>Recusar</Text>
+                        <Text style={s.offerDeclineText}>{t('companies.decline')}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[s.offerAcceptBtn, respondingOffer === offer.id && s.disabled]}
@@ -382,7 +384,7 @@ export default function Companies() {
                         {respondingOffer === offer.id ? <ActivityIndicator size="small" color="#fff" /> : (
                           <>
                             <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                            <Text style={s.offerAcceptText}>Aceitar Oferta</Text>
+                            <Text style={s.offerAcceptText}>{t('companies.acceptOffer')}</Text>
                           </>
                         )}
                       </TouchableOpacity>
@@ -419,7 +421,7 @@ export default function Companies() {
               ) : (
                 <TouchableOpacity style={[s.buyBtn, (!canAfford || !hasLevel) && s.disabled]} onPress={() => handleBuy(c)} disabled={buying === c.id}>
                   {buying === c.id ? <ActivityIndicator size="small" color="#fff" /> : (
-                    <Text style={s.buyBtnText}>{!hasLevel ? `Requer Nível ${c.level_required}` : !canAfford ? 'Saldo Insuficiente' : 'Comprar'}</Text>
+                    <Text style={s.buyBtnText}>{!hasLevel ? `${t('jobs.levelRequired')} ${c.level_required}` : !canAfford ? t('bank.insufficient') : t('companies.buy')}</Text>
                   )}
                 </TouchableOpacity>
               )}
@@ -431,11 +433,11 @@ export default function Companies() {
       {/* Create Modal */}
       <Modal visible={showCreate} animationType="slide" transparent onRequestClose={() => setShowCreate(false)}>
         <View style={s.modalOverlay}><View style={s.modal}>
-          <View style={s.modalHeader}><Text style={s.modalTitle}>Criar Empresa</Text><TouchableOpacity onPress={() => setShowCreate(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
+          <View style={s.modalHeader}><Text style={s.modalTitle}>{t('companies.createCompany')}</Text><TouchableOpacity onPress={() => setShowCreate(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
           <Text style={s.modalCost}>Custo de criação: R$ 5.000</Text>
-          <Text style={s.label}>Nome da Empresa</Text>
+          <Text style={s.label}>{t('companies.companyName')}</Text>
           <TextInput style={s.input} placeholder="Ex: Minha Startup Tech" placeholderTextColor="#555" value={newName} onChangeText={setNewName} />
-          <Text style={s.label}>Segmento</Text>
+          <Text style={s.label}>{t('companies.segment')}</Text>
           <View style={s.segGrid}>
             {Object.entries(SEGMENT_LABELS).map(([key, label]) => (
               <TouchableOpacity key={key} style={[s.segChip, newSegment === key && s.segActive]} onPress={() => setNewSegment(key)}>
@@ -450,9 +452,9 @@ export default function Companies() {
       {/* Merge Modal */}
       <Modal visible={showMerge} animationType="slide" transparent onRequestClose={() => setShowMerge(false)}>
         <View style={s.modalOverlay}><View style={s.modal}>
-          <View style={s.modalHeader}><Text style={s.modalTitle}>Fusão de Empresas</Text><TouchableOpacity onPress={() => setShowMerge(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
+          <View style={s.modalHeader}><Text style={s.modalTitle}>{t('companies.merge')}</Text><TouchableOpacity onPress={() => setShowMerge(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
           <Text style={s.modalCost}>Fusão gera +30% de receita! Empresas devem ser do mesmo segmento.</Text>
-          <Text style={s.label}>Empresa Principal</Text>
+          <Text style={s.label}>{t('companies.title')}</Text>
           {owned.map(c => (
             <TouchableOpacity key={`m1-${c.id}`} style={[s.mergeOption, mergeFrom === c.id && s.mergeSelected]} onPress={() => setMergeFrom(c.id)}>
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>
@@ -469,7 +471,7 @@ export default function Companies() {
               <Text style={{ color: '#FF9800', fontSize: 13 }}>Nenhuma empresa do mesmo segmento disponível para fusão</Text>
             </View>
           )}
-          <TouchableOpacity style={[s.createBtn, { backgroundColor: '#2196F3' }]} onPress={handleMerge}><Text style={s.createText}>Realizar Fusão</Text></TouchableOpacity>
+          <TouchableOpacity style={[s.createBtn, { backgroundColor: '#2196F3' }]} onPress={handleMerge}><Text style={s.createText}>{t('general.confirm')}</Text></TouchableOpacity>
         </View></View>
       </Modal>
     </SafeAreaView>

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useSounds } from '../../hooks/useSounds';
 
 const API = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -30,6 +31,7 @@ interface ChatMessage {
 
 export default function Coaching() {
   const { token, user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const { play } = useSounds();
   const scrollRef = useRef<ScrollView>(null);
@@ -119,8 +121,8 @@ export default function Coaching() {
             <Ionicons name="sparkles" size={20} color="#FFD700" />
           </View>
           <View>
-            <Text style={s.headerTitle}>Coach IA</Text>
-            <Text style={s.headerSub}>Seu mentor de negócios virtual</Text>
+            <Text style={s.headerTitle}>{t('coaching.title')}</Text>
+            <Text style={s.headerSub}>{t('coaching.subtitle')}</Text>
           </View>
         </View>
         <View style={s.onlineDot} />
@@ -148,7 +150,7 @@ export default function Coaching() {
               <Text style={s.welcomeText}>
                 Sou seu Coach IA de negócios. Analiso seu portfólio e dou conselhos personalizados para você crescer no jogo.
               </Text>
-              <Text style={s.welcomeHint}>Escolha uma pergunta rápida ou digite a sua:</Text>
+              <Text style={s.welcomeHint}>{t('coaching.welcomeHint')}</Text>
 
               <View style={s.quickGrid}>
                 {QUICK_QUESTIONS.map((q, i) => (
@@ -187,7 +189,7 @@ export default function Coaching() {
               </View>
               <View style={[s.msgBubble, s.coachBubble, s.typingBubble]}>
                 <ActivityIndicator size="small" color="#FFD700" />
-                <Text style={s.typingText}>Analisando seus dados...</Text>
+                <Text style={s.typingText}>{t('coaching.analyzing')}</Text>
               </View>
             </View>
           )}
@@ -208,7 +210,7 @@ export default function Coaching() {
         <View style={s.inputArea}>
           <TextInput
             style={s.input}
-            placeholder="Pergunte ao Coach IA..."
+            placeholder={t('coaching.placeholder')}
             placeholderTextColor="#555"
             value={inputText}
             onChangeText={setInputText}

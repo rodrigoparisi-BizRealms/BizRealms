@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -59,6 +60,7 @@ interface AdBoost {
 
 export default function Jobs() {
   const { token, refreshUser } = useAuth();
+  const { t, formatMoney } = useLanguage();
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -337,7 +339,7 @@ export default function Jobs() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Empregos</Text>
+        <Text style={styles.title}>{t('jobs.title')}</Text>
         <Ionicons name="briefcase" size={32} color="#4CAF50" />
       </View>
 
@@ -352,7 +354,7 @@ export default function Jobs() {
           <View style={styles.currentJobCard}>
             <View style={styles.currentJobHeader}>
               <Ionicons name="briefcase" size={24} color="#4CAF50" />
-              <Text style={styles.currentJobLabel}>Emprego Atual</Text>
+              <Text style={styles.currentJobLabel}>{t('jobs.current')}</Text>
             </View>
 
             {/* Ad Boost Badge */}
@@ -485,7 +487,7 @@ export default function Jobs() {
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="search" size={22} color="#888" />
               <Text style={styles.sectionTitle}>
-                Vagas Disponíveis ({jobs.length})
+                {t('jobs.available')} ({jobs.length})
               </Text>
             </View>
 
@@ -576,7 +578,7 @@ export default function Jobs() {
                         <ActivityIndicator size="small" color="#fff" />
                       ) : (
                         <>
-                          <Text style={styles.applyButtonText}>Candidatar-se</Text>
+                          <Text style={styles.applyButtonText}>{t('jobs.apply')}</Text>
                           <Ionicons name="arrow-forward" size={18} color="#fff" />
                         </>
                       )}

@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 
@@ -29,6 +30,7 @@ const showAlert = (title: string, msg: string) => {
 
 export default function Rankings() {
   const { token, user, refreshUser } = useAuth();
+  const { t, formatMoney: fmtCurrency } = useLanguage();
   const router = useRouter();
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
   const [data, setData] = useState<any>(null);
@@ -127,7 +129,7 @@ export default function Rankings() {
     <SafeAreaView style={s.container}>
       <View style={s.center}>
         <ActivityIndicator size="large" color="#FFD700" />
-        <Text style={s.loadText}>Carregando rankings...</Text>
+        <Text style={s.loadText}>{t('general.loading')}</Text>
       </View>
     </SafeAreaView>
   );
@@ -140,7 +142,7 @@ export default function Rankings() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={s.title}>Rankings</Text>
+          <Text style={s.title}>{t('rankings.title')}</Text>
           <Text style={s.subtitle}>{data?.total_players || 0} jogadores</Text>
         </View>
         <Ionicons name="trophy" size={28} color="#FFD700" />
@@ -153,21 +155,21 @@ export default function Rankings() {
           onPress={() => setPeriod('weekly')}
         >
           <Ionicons name="calendar" size={16} color={period === 'weekly' ? '#fff' : '#888'} />
-          <Text style={[s.toggleText, period === 'weekly' && s.toggleTextActive]}>Semanal</Text>
+          <Text style={[s.toggleText, period === 'weekly' && s.toggleTextActive]}>{t('rankings.weekly')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[s.toggleBtn, period === 'monthly' && s.toggleActive]}
           onPress={() => setPeriod('monthly')}
         >
           <Ionicons name="calendar" size={16} color={period === 'monthly' ? '#fff' : '#888'} />
-          <Text style={[s.toggleText, period === 'monthly' && s.toggleTextActive]}>Mensal</Text>
+          <Text style={[s.toggleText, period === 'monthly' && s.toggleTextActive]}>{t('rankings.monthly')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Weekly Prizes Banner */}
       {period === 'weekly' && prizes.length > 0 && (
         <View style={s.prizesBanner}>
-          <Text style={s.prizesTitle}>Prêmios Semanais</Text>
+          <Text style={s.prizesTitle}>{t('rankings.prizes')}</Text>
           <View style={s.prizesRow}>
             {prizes.map((p: any) => (
               <View key={p.position} style={s.prizeItem}>
@@ -191,7 +193,7 @@ export default function Rankings() {
             ) : (
               <>
                 <Ionicons name="gift" size={16} color="#FFD700" />
-                <Text style={s.distributeBtnText}>Distribuir Prêmios</Text>
+                <Text style={s.distributeBtnText}>{t('rankings.distribution')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -207,7 +209,7 @@ export default function Rankings() {
               <Ionicons name={(currentUser.avatar_icon || 'person') as any} size={20} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.myRankName}>Você</Text>
+              <Text style={s.myRankName}>{t('rankings.you')}</Text>
               <Text style={s.myRankLevel}>Nível {currentUser.level}</Text>
             </View>
           </View>
@@ -316,7 +318,7 @@ export default function Rankings() {
         {(!data?.rankings || data.rankings.length === 0) && (
           <View style={s.empty}>
             <Ionicons name="trophy-outline" size={48} color="#555" />
-            <Text style={s.emptyText}>Nenhum ranking disponível</Text>
+            <Text style={s.emptyText}>{t('rankings.noRankings')}</Text>
           </View>
         )}
       </ScrollView>
@@ -326,10 +328,10 @@ export default function Rankings() {
         <View style={s.realPrizeSection}>
           <View style={s.realPrizeHeader}>
             <Ionicons name="cash" size={22} color="#FFD700" />
-            <Text style={s.realPrizeTitle}>Premiação em Dinheiro Real</Text>
+            <Text style={s.realPrizeTitle}>{t('rankings.realPrize')}</Text>
           </View>
           <View style={s.realPrizePool}>
-            <Text style={s.realPrizeLabel}>Pool do Mês</Text>
+            <Text style={s.realPrizeLabel}>{t('rankings.monthPool')}</Text>
             <Text style={s.realPrizeAmount}>R$ {(prizePool.prize_pool_total || 0).toFixed(2)}</Text>
             <Text style={s.realPrizeSub}>5% da receita de ads • {prizePool.days_remaining || 0} dias restantes</Text>
           </View>
@@ -353,7 +355,7 @@ export default function Rankings() {
           {!prizePool.has_pix_key && (
             <View style={s.pixWarning}>
               <Ionicons name="warning" size={16} color="#FF9800" />
-              <Text style={s.pixWarningText}>Configure sua chave PIX no Perfil para receber prêmios!</Text>
+              <Text style={s.pixWarningText}>{t('rankings.configPix')}</Text>
             </View>
           )}
           {prizePool.has_unclaimed_reward && prizePool.unclaimed_reward && (
@@ -379,7 +381,7 @@ export default function Rankings() {
         <View style={s.modalOverlay}>
           <View style={s.modal}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Prêmio Semanal!</Text>
+              <Text style={s.modalTitle}>{t('rankings.reward')}</Text>
               <TouchableOpacity onPress={() => setShowRewardModal(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
@@ -421,7 +423,7 @@ export default function Rankings() {
                   ) : (
                     <>
                       <Ionicons name="gift" size={20} color="#fff" />
-                      <Text style={s.claimBtnText}>Resgatar Prêmio</Text>
+                      <Text style={s.claimBtnText}>{t('rankings.claimReward')}</Text>
                     </>
                   )}
                 </TouchableOpacity>

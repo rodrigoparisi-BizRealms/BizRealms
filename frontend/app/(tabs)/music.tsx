@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
+import * as WebBrowser from 'expo-web-browser';
 import { useSounds } from '../../hooks/useSounds';
+import { useLanguage } from '../../context/LanguageContext';
 
 type PlaylistCategory = 'lofi' | 'motivation' | 'focus' | 'jazz' | 'gaming';
 
@@ -101,6 +103,7 @@ const CATEGORY_LABELS: Record<PlaylistCategory, string> = {
 export default function Music() {
   const router = useRouter();
   const { play } = useSounds();
+  const { t } = useLanguage();
   const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeCategory, setActiveCategory] = useState<PlaylistCategory | 'all'>('all');
@@ -119,12 +122,16 @@ export default function Music() {
   const handleOpenExternal = async (url: string, appName: string) => {
     play('click');
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
+      if (Platform.OS === 'web') {
+        // Open in new tab so user can easily return to the game
+        window.open(url, '_blank');
       } else {
-        // Fallback to web URL
-        await Linking.openURL(url);
+        // Use in-app browser with a built-in "Done" button to return
+        await WebBrowser.openBrowserAsync(url, {
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+          toolbarColor: '#1a1a1a',
+          controlsColor: '#fff',
+        });
       }
     } catch (e) {
       console.error(`Failed to open ${appName}:`, e);
@@ -159,7 +166,7 @@ export default function Music() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.title}>Música</Text>
+        <Text style={s.title}>{t('music.title')}</Text>
         <Ionicons name="musical-notes" size={28} color="#9C27B0" />
       </View>
 
@@ -182,6 +189,15 @@ export default function Music() {
                 allowsInlineMediaPlayback
                 mediaPlaybackRequiresUserAction={false}
                 javaScriptEnabled
+                onShouldStartLoadWithRequest={(request) => {
+                  // Allow initial embed loads but intercept external navigation
+                  if (request.url.includes('youtube.com/embed') || request.url === 'about:blank') {
+                    return true;
+                  }
+                  // Open any other URLs in the in-app browser instead
+                  WebBrowser.openBrowserAsync(request.url).catch(() => {});
+                  return false;
+                }}
               />
             )}
           </View>

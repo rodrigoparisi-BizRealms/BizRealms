@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -18,6 +19,7 @@ const CATEGORY_CFG: Record<string, { label: string; icon: string; color: string 
 
 export default function Store() {
   const { token, user, refreshUser } = useAuth();
+  const { t, formatMoney } = useLanguage();
   const [items, setItems] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ export default function Store() {
     <SafeAreaView style={s.container}>
       <View style={s.center}>
         <ActivityIndicator size="large" color="#E91E63" />
-        <Text style={s.loadText}>Carregando loja...</Text>
+        <Text style={s.loadText}>{t('general.loading')}</Text>
       </View>
     </SafeAreaView>
   );
@@ -122,8 +124,8 @@ export default function Store() {
       {/* Header */}
       <View style={s.header}>
         <View>
-          <Text style={s.title}>Loja</Text>
-          <Text style={s.subtitle}>Acelere seu progresso!</Text>
+          <Text style={s.title}>{t('store.title')}</Text>
+          <Text style={s.subtitle}>{t('store.title')}</Text>
         </View>
         <TouchableOpacity style={s.historyBtn} onPress={() => setShowHistory(true)}>
           <Ionicons name="receipt" size={22} color="#888" />
@@ -147,7 +149,7 @@ export default function Store() {
         <View style={s.filterRow}>
           <TouchableOpacity style={[s.fChip, filterCat === 'all' && s.fActive]} onPress={() => setFilterCat('all')}>
             <Ionicons name="grid" size={14} color={filterCat === 'all' ? '#fff' : '#888'} />
-            <Text style={[s.fText, filterCat === 'all' && s.fTextActive]}>Todos</Text>
+            <Text style={[s.fText, filterCat === 'all' && s.fTextActive]}>{t('store.all')}</Text>
           </TouchableOpacity>
           {Object.entries(CATEGORY_CFG).map(([key, cfg]) => (
             <TouchableOpacity key={key} style={[s.fChip, filterCat === key && { backgroundColor: cfg.color }]} onPress={() => setFilterCat(key)}>
@@ -173,7 +175,7 @@ export default function Store() {
                 <Ionicons name="gift" size={28} color="#FFD700" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={s.dailyTitle}>Dinheiro Grátis Diário!</Text>
+                <Text style={s.dailyTitle}>{t('store.dailyReward')}</Text>
                 <Text style={s.dailyDesc}>Assista uma propaganda e ganhe R$ {dailyStatus.reward_amount?.toLocaleString('pt-BR')}</Text>
               </View>
             </View>
@@ -182,7 +184,7 @@ export default function Store() {
             ) : (
               <View style={s.dailyBtn}>
                 <Ionicons name="play-circle" size={20} color="#000" />
-                <Text style={s.dailyBtnText}>ASSISTIR</Text>
+                <Text style={s.dailyBtnText}>{t('store.dailyClaim')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -194,7 +196,7 @@ export default function Store() {
                 <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.dailyTitle, { color: '#666' }]}>Recompensa Resgatada!</Text>
+                <Text style={[s.dailyTitle, { color: '#666' }]}>{t('store.dailyClaimed')}</Text>
                 <Text style={s.dailyDesc}>Volte amanhã para ganhar mais</Text>
               </View>
             </View>
@@ -266,7 +268,7 @@ export default function Store() {
         <View style={s.modalOverlay}>
           <View style={s.modal}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Confirmar Compra</Text>
+              <Text style={s.modalTitle}>{t('store.confirm')}</Text>
               <TouchableOpacity onPress={() => setShowPayment(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
@@ -285,21 +287,21 @@ export default function Store() {
                 </View>
 
                 {/* Payment Method */}
-                <Text style={s.label}>Método de Pagamento</Text>
+                <Text style={s.label}>{t('store.paymentMethod')}</Text>
                 <View style={s.payMethods}>
                   <TouchableOpacity
                     style={[s.payOption, paymentMethod === 'credit_card' && s.payActive]}
                     onPress={() => setPaymentMethod('credit_card')}
                   >
                     <Ionicons name="card" size={24} color={paymentMethod === 'credit_card' ? '#fff' : '#888'} />
-                    <Text style={[s.payLabel, paymentMethod === 'credit_card' && s.payLabelActive]}>Cartão de Crédito</Text>
+                    <Text style={[s.payLabel, paymentMethod === 'credit_card' && s.payLabelActive]}>{t('store.creditCard')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[s.payOption, paymentMethod === 'pix' && s.payActive]}
                     onPress={() => setPaymentMethod('pix')}
                   >
                     <Ionicons name="qr-code" size={24} color={paymentMethod === 'pix' ? '#fff' : '#888'} />
-                    <Text style={[s.payLabel, paymentMethod === 'pix' && s.payLabelActive]}>PIX</Text>
+                    <Text style={[s.payLabel, paymentMethod === 'pix' && s.payLabelActive]}>{t('store.pix')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -324,7 +326,7 @@ export default function Store() {
         <View style={s.modalOverlay}>
           <View style={s.modal}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Histórico de Compras</Text>
+              <Text style={s.modalTitle}>{t('store.purchaseHistory')}</Text>
               <TouchableOpacity onPress={() => setShowHistory(false)}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
@@ -333,7 +335,7 @@ export default function Store() {
               {purchases.length === 0 ? (
                 <View style={s.emptyHistory}>
                   <Ionicons name="receipt-outline" size={48} color="#555" />
-                  <Text style={s.emptyHistText}>Nenhuma compra realizada</Text>
+                  <Text style={s.emptyHistText}>{t('store.noPurchases')}</Text>
                 </View>
               ) : purchases.map((p: any, i: number) => (
                 <View key={p.id || i} style={s.histItem}>
