@@ -2788,6 +2788,203 @@ async def claim_ranking_reward(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ==================== REAL MONEY REWARDS (PREMIAÇÃO REAL) ====================
+
+@api_router.get("/rewards/prize-pool")
+async def get_prize_pool(current_user: dict = Depends(get_current_user)):
+    """Get current monthly prize pool and distribution info"""
+    now = datetime.utcnow()
+    current_month = now.strftime("%Y-%m")
+    
+    # Simulated ad revenue (in production, this comes from real ad network)
+    # Base: R$ 5000/month simulated ad revenue, 5% goes to prize pool
+    total_players = await db.users.count_documents({})
+    base_revenue = 5000 + (total_players * 50)  # More players = more ad revenue
+    prize_pool_total = round(base_revenue * 0.05, 2)  # 5% of ad revenue
+    
+    # Distribution: 60% 1st, 30% 2nd, 10% 3rd
+    distribution = {
+        "1st": round(prize_pool_total * 0.60, 2),
+        "2nd": round(prize_pool_total * 0.30, 2),
+        "3rd": round(prize_pool_total * 0.10, 2),
+    }
+    
+    # Get current monthly rankings (top 3)
+    all_users = await db.users.find({}).to_list(1000)
+    rankings = []
+    for u in all_users:
+        portfolio = await db.user_investments.find({"user_id": u['id']}).to_list(100)
+        inv_value = sum(i.get('current_value', i.get('amount', 0) * i.get('current_price', i.get('purchase_price', 0))) for i in portfolio)
+        companies = await db.user_companies.find({"user_id": u['id']}).to_list(500)
+        comp_value = sum(c.get('purchase_price', 0) for c in companies)
+        assets = await db.user_assets.find({"user_id": u['id']}).to_list(100)
+        asset_value = sum(a.get('current_value', a.get('purchase_price', 0)) for a in assets)
+        total_nw = u.get('money', 0) + inv_value + comp_value + asset_value
+        rankings.append({
+            "user_id": u['id'],
+            "username": u.get('username', 'Jogador'),
+            "avatar_color": u.get('avatar_color', 'blue'),
+            "level": u.get('level', 1),
+            "total_net_worth": round(total_nw, 2),
+        })
+    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
+    top3 = rankings[:3]
+    
+    # Check user's position
+    user_pos = next((i + 1 for i, r in enumerate(rankings) if r['user_id'] == current_user['id']), None)
+    
+    # Check if user has PIX key configured
+    user_doc = await db.users.find_one({"id": current_user['id']})
+    has_pix = bool(user_doc.get('pix_key'))
+    
+    # Check if there are unclaimed real rewards for user
+    unclaimed_real = await db.real_money_rewards.find_one({
+        "user_id": current_user['id'],
+        "claimed": False,
+    })
+    
+    # Check previous months' rewards history
+    history = await db.real_money_rewards.find({
+        "user_id": current_user['id']
+    }).sort("month", -1).to_list(12)
+    for h in history:
+        h.pop('_id', None)
+    
+    # Days remaining in month
+    import calendar
+    _, last_day = calendar.monthrange(now.year, now.month)
+    days_remaining = last_day - now.day
+    
+    return {
+        "current_month": current_month,
+        "prize_pool_total": prize_pool_total,
+        "distribution": distribution,
+        "simulated_ad_revenue": base_revenue,
+        "top3": top3,
+        "user_position": user_pos,
+        "total_players": total_players,
+        "has_pix_key": has_pix,
+        "pix_key": user_doc.get('pix_key', ''),
+        "days_remaining": days_remaining,
+        "has_unclaimed_reward": unclaimed_real is not None,
+        "unclaimed_reward": {
+            "amount": unclaimed_real.get('amount', 0),
+            "position": unclaimed_real.get('position', 0),
+            "month": unclaimed_real.get('month', ''),
+            "id": unclaimed_real.get('id', ''),
+        } if unclaimed_real else None,
+        "history": history,
+    }
+
+
+@api_router.post("/rewards/update-pix")
+async def update_pix_key(request: dict, current_user: dict = Depends(get_current_user)):
+    """Update user's PIX key for receiving real money rewards"""
+    pix_key = request.get('pix_key', '').strip()
+    pix_type = request.get('pix_type', 'cpf')  # cpf, email, phone, random
+    
+    if not pix_key:
+        raise HTTPException(status_code=400, detail="Chave PIX não pode estar vazia")
+    
+    await db.users.update_one({"id": current_user['id']}, {
+        "$set": {
+            "pix_key": pix_key,
+            "pix_type": pix_type,
+            "pix_updated_at": datetime.utcnow(),
+        }
+    })
+    
+    return {"success": True, "message": f"Chave PIX atualizada: {pix_key}"}
+
+
+@api_router.post("/rewards/distribute-monthly")
+async def distribute_monthly_rewards(current_user: dict = Depends(get_current_user)):
+    """Distribute monthly real money rewards to top 3 (admin/auto trigger)"""
+    now = datetime.utcnow()
+    current_month = now.strftime("%Y-%m")
+    
+    # Check if already distributed this month
+    existing = await db.real_money_rewards.find_one({"month": current_month})
+    if existing:
+        return {"success": False, "message": "Premiação deste mês já foi distribuída"}
+    
+    # Calculate prize pool
+    total_players = await db.users.count_documents({})
+    base_revenue = 5000 + (total_players * 50)
+    prize_pool_total = round(base_revenue * 0.05, 2)
+    
+    # Get rankings
+    all_users = await db.users.find({}).to_list(1000)
+    rankings = []
+    for u in all_users:
+        portfolio = await db.user_investments.find({"user_id": u['id']}).to_list(100)
+        inv_value = sum(i.get('current_value', i.get('amount', 0) * i.get('current_price', i.get('purchase_price', 0))) for i in portfolio)
+        companies = await db.user_companies.find({"user_id": u['id']}).to_list(500)
+        comp_value = sum(c.get('purchase_price', 0) for c in companies)
+        assets = await db.user_assets.find({"user_id": u['id']}).to_list(100)
+        asset_value = sum(a.get('current_value', a.get('purchase_price', 0)) for a in assets)
+        total_nw = u.get('money', 0) + inv_value + comp_value + asset_value
+        rankings.append({"user_id": u['id'], "username": u.get('username', 'Jogador'), "total_net_worth": total_nw})
+    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
+    
+    # Distribute to top 3
+    prizes = [0.60, 0.30, 0.10]
+    for i, pct in enumerate(prizes):
+        if i >= len(rankings):
+            break
+        amount = round(prize_pool_total * pct, 2)
+        reward = {
+            "id": str(uuid.uuid4()),
+            "user_id": rankings[i]['user_id'],
+            "username": rankings[i]['username'],
+            "month": current_month,
+            "position": i + 1,
+            "amount": amount,
+            "total_net_worth": rankings[i]['total_net_worth'],
+            "claimed": False,
+            "created_at": now,
+        }
+        await db.real_money_rewards.insert_one(reward)
+    
+    return {"success": True, "message": f"Premiação de {current_month} distribuída! Pool: R$ {prize_pool_total:.2f}"}
+
+
+@api_router.post("/rewards/claim-real")
+async def claim_real_money_reward(request: dict, current_user: dict = Depends(get_current_user)):
+    """Claim a real money reward (requires PIX key)"""
+    reward_id = request.get('reward_id')
+    
+    # Check PIX key
+    user = await db.users.find_one({"id": current_user['id']})
+    if not user.get('pix_key'):
+        raise HTTPException(status_code=400, detail="Configure sua chave PIX no perfil antes de resgatar!")
+    
+    reward = await db.real_money_rewards.find_one({
+        "id": reward_id,
+        "user_id": current_user['id'],
+        "claimed": False,
+    })
+    if not reward:
+        raise HTTPException(status_code=404, detail="Recompensa não encontrada ou já resgatada")
+    
+    # Mark as claimed
+    await db.real_money_rewards.update_one({"id": reward_id}, {
+        "$set": {
+            "claimed": True,
+            "claimed_at": datetime.utcnow(),
+            "pix_key_used": user.get('pix_key'),
+            "status": "processing",  # In production: pending -> processing -> paid
+        }
+    })
+    
+    return {
+        "success": True,
+        "message": f"Resgate de R$ {reward['amount']:.2f} solicitado!\n\nPagamento será enviado para sua chave PIX: {user['pix_key']}\n\nPrazo: até 5 dias úteis.",
+        "amount": reward['amount'],
+        "position": reward['position'],
+    }
+
+
 STORE_ITEMS = [
     # Money Packs
     {"id": "pack_starter", "category": "dinheiro", "name": "Pacote Iniciante", "description": "Dê o primeiro passo no mundo dos negócios", "game_reward": {"money": 10000}, "price_brl": 4.90, "icon": "cash", "color": "#4CAF50", "popular": False},

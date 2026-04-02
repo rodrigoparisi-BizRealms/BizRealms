@@ -37,13 +37,18 @@ export default function Rankings() {
   const [claiming, setClaiming] = useState(false);
   const [distributing, setDistributing] = useState(false);
   const [showRewardModal, setShowRewardModal] = useState(false);
+  const [prizePool, setPrizePool] = useState<any>(null);
+  const [claimingReal, setClaimingReal] = useState(false);
 
   const loadRankings = useCallback(async () => {
     try {
-      const r = await axios.get(`${API}/api/rankings?period=${period}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const h = { Authorization: `Bearer ${token}` };
+      const [r, pp] = await Promise.all([
+        axios.get(`${API}/api/rankings?period=${period}`, { headers: h }),
+        axios.get(`${API}/api/rewards/prize-pool`, { headers: h }).catch(() => ({ data: null })),
+      ]);
       setData(r.data);
+      setPrizePool(pp.data);
     } catch (e) { console.error('Rankings error:', e); }
     finally { setLoading(false); }
   }, [token, period]);
@@ -88,6 +93,31 @@ export default function Rankings() {
     } catch (e: any) {
       showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar prêmio');
     } finally { setClaiming(false); }
+  };
+
+  const handleClaimRealMoney = async (rewardId: string) => {
+    setClaimingReal(true);
+    try {
+      const r = await axios.post(`${API}/api/rewards/claim-real`, { reward_id: rewardId }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showAlert('Resgate Solicitado!', r.data.message);
+      await loadRankings();
+    } catch (e: any) {
+      showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar');
+    } finally { setClaimingReal(false); }
+  };
+
+  const handleDistributeReal = async () => {
+    try {
+      const r = await axios.post(`${API}/api/rewards/distribute-monthly`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showAlert(r.data.success ? 'Distribuído!' : 'Info', r.data.message);
+      if (r.data.success) await loadRankings();
+    } catch (e: any) {
+      showAlert('Erro', e.response?.data?.detail || 'Erro');
+    }
   };
 
   const currentUser = data?.current_user;
@@ -291,6 +321,59 @@ export default function Rankings() {
         )}
       </ScrollView>
 
+      {/* Real Money Prize Pool Section */}
+      {prizePool && (
+        <View style={s.realPrizeSection}>
+          <View style={s.realPrizeHeader}>
+            <Ionicons name="cash" size={22} color="#FFD700" />
+            <Text style={s.realPrizeTitle}>Premiação em Dinheiro Real</Text>
+          </View>
+          <View style={s.realPrizePool}>
+            <Text style={s.realPrizeLabel}>Pool do Mês</Text>
+            <Text style={s.realPrizeAmount}>R$ {(prizePool.prize_pool_total || 0).toFixed(2)}</Text>
+            <Text style={s.realPrizeSub}>5% da receita de ads • {prizePool.days_remaining || 0} dias restantes</Text>
+          </View>
+          <View style={s.realDistRow}>
+            <View style={[s.realDistItem, { borderColor: '#FFD700' }]}>
+              <Text style={[s.realDistPos, { color: '#FFD700' }]}>1º</Text>
+              <Text style={s.realDistAmount}>R$ {(prizePool.distribution?.['1st'] || 0).toFixed(2)}</Text>
+              <Text style={s.realDistPct}>60%</Text>
+            </View>
+            <View style={[s.realDistItem, { borderColor: '#C0C0C0' }]}>
+              <Text style={[s.realDistPos, { color: '#C0C0C0' }]}>2º</Text>
+              <Text style={s.realDistAmount}>R$ {(prizePool.distribution?.['2nd'] || 0).toFixed(2)}</Text>
+              <Text style={s.realDistPct}>30%</Text>
+            </View>
+            <View style={[s.realDistItem, { borderColor: '#CD7F32' }]}>
+              <Text style={[s.realDistPos, { color: '#CD7F32' }]}>3º</Text>
+              <Text style={s.realDistAmount}>R$ {(prizePool.distribution?.['3rd'] || 0).toFixed(2)}</Text>
+              <Text style={s.realDistPct}>10%</Text>
+            </View>
+          </View>
+          {!prizePool.has_pix_key && (
+            <View style={s.pixWarning}>
+              <Ionicons name="warning" size={16} color="#FF9800" />
+              <Text style={s.pixWarningText}>Configure sua chave PIX no Perfil para receber prêmios!</Text>
+            </View>
+          )}
+          {prizePool.has_unclaimed_reward && prizePool.unclaimed_reward && (
+            <TouchableOpacity
+              style={[s.claimRealBtn, claimingReal && { opacity: 0.5 }]}
+              onPress={() => handleClaimRealMoney(prizePool.unclaimed_reward.id)}
+              disabled={claimingReal}
+            >
+              <Ionicons name="gift" size={20} color="#000" />
+              <Text style={s.claimRealText}>
+                Resgatar R$ {(prizePool.unclaimed_reward.amount || 0).toFixed(2)} ({prizePool.unclaimed_reward.position}º lugar)
+              </Text>
+            </TouchableOpacity>
+          )}
+          <Text style={s.realPrizeYou}>
+            Sua posição: #{prizePool.user_position || '?'} de {prizePool.total_players || 0} jogadores
+          </Text>
+        </View>
+      )}
+
       {/* Reward Claim Modal */}
       <Modal visible={showRewardModal} animationType="slide" transparent onRequestClose={() => setShowRewardModal(false)}>
         <View style={s.modalOverlay}>
@@ -422,4 +505,22 @@ const s = StyleSheet.create({
   rewardDesc: { color: '#4CAF50', fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
   claimBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FFD700', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, width: '100%' },
   claimBtnText: { color: '#000', fontSize: 18, fontWeight: 'bold' },
+  // Real Prize Section
+  realPrizeSection: { marginHorizontal: 16, backgroundColor: '#1a1a2a', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#FFD70050' },
+  realPrizeHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  realPrizeTitle: { color: '#FFD700', fontSize: 18, fontWeight: 'bold' },
+  realPrizePool: { alignItems: 'center', marginBottom: 14, paddingVertical: 10, backgroundColor: '#FFD70010', borderRadius: 12 },
+  realPrizeLabel: { color: '#888', fontSize: 12 },
+  realPrizeAmount: { color: '#FFD700', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
+  realPrizeSub: { color: '#666', fontSize: 11, marginTop: 4 },
+  realDistRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  realDistItem: { flex: 1, alignItems: 'center', backgroundColor: '#2a2a3a', borderRadius: 10, padding: 10, borderWidth: 1 },
+  realDistPos: { fontSize: 16, fontWeight: 'bold' },
+  realDistAmount: { color: '#fff', fontSize: 13, fontWeight: 'bold', marginTop: 4 },
+  realDistPct: { color: '#666', fontSize: 10, marginTop: 2 },
+  pixWarning: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF980020', borderRadius: 10, padding: 10, marginBottom: 10 },
+  pixWarningText: { color: '#FF9800', fontSize: 12, flex: 1 },
+  claimRealBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD700', borderRadius: 12, paddingVertical: 14, marginBottom: 10 },
+  claimRealText: { color: '#000', fontSize: 15, fontWeight: 'bold' },
+  realPrizeYou: { color: '#888', fontSize: 12, textAlign: 'center' },
 });

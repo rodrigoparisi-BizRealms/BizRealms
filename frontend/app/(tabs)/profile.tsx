@@ -54,6 +54,12 @@ export default function Profile() {
   });
   const [savingPersonal, setSavingPersonal] = useState(false);
 
+  // PIX key form
+  const [showPixModal, setShowPixModal] = useState(false);
+  const [pixKey, setPixKey] = useState('');
+  const [pixType, setPixType] = useState('cpf');
+  const [savingPix, setSavingPix] = useState(false);
+
   const showAlert = (title: string, msg: string) => {
     if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
     else Alert.alert(title, msg);
@@ -85,6 +91,29 @@ export default function Profile() {
     } catch (e: any) {
       showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar dados');
     } finally { setSavingPersonal(false); }
+  };
+
+  const openPixModal = () => {
+    setPixKey((user as any)?.pix_key || '');
+    setPixType((user as any)?.pix_type || 'cpf');
+    setShowPixModal(true);
+  };
+
+  const handleSavePix = async () => {
+    if (!pixKey.trim()) { showAlert('Erro', 'Informe sua chave PIX'); return; }
+    setSavingPix(true);
+    try {
+      await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/update-pix`,
+        { pix_key: pixKey, pix_type: pixType },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showAlert('Sucesso!', 'Chave PIX salva com sucesso!');
+      await refreshUser();
+      setShowPixModal(false);
+    } catch (e: any) {
+      showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar PIX');
+    } finally { setSavingPix(false); }
   };
 
   const handleLogout = async () => {
@@ -528,6 +557,38 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* PIX Key Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="wallet" size={22} color="#FFD700" />
+            <Text style={styles.sectionTitle}>Chave PIX (Premiação Real)</Text>
+            <TouchableOpacity style={[styles.addButton, { backgroundColor: '#FFD700' }]} onPress={openPixModal}>
+              <Ionicons name="create" size={20} color="#000" />
+              <Text style={[styles.addButtonText, { color: '#000' }]}>{(user as any)?.pix_key ? 'Editar' : 'Cadastrar'}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.card}>
+            <View style={styles.cardContent}>
+              {(user as any)?.pix_key ? (
+                <View style={{ gap: 6 }}>
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.personalLabel}>Chave: {(user as any).pix_key}</Text>
+                  </View>
+                  <Text style={{ color: '#888', fontSize: 12 }}>Tipo: {(user as any).pix_type || 'CPF'}</Text>
+                </View>
+              ) : (
+                <View style={{ gap: 6, alignItems: 'center' }}>
+                  <Ionicons name="alert-circle" size={24} color="#FF9800" />
+                  <Text style={{ color: '#FF9800', fontSize: 13, textAlign: 'center' }}>
+                    Cadastre sua chave PIX para receber prêmios em dinheiro real!
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out" size={24} color="#F44336" />
@@ -771,6 +832,64 @@ export default function Profile() {
                   <Text style={styles.submitButtonText}>{savingPersonal ? 'Salvando...' : 'Salvar Dados'}</Text>
                 </TouchableOpacity>
               </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* PIX Modal */}
+      <Modal visible={showPixModal} animationType="slide" transparent onRequestClose={() => setShowPixModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Chave PIX</Text>
+                <TouchableOpacity onPress={() => setShowPixModal(false)}>
+                  <Ionicons name="close" size={28} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              <Text style={{ color: '#FFD700', fontSize: 13, marginBottom: 16 }}>
+                Configure sua chave PIX para receber premiações em dinheiro real dos rankings mensais.
+              </Text>
+
+              <Text style={styles.inputLabel}>Tipo de Chave</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                {[
+                  { key: 'cpf', label: 'CPF' },
+                  { key: 'email', label: 'E-mail' },
+                  { key: 'phone', label: 'Telefone' },
+                  { key: 'random', label: 'Aleatória' },
+                ].map(t => (
+                  <TouchableOpacity
+                    key={t.key}
+                    style={[
+                      { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#2a2a2a', borderWidth: 1, borderColor: '#3a3a3a' },
+                      pixType === t.key && { backgroundColor: '#FFD700', borderColor: '#FFD700' },
+                    ]}
+                    onPress={() => setPixType(t.key)}
+                  >
+                    <Text style={[{ color: '#888', fontSize: 12, fontWeight: 'bold' }, pixType === t.key && { color: '#000' }]}>{t.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Chave PIX</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={pixType === 'cpf' ? '000.000.000-00' : pixType === 'email' ? 'email@exemplo.com' : pixType === 'phone' ? '+55 (11) 99999-9999' : 'Cole sua chave aleatória'}
+                placeholderTextColor="#555"
+                value={pixKey}
+                onChangeText={setPixKey}
+                keyboardType={pixType === 'phone' ? 'phone-pad' : pixType === 'email' ? 'email-address' : 'default'}
+              />
+
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: '#FFD700' }, savingPix && { opacity: 0.5 }]}
+                onPress={handleSavePix}
+                disabled={savingPix}
+              >
+                <Text style={[styles.saveButtonText, { color: '#000' }]}>{savingPix ? 'Salvando...' : 'Salvar Chave PIX'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
