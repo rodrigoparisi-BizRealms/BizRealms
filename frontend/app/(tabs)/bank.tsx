@@ -80,19 +80,19 @@ export default function Bank() {
   // Credit Card Purchase
   const handlePurchase = async () => {
     const amount = parseFloat(purchaseAmount);
-    if (!amount || amount <= 0) { showAlert('Erro', 'Valor inválido'); return; }
+    if (!amount || amount <= 0) { showAlert(t('general.error'), t('bank.invalidValue')); return; }
     setActionLoading(true);
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/credit-card/purchase`, {
-        amount, description: purchaseDesc || 'Compra no cartão',
+        amount, description: purchaseDesc || t('bank.purchase'),
       }, { headers });
-      showAlert('Compra Realizada!', r.data.message);
+      showAlert(t('bank.cardPurchaseSuccess'), r.data.message);
       play('purchase');
       setShowPurchaseModal(false);
       setPurchaseAmount(''); setPurchaseDesc('');
       await loadBankData();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro na compra');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setActionLoading(false); }
   };
 
@@ -104,29 +104,29 @@ export default function Bank() {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/credit-card/pay-bill`, {
         amount: amount || 0,
       }, { headers });
-      showAlert('Fatura Paga!', r.data.message);
+      showAlert(t('bank.billPaidSuccess'), r.data.message);
       play('success');
       setShowPayBillModal(false);
       setPayBillAmount('');
       await loadBankData(); await refreshUser();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao pagar');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setActionLoading(false); }
   };
 
   // Redeem Miles
   const handleRedeemMiles = (tripId: string, tripName: string, milesCost: number) => {
-    confirmAction('Resgatar Viagem', `Deseja trocar ${milesCost.toLocaleString('pt-BR')} milhas por "${tripName}"?`, async () => {
+    confirmAction(t('bank.tripRedeemed'), `${t('bank.redeemTripConfirm')} "${tripName}"?`, async () => {
       setActionLoading(true);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/credit-card/redeem-miles`, {
           trip_id: tripId,
         }, { headers });
-        showAlert('Viagem Resgatada!', r.data.message);
+        showAlert(t('bank.tripRedeemed'), r.data.message);
         play('levelup');
         await loadBankData(); await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar');
+        showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       } finally { setActionLoading(false); }
     });
   };
@@ -135,19 +135,19 @@ export default function Bank() {
   const handleApplyLoan = async () => {
     const amount = parseFloat(loanAmount);
     const months = parseInt(loanMonths) || 12;
-    if (!amount || amount <= 0) { showAlert('Erro', 'Valor inválido'); return; }
+    if (!amount || amount <= 0) { showAlert(t('general.error'), t('bank.invalidValue')); return; }
     setActionLoading(true);
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/loan/apply`, {
         amount, type: loanType, months,
       }, { headers });
-      showAlert('Empréstimo Aprovado!', r.data.message);
+      showAlert(t('bank.loanApproved'), r.data.message);
       play('coin');
       setShowLoanModal(false);
       setLoanAmount('');
       await loadBankData(); await refreshUser();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao solicitar');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setActionLoading(false); }
   };
 
@@ -159,26 +159,26 @@ export default function Bank() {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/loan/pay`, {
           loan_id: loanId,
         }, { headers });
-        showAlert('Parcela Paga!', r.data.message);
+        showAlert(t('bank.installmentPaidSuccess'), r.data.message);
         await loadBankData(); await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao pagar');
+        showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       } finally { setActionLoading(false); }
     });
   };
 
   // Payoff Loan
   const handlePayoffLoan = (loanId: string, payoffAmount: number) => {
-    confirmAction('Quitar Empréstimo', `Quitar empréstimo por ${formatMoney(payoffAmount)}?\n\nVocê economiza com desconto na quitação antecipada!`, async () => {
+    confirmAction(t('bank.loanPaidOff'), `${t('bank.payoffConfirm')} ${formatMoney(payoffAmount)}?\n\n${t('bank.payoffDiscount')}`, async () => {
       setActionLoading(true);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/loan/payoff`, {
           loan_id: loanId,
         }, { headers });
-        showAlert('Empréstimo Quitado!', r.data.message);
+        showAlert(t('bank.loanPaidOff'), r.data.message);
         await loadBankData(); await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao quitar');
+        showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       } finally { setActionLoading(false); }
     });
   };

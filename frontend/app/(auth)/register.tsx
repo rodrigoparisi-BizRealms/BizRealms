@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -22,20 +23,26 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const showMsg = (title: string, msg: string) => {
+    if (Platform.OS === 'web') { window.alert(`${title}\n${msg}`); }
+    else { Alert.alert(title, msg); }
+  };
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      showMsg(t('general.error'), t('auth.fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem');
+      showMsg(t('general.error'), t('auth.passwordsDontMatch'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter no mínimo 6 caracteres');
+      showMsg(t('general.error'), t('auth.passwordTooShort'));
       return;
     }
 
@@ -44,7 +51,7 @@ export default function Register() {
       await register(email, password, name);
       router.replace('/(onboarding)/avatar');
     } catch (error: any) {
-      Alert.alert('Erro', error.message);
+      showMsg(t('general.error'), error.message);
     } finally {
       setLoading(false);
     }
@@ -58,8 +65,8 @@ export default function Register() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Ionicons name="business" size={80} color="#4CAF50" />
-          <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Comece sua jornada empresarial</Text>
+          <Text style={styles.title}>{t('auth.signUp')}</Text>
+          <Text style={styles.subtitle}>{t('auth.registerSubtitle')}</Text>
         </View>
 
         <View style={styles.form}>
@@ -67,7 +74,7 @@ export default function Register() {
             <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Nome"
+              placeholder={t('auth.name')}
               placeholderTextColor="#888"
               value={name}
               onChangeText={setName}
@@ -78,7 +85,7 @@ export default function Register() {
             <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('auth.email')}
               placeholderTextColor="#888"
               value={email}
               onChangeText={setEmail}
@@ -91,7 +98,7 @@ export default function Register() {
             <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Senha"
+              placeholder={t('auth.password')}
               placeholderTextColor="#888"
               value={password}
               onChangeText={setPassword}
@@ -103,7 +110,7 @@ export default function Register() {
             <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Confirmar Senha"
+              placeholder={t('auth.confirmPassword')}
               placeholderTextColor="#888"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -117,7 +124,7 @@ export default function Register() {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Criando conta...' : 'Criar Conta'}
+              {loading ? t('auth.creatingAccount') : t('auth.signUp')}
             </Text>
           </TouchableOpacity>
 
@@ -125,7 +132,7 @@ export default function Register() {
             style={styles.linkButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.linkText}>Já tem uma conta? Faça login</Text>
+            <Text style={styles.linkText}>{t('auth.hasAccount')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

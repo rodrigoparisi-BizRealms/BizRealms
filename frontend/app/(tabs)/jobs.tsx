@@ -541,7 +541,7 @@ export default function Jobs() {
 
                   {Object.keys(job.requirements.skills).length > 0 && (
                     <View style={styles.skillsRequired}>
-                      <Text style={styles.skillsLabel}>Habilidades:</Text>
+                      <Text style={styles.skillsLabel}>{t('general.skills')}:</Text>
                       <View style={styles.skillsList}>
                         {Object.entries(job.requirements.skills).map(([skill, level]) => (
                           <View key={skill} style={styles.skillTag}>

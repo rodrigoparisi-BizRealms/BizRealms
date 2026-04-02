@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -20,10 +21,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      if (Platform.OS === 'web') { window.alert(t('auth.fillAllFields')); }
+      else { Alert.alert(t('general.error'), t('auth.fillAllFields')); }
       return;
     }
 
@@ -32,7 +35,8 @@ export default function Login() {
       await login(email, password);
       router.replace('/(tabs)/home');
     } catch (error: any) {
-      Alert.alert('Erro', error.message);
+      if (Platform.OS === 'web') { window.alert(error.message); }
+      else { Alert.alert(t('general.error'), error.message); }
     } finally {
       setLoading(false);
     }
@@ -47,7 +51,7 @@ export default function Login() {
         <View style={styles.header}>
           <Ionicons name="business" size={80} color="#4CAF50" />
           <Text style={styles.title}>Business Empire</Text>
-          <Text style={styles.subtitle}>Construa seu Império Empresarial</Text>
+          <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
         </View>
 
         <View style={styles.form}>
@@ -55,7 +59,7 @@ export default function Login() {
             <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('auth.email')}
               placeholderTextColor="#888"
               value={email}
               onChangeText={setEmail}
@@ -68,7 +72,7 @@ export default function Login() {
             <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Senha"
+              placeholder={t('auth.password')}
               placeholderTextColor="#888"
               value={password}
               onChangeText={setPassword}
@@ -82,7 +86,7 @@ export default function Login() {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
             </Text>
           </TouchableOpacity>
 
@@ -90,7 +94,7 @@ export default function Login() {
             style={styles.linkButton}
             onPress={() => router.push('/(auth)/register')}
           >
-            <Text style={styles.linkText}>Não tem uma conta? Registre-se</Text>
+            <Text style={styles.linkText}>{t('auth.noAccount')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -260,7 +260,7 @@ export default function Companies() {
             <View key={c.id} style={[s.companyCard, { borderLeftColor: c.color, borderLeftWidth: 4 }]}>
               <View style={s.companyHeader}>
                 <View style={[s.companyIcon, { backgroundColor: c.color }]}><Ionicons name={c.icon as any} size={20} color="#fff" /></View>
-                <View style={s.companyInfo}><Text style={s.companyName}>{c.name}</Text><Text style={s.companySegment}>{SEGMENT_LABELS[c.segment] || c.segment} • Nível {c.level || 1}</Text></View>
+                <View style={s.companyInfo}><Text style={s.companyName}>{c.name}</Text><Text style={s.companySegment}>{SEGMENT_LABELS[c.segment] || c.segment} • {t('profile.levelLabel')} {c.level || 1}</Text></View>
                 <View style={s.companyRevenue}>
                   <Text style={s.revText}>{formatMoney(c.effective_revenue || 0)}</Text>
                   <Text style={s.revLabel}>/mês</Text>
@@ -269,7 +269,7 @@ export default function Companies() {
               </View>
               <Text style={s.companyDesc}>{c.description}</Text>
               <View style={s.companyMeta}>
-                <Text style={s.metaText}>👥 {c.employees} func.</Text>
+                <Text style={s.metaText}>👥 {c.employees} emp.</Text>
                 <Text style={s.metaText}>💰 Total: {formatMoney(c.total_collected || 0)}</Text>
               </View>
               {c.is_franchise && (
@@ -413,8 +413,8 @@ export default function Companies() {
               <Text style={s.buyDesc}>{c.description}</Text>
               <View style={s.buyMeta}>
                 <Text style={s.metaText}>💵 {formatMoney(c.monthly_revenue)}/{t('general.month')}</Text>
-                <Text style={s.metaText}>👥 {c.employees} func.</Text>
-                <Text style={s.metaText}>📊 Nível {c.level_required}</Text>
+                <Text style={s.metaText}>👥 {c.employees} emp.</Text>
+                <Text style={s.metaText}>📊 {t('profile.levelLabel')} {c.level_required}</Text>
               </View>
               {c.already_owned ? (
                 <View style={s.ownedBadge}><Ionicons name="checkmark-circle" size={16} color="#4CAF50" /><Text style={s.ownedText}>Já possui</Text></View>
