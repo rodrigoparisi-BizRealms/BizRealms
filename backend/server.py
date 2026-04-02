@@ -3622,6 +3622,212 @@ async def sell_company(request: dict, current_user: dict = Depends(get_current_u
     }
 
 
+# ==================== COMPANY PURCHASE OFFERS ====================
+
+import random as _random
+
+OFFER_REASONS = [
+    {"reason": "Investidor estrangeiro interessado", "emoji": "🌍", "multiplier_range": (1.05, 1.50), "type": "high"},
+    {"reason": "Fundo de investimento quer adquirir", "emoji": "🏦", "multiplier_range": (1.10, 1.40), "type": "high"},
+    {"reason": "Concorrente quer eliminar competição", "emoji": "⚔️", "multiplier_range": (1.15, 1.35), "type": "high"},
+    {"reason": "Mercado aquecido no setor", "emoji": "📈", "multiplier_range": (1.08, 1.30), "type": "high"},
+    {"reason": "Empresa chamou atenção da mídia", "emoji": "📺", "multiplier_range": (1.02, 1.25), "type": "high"},
+    {"reason": "Grupo empresarial em expansão", "emoji": "🏢", "multiplier_range": (1.00, 1.20), "type": "neutral"},
+    {"reason": "Oferta padrão de mercado", "emoji": "📋", "multiplier_range": (0.90, 1.10), "type": "neutral"},
+    {"reason": "Investidor oportunista", "emoji": "🦅", "multiplier_range": (0.85, 1.05), "type": "neutral"},
+    {"reason": "Crise no setor - comprador a preço baixo", "emoji": "📉", "multiplier_range": (0.70, 0.90), "type": "low"},
+    {"reason": "Liquidação forçada por dívidas do comprador", "emoji": "⚠️", "multiplier_range": (0.65, 0.85), "type": "low"},
+    {"reason": "Startup querendo o ponto comercial", "emoji": "🚀", "multiplier_range": (0.75, 0.95), "type": "low"},
+]
+
+BUYER_FIRST_NAMES = ["Carlos", "Marina", "Roberto", "Ana", "Pedro", "Fernanda", "Lucas", "Juliana", "Rafael", "Camila",
+                     "Gabriel", "Isabela", "Thiago", "Larissa", "Matheus", "Patrícia", "Bruno", "Vanessa", "Diego", "Renata"]
+BUYER_LAST_NAMES = ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Almeida", "Pereira", "Lima", "Gomes",
+                    "Costa", "Ribeiro", "Martins", "Carvalho", "Araújo", "Melo", "Barbosa", "Cardoso", "Correia", "Dias"]
+BUYER_COMPANIES = ["Capital Invest", "Grupo Alpha", "Nexus Holdings", "Venture BR", "Fênix Capital", "Athena Partners",
+                   "Ômega Corp", "Summit Group", "Prisma Investimentos", "Atlas Holdings", "Titan Capital", "Nova Era Group"]
+
+
+def _generate_buyer_name():
+    if _random.random() < 0.5:
+        return f"{_random.choice(BUYER_FIRST_NAMES)} {_random.choice(BUYER_LAST_NAMES)}"
+    else:
+        return _random.choice(BUYER_COMPANIES)
+
+
+@api_router.get("/companies/offers")
+async def get_company_offers(current_user: dict = Depends(get_current_user)):
+    """Get active purchase offers for user's companies. Generates new ones if needed."""
+    user_id = current_user['id']
+    now = datetime.utcnow()
+
+    # Clean expired offers
+    await db.company_offers.delete_many({"user_id": user_id, "expires_at": {"$lt": now}})
+
+    # Get active pending offers
+    active_offers = await db.company_offers.find({
+        "user_id": user_id,
+        "status": "pending",
+        "expires_at": {"$gt": now}
+    }).to_list(50)
+
+    # Get user's companies
+    user_companies = await db.user_companies.find({"user_id": user_id}).to_list(500)
+    if not user_companies:
+        return {"offers": [], "message": "Você não possui empresas"}
+
+    # Check cooldown: generate new offers at most every 2 hours per company
+    companies_with_recent_offer = set()
+    all_offers = await db.company_offers.find({
+        "user_id": user_id,
+        "created_at": {"$gt": now - timedelta(hours=2)}
+    }).to_list(500)
+    for o in all_offers:
+        companies_with_recent_offer.add(o.get('company_id'))
+
+    # Generate new offers for companies without recent ones (30% chance per company)
+    new_offers = []
+    for company in user_companies:
+        if company['id'] in companies_with_recent_offer:
+            continue
+        if _random.random() > 0.35:
+            continue
+
+        reason_data = _random.choice(OFFER_REASONS)
+        low, high = reason_data['multiplier_range']
+        multiplier = round(_random.uniform(low, high), 2)
+        purchase_price = company.get('purchase_price', 10000)
+        offer_amount = round(purchase_price * multiplier)
+
+        # Higher level companies get slightly better offers
+        company_level = company.get('level', 1)
+        if company_level > 3:
+            offer_amount = round(offer_amount * (1 + (company_level - 3) * 0.02))
+
+        # Expires in 4-24 hours
+        hours_to_expire = _random.randint(4, 24)
+        expires_at = now + timedelta(hours=hours_to_expire)
+
+        offer = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "company_id": company['id'],
+            "company_name": company.get('name', 'Empresa'),
+            "company_segment": company.get('segment', ''),
+            "buyer_name": _generate_buyer_name(),
+            "offer_amount": offer_amount,
+            "purchase_price": purchase_price,
+            "multiplier": multiplier,
+            "reason": reason_data['reason'],
+            "reason_emoji": reason_data['emoji'],
+            "reason_type": reason_data['type'],
+            "status": "pending",
+            "created_at": now,
+            "expires_at": expires_at,
+        }
+        await db.company_offers.insert_one(offer)
+        new_offers.append(offer)
+
+    # Merge with active
+    all_active = active_offers + new_offers
+    # Remove _id for serialization
+    result = []
+    for o in all_active:
+        o.pop('_id', None)
+        o['created_at'] = o['created_at'].isoformat() if isinstance(o.get('created_at'), datetime) else str(o.get('created_at', ''))
+        o['expires_at'] = o['expires_at'].isoformat() if isinstance(o.get('expires_at'), datetime) else str(o.get('expires_at', ''))
+        # Calculate time remaining in minutes
+        try:
+            exp = datetime.fromisoformat(o['expires_at']) if isinstance(o['expires_at'], str) else o['expires_at']
+            remaining_minutes = max(0, int((exp - now).total_seconds() / 60))
+            o['remaining_minutes'] = remaining_minutes
+        except Exception:
+            o['remaining_minutes'] = 0
+        result.append(o)
+
+    # Sort by offer amount descending
+    result.sort(key=lambda x: x.get('offer_amount', 0), reverse=True)
+
+    return {"offers": result, "total_offers": len(result)}
+
+
+@api_router.post("/companies/offers/respond")
+async def respond_to_offer(request: dict, current_user: dict = Depends(get_current_user)):
+    """Accept or decline a purchase offer"""
+    offer_id = request.get('offer_id')
+    action = request.get('action')  # 'accept' or 'decline'
+
+    if action not in ('accept', 'decline'):
+        raise HTTPException(status_code=400, detail="Ação inválida. Use 'accept' ou 'decline'")
+
+    offer = await db.company_offers.find_one({
+        "id": offer_id,
+        "user_id": current_user['id'],
+        "status": "pending"
+    })
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta não encontrada ou já expirada")
+
+    # Check if offer is still valid
+    if datetime.utcnow() > offer.get('expires_at', datetime.utcnow()):
+        await db.company_offers.update_one({"id": offer_id}, {"$set": {"status": "expired"}})
+        raise HTTPException(status_code=400, detail="Oferta expirada!")
+
+    if action == 'decline':
+        await db.company_offers.update_one({"id": offer_id}, {"$set": {"status": "declined"}})
+        return {"success": True, "message": f"Oferta de {offer.get('buyer_name')} recusada."}
+
+    # Accept: sell the company at the offer price
+    company = await db.user_companies.find_one({
+        "id": offer['company_id'],
+        "user_id": current_user['id']
+    })
+    if not company:
+        await db.company_offers.update_one({"id": offer_id}, {"$set": {"status": "expired"}})
+        raise HTTPException(status_code=404, detail="Empresa não encontrada (pode já ter sido vendida)")
+
+    offer_amount = offer.get('offer_amount', 0)
+
+    # Delete franchises if parent company
+    if not company.get('is_franchise'):
+        await db.user_companies.delete_many({
+            "parent_company_id": company['id'],
+            "user_id": current_user['id']
+        })
+
+    # Delete the company
+    await db.user_companies.delete_one({"_id": company['_id']})
+
+    # Credit the player
+    user = await db.users.find_one({"id": current_user['id']})
+    new_money = user['money'] + offer_amount
+    xp_bonus = round(offer_amount * 0.01)  # 1% of offer as XP
+    new_xp = user.get('experience', 0) + xp_bonus
+
+    await db.users.update_one({"id": current_user['id']}, {
+        "$set": {"money": new_money, "experience": new_xp}
+    })
+
+    # Mark offer as accepted and invalidate other offers for same company
+    await db.company_offers.update_one({"id": offer_id}, {"$set": {"status": "accepted"}})
+    await db.company_offers.update_many(
+        {"company_id": offer['company_id'], "user_id": current_user['id'], "status": "pending"},
+        {"$set": {"status": "expired"}}
+    )
+
+    profit = offer_amount - offer.get('purchase_price', 0)
+    profit_text = f"Lucro: R$ {profit:,.0f}" if profit >= 0 else f"Prejuízo: R$ {abs(profit):,.0f}"
+
+    return {
+        "success": True,
+        "message": f"Empresa '{company.get('name')}' vendida para {offer.get('buyer_name')} por R$ {offer_amount:,.0f}!\n\n{profit_text}\nXP Bônus: +{xp_bonus:,}",
+        "offer_amount": offer_amount,
+        "profit": profit,
+        "xp_bonus": xp_bonus,
+        "new_balance": round(new_money, 2),
+    }
+
+
 # Include the router in the main app
 app.include_router(api_router)
 

@@ -24,7 +24,7 @@ export default function Companies() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState<'owned' | 'buy' | 'create'>('owned');
+  const [viewMode, setViewMode] = useState<'owned' | 'buy' | 'create' | 'offers'>('owned');
   const [buying, setBuying] = useState<string | null>(null);
   const [collecting, setCollecting] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
@@ -36,6 +36,9 @@ export default function Companies() {
   // Merge modal
   const [showMerge, setShowMerge] = useState(false);
   const [franchising, setFranchising] = useState<string | null>(null);
+  // Offers
+  const [offers, setOffers] = useState<any[]>([]);
+  const [respondingOffer, setRespondingOffer] = useState<string | null>(null);
 
   const FRANCHISE_SEGMENTS = ['restaurante', 'loja', 'fabrica'];
 
@@ -74,18 +77,44 @@ export default function Companies() {
   const [mergeFrom, setMergeFrom] = useState<string | null>(null);
   const [mergeTo, setMergeTo] = useState<string | null>(null);
 
+  const handleOfferRespond = (offerId: string, action: 'accept' | 'decline', buyerName: string, amount?: number, companyName?: string) => {
+    if (action === 'accept') {
+      confirmAction(
+        'Aceitar Oferta',
+        `Vender "${companyName}" para ${buyerName} por R$ ${(amount || 0).toLocaleString('pt-BR')}?\n\nEsta ação não pode ser desfeita!`,
+        async () => {
+          setRespondingOffer(offerId);
+          try {
+            const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/offers/respond`, { offer_id: offerId, action: 'accept' }, { headers: { Authorization: `Bearer ${token}` } });
+            showAlert('Venda Concluída!', r.data.message);
+            await loadData(); await refreshUser();
+          } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro ao aceitar oferta'); }
+          finally { setRespondingOffer(null); }
+        }
+      );
+    } else {
+      setRespondingOffer(offerId);
+      axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/offers/respond`, { offer_id: offerId, action: 'decline' }, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => { showAlert('Oferta Recusada', r.data.message); loadData(); })
+        .catch(e => showAlert('Erro', e.response?.data?.detail || 'Erro'))
+        .finally(() => setRespondingOffer(null));
+    }
+  };
+
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
       const h = { Authorization: `Bearer ${token}` };
-      const [avRes, ownRes] = await Promise.all([
+      const [avRes, ownRes, offRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/available`, { headers: h }),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/owned`, { headers: h }),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/offers`, { headers: h }).catch(() => ({ data: { offers: [] } })),
       ]);
       setAvailable(avRes.data);
       setOwned(ownRes.data.companies);
       setTotalRevenue(ownRes.data.total_monthly_revenue);
+      setOffers(offRes.data.offers || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -175,10 +204,12 @@ export default function Companies() {
       <View style={s.header}><Text style={s.title}>Empresas</Text><Ionicons name="business" size={28} color="#4CAF50" /></View>
       {/* Mode Toggle */}
       <View style={s.toggle}>
-        {(['owned', 'buy', 'create'] as const).map(m => (
+        {(['owned', 'offers', 'buy', 'create'] as const).map(m => (
           <TouchableOpacity key={m} style={[s.toggleBtn, viewMode === m && s.toggleActive]} onPress={() => m === 'create' ? setShowCreate(true) : setViewMode(m)}>
-            <Ionicons name={m === 'owned' ? 'business' : m === 'buy' ? 'cart' : 'add-circle'} size={16} color={viewMode === m ? '#fff' : '#888'} />
-            <Text style={[s.toggleText, viewMode === m && s.toggleTextActive]}>{m === 'owned' ? `Minhas (${owned.length})` : m === 'buy' ? 'Comprar' : 'Criar'}</Text>
+            <Ionicons name={m === 'owned' ? 'business' : m === 'offers' ? 'mail' : m === 'buy' ? 'cart' : 'add-circle'} size={16} color={viewMode === m ? '#fff' : '#888'} />
+            <Text style={[s.toggleText, viewMode === m && s.toggleTextActive]}>
+              {m === 'owned' ? `Minhas (${owned.length})` : m === 'offers' ? `Ofertas${offers.length > 0 ? ` (${offers.length})` : ''}` : m === 'buy' ? 'Comprar' : 'Criar'}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -251,6 +282,112 @@ export default function Companies() {
               </TouchableOpacity>
             </View>
           ))}
+        </>)}
+
+        {/* OFFERS VIEW */}
+        {viewMode === 'offers' && (<>
+          {offers.length === 0 ? (
+            <View style={s.empty}>
+              <Ionicons name="mail-outline" size={64} color="#555" />
+              <Text style={s.emptyTitle}>Nenhuma oferta</Text>
+              <Text style={s.emptySub}>Novas ofertas surgem periodicamente para suas empresas. Volte mais tarde!</Text>
+              <TouchableOpacity style={s.goBtn} onPress={() => { onRefresh(); }}>
+                <Text style={s.goBtnText}>Verificar Ofertas</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={s.offersHeader}>
+                <Ionicons name="mail-unread" size={20} color="#FF9800" />
+                <Text style={s.offersHeaderText}>{offers.length} oferta(s) ativa(s)</Text>
+              </View>
+              {offers.map((offer: any) => {
+                const isGoodDeal = offer.multiplier >= 1.0;
+                const profitPercent = Math.round((offer.multiplier - 1) * 100);
+                const profitAmount = offer.offer_amount - offer.purchase_price;
+                const remainHours = Math.floor((offer.remaining_minutes || 0) / 60);
+                const remainMins = (offer.remaining_minutes || 0) % 60;
+
+                return (
+                  <View key={offer.id} style={[s.offerCard, { borderLeftColor: isGoodDeal ? '#4CAF50' : '#F44336', borderLeftWidth: 4 }]}>
+                    {/* Offer Header */}
+                    <View style={s.offerHeader}>
+                      <View style={[s.offerTypeBadge, { backgroundColor: offer.reason_type === 'high' ? '#4CAF5020' : offer.reason_type === 'low' ? '#F4433620' : '#FF980020' }]}>
+                        <Text style={s.offerEmoji}>{offer.reason_emoji || '📋'}</Text>
+                        <Text style={[s.offerTypeText, { color: offer.reason_type === 'high' ? '#4CAF50' : offer.reason_type === 'low' ? '#F44336' : '#FF9800' }]}>
+                          {offer.reason_type === 'high' ? 'Boa Oferta' : offer.reason_type === 'low' ? 'Oferta Baixa' : 'Oferta Neutra'}
+                        </Text>
+                      </View>
+                      <View style={s.offerTimer}>
+                        <Ionicons name="time" size={14} color="#888" />
+                        <Text style={s.offerTimerText}>
+                          {remainHours > 0 ? `${remainHours}h ${remainMins}m` : `${remainMins}m`}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Buyer & Company */}
+                    <Text style={s.offerBuyer}>{offer.buyer_name}</Text>
+                    <Text style={s.offerReason}>{offer.reason}</Text>
+                    <View style={s.offerCompanyRow}>
+                      <Ionicons name="business" size={14} color="#888" />
+                      <Text style={s.offerCompanyName}>{offer.company_name}</Text>
+                      <Text style={s.offerSegment}>{SEGMENT_LABELS[offer.company_segment] || offer.company_segment}</Text>
+                    </View>
+
+                    {/* Price comparison */}
+                    <View style={s.offerPriceBlock}>
+                      <View style={s.offerPriceItem}>
+                        <Text style={s.offerPriceLabel}>Você pagou</Text>
+                        <Text style={s.offerPriceOld}>R$ {(offer.purchase_price || 0).toLocaleString('pt-BR')}</Text>
+                      </View>
+                      <View style={s.offerArrow}>
+                        <Ionicons name="arrow-forward" size={20} color="#888" />
+                      </View>
+                      <View style={s.offerPriceItem}>
+                        <Text style={s.offerPriceLabel}>Oferta</Text>
+                        <Text style={[s.offerPriceNew, { color: isGoodDeal ? '#4CAF50' : '#F44336' }]}>
+                          R$ {(offer.offer_amount || 0).toLocaleString('pt-BR')}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Profit/Loss indicator */}
+                    <View style={[s.offerProfitBadge, { backgroundColor: isGoodDeal ? '#4CAF5015' : '#F4433615' }]}>
+                      <Ionicons name={isGoodDeal ? 'trending-up' : 'trending-down'} size={16} color={isGoodDeal ? '#4CAF50' : '#F44336'} />
+                      <Text style={[s.offerProfitText, { color: isGoodDeal ? '#4CAF50' : '#F44336' }]}>
+                        {isGoodDeal ? '+' : ''}{profitPercent}% ({profitAmount >= 0 ? '+' : ''}R$ {profitAmount.toLocaleString('pt-BR')})
+                      </Text>
+                    </View>
+
+                    {/* Actions */}
+                    <View style={s.offerActions}>
+                      <TouchableOpacity
+                        style={[s.offerDeclineBtn, respondingOffer === offer.id && s.disabled]}
+                        disabled={respondingOffer === offer.id}
+                        onPress={() => handleOfferRespond(offer.id, 'decline', offer.buyer_name)}
+                      >
+                        <Ionicons name="close-circle" size={18} color="#F44336" />
+                        <Text style={s.offerDeclineText}>Recusar</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[s.offerAcceptBtn, respondingOffer === offer.id && s.disabled]}
+                        disabled={respondingOffer === offer.id}
+                        onPress={() => handleOfferRespond(offer.id, 'accept', offer.buyer_name, offer.offer_amount, offer.company_name)}
+                      >
+                        {respondingOffer === offer.id ? <ActivityIndicator size="small" color="#fff" /> : (
+                          <>
+                            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                            <Text style={s.offerAcceptText}>Aceitar Oferta</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          )}
         </>)}
 
         {/* BUY VIEW */}
@@ -423,4 +560,32 @@ const s = StyleSheet.create({
   franchiseBtnText: { color: '#9C27B0', fontSize: 12, fontWeight: 'bold' },
   sellBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F44336', backgroundColor: '#F4433610' },
   sellBtnText: { color: '#F44336', fontSize: 12, fontWeight: 'bold' },
+  // Offers
+  offersHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16, backgroundColor: '#2a2a2a', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#FF980040' },
+  offersHeaderText: { color: '#FF9800', fontSize: 16, fontWeight: 'bold' },
+  offerCard: { backgroundColor: '#2a2a2a', borderRadius: 14, padding: 16, marginBottom: 14 },
+  offerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  offerTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  offerEmoji: { fontSize: 14 },
+  offerTypeText: { fontSize: 12, fontWeight: 'bold' },
+  offerTimer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  offerTimerText: { color: '#888', fontSize: 12 },
+  offerBuyer: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  offerReason: { color: '#aaa', fontSize: 13, marginTop: 2, marginBottom: 8 },
+  offerCompanyRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  offerCompanyName: { color: '#ccc', fontSize: 13, fontWeight: '600' },
+  offerSegment: { color: '#888', fontSize: 12 },
+  offerPriceBlock: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10 },
+  offerPriceItem: { flex: 1, alignItems: 'center' },
+  offerArrow: { paddingHorizontal: 12 },
+  offerPriceLabel: { color: '#666', fontSize: 11, marginBottom: 4 },
+  offerPriceOld: { color: '#888', fontSize: 15, fontWeight: '600' },
+  offerPriceNew: { fontSize: 18, fontWeight: 'bold' },
+  offerProfitBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, padding: 10, marginBottom: 12 },
+  offerProfitText: { fontSize: 14, fontWeight: 'bold' },
+  offerActions: { flexDirection: 'row', gap: 10 },
+  offerDeclineBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#F4433640' },
+  offerDeclineText: { color: '#F44336', fontSize: 14, fontWeight: 'bold' },
+  offerAcceptBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#4CAF50', borderRadius: 10, padding: 12 },
+  offerAcceptText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
 });
