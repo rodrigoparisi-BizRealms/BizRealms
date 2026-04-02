@@ -244,6 +244,27 @@ export default function Home() {
           )}
         </TouchableOpacity>
 
+        {/* Bank Panel */}
+        <TouchableOpacity
+          style={[styles.panelCard, { borderWidth: 1, borderColor: '#1E88E530' }]}
+          onPress={() => router.push('/(tabs)/bank')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleRow}>
+              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(30,136,229,0.15)' }]}>
+                <Ionicons name="card" size={20} color="#1E88E5" />
+              </View>
+              <Text style={styles.panelTitle}>Banco On-line</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </View>
+          <View style={styles.panelEmpty}>
+            <Text style={[styles.panelEmptyText, { color: '#1E88E5' }]}>Cartão de Crédito, Milhas e Empréstimos</Text>
+            <Text style={styles.panelEmptyHint}>Gerencie suas finanças e acumule milhas</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Investment Portfolio Panel */}
         <TouchableOpacity
           style={styles.panelCard}

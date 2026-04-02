@@ -57,6 +57,20 @@ export default function Companies() {
       else Alert.alert('Erro', msg);
     } finally { setFranchising(null); }
   };
+  const handleSellCompany = (company: any) => {
+    const sellPrice = Math.round(company.purchase_price * 0.8);
+    const franchiseWarning = !company.is_franchise ? '\n\nATENÇÃO: Todas as franquias desta empresa também serão vendidas!' : '';
+    confirmAction('Vender Empresa', `Deseja vender "${company.name}" por R$ ${sellPrice.toLocaleString('pt-BR')}?${franchiseWarning}`, async () => {
+      try {
+        const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/sell`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
+        showAlert('Empresa Vendida!', r.data.message);
+        await loadData(); await refreshUser();
+      } catch (e: any) {
+        showAlert('Erro', e.response?.data?.detail || 'Erro ao vender');
+      }
+    });
+  };
+
   const [mergeFrom, setMergeFrom] = useState<string | null>(null);
   const [mergeTo, setMergeTo] = useState<string | null>(null);
 
@@ -230,6 +244,11 @@ export default function Companies() {
                   <Text style={s.franchiseBtnText}>{franchising === c.id ? 'Criando...' : 'Criar Franquia (60% custo, 70% receita)'}</Text>
                 </TouchableOpacity>
               )}
+              {/* Sell Button */}
+              <TouchableOpacity style={s.sellBtn} onPress={() => handleSellCompany(c)}>
+                <Ionicons name="cash-outline" size={16} color="#F44336" />
+                <Text style={s.sellBtnText}>Vender por R$ {Math.round((c.purchase_price || 0) * 0.8).toLocaleString('pt-BR')}</Text>
+              </TouchableOpacity>
             </View>
           ))}
         </>)}
@@ -298,12 +317,17 @@ export default function Companies() {
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>
             </TouchableOpacity>
           ))}
-          <Text style={[s.label, { marginTop: 16 }]}>Empresa para Fundir</Text>
-          {owned.filter(c => c.id !== mergeFrom).map(c => (
+          <Text style={[s.label, { marginTop: 16 }]}>Empresa para Fundir (mesmo segmento)</Text>
+          {owned.filter(c => c.id !== mergeFrom && (!mergeFrom || c.segment === owned.find(o => o.id === mergeFrom)?.segment)).map(c => (
             <TouchableOpacity key={`m2-${c.id}`} style={[s.mergeOption, mergeTo === c.id && s.mergeSelected]} onPress={() => setMergeTo(c.id)}>
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>
             </TouchableOpacity>
           ))}
+          {mergeFrom && owned.filter(c => c.id !== mergeFrom && c.segment === owned.find(o => o.id === mergeFrom)?.segment).length === 0 && (
+            <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+              <Text style={{ color: '#FF9800', fontSize: 13 }}>Nenhuma empresa do mesmo segmento disponível para fusão</Text>
+            </View>
+          )}
           <TouchableOpacity style={[s.createBtn, { backgroundColor: '#2196F3' }]} onPress={handleMerge}><Text style={s.createText}>Realizar Fusão</Text></TouchableOpacity>
         </View></View>
       </Modal>
@@ -397,5 +421,6 @@ const s = StyleSheet.create({
   franchiseBadgeText: { color: '#9C27B0', fontSize: 12, fontWeight: '600' },
   franchiseBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#9C27B0', backgroundColor: '#9C27B010' },
   franchiseBtnText: { color: '#9C27B0', fontSize: 12, fontWeight: 'bold' },
-  disabled: { opacity: 0.5 },
+  sellBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F44336', backgroundColor: '#F4433610' },
+  sellBtnText: { color: '#F44336', fontSize: 12, fontWeight: 'bold' },
 });
