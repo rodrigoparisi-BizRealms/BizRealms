@@ -35,6 +35,28 @@ export default function Companies() {
   const [newSegment, setNewSegment] = useState('restaurante');
   // Merge modal
   const [showMerge, setShowMerge] = useState(false);
+  const [franchising, setFranchising] = useState<string | null>(null);
+
+  const FRANCHISE_SEGMENTS = ['restaurante', 'loja', 'fabrica'];
+
+  const handleCreateFranchise = async (company: any) => {
+    const cost = Math.round(company.purchase_price * 0.6);
+    const doIt = Platform.OS === 'web'
+      ? window.confirm(`Criar franquia de "${company.name}"?\n\nCusto: R$ ${cost.toLocaleString('pt-BR')}\nReceita: 70% da original`)
+      : await new Promise<boolean>(resolve => Alert.alert('Criar Franquia', `Criar franquia de "${company.name}"?\n\nCusto: R$ ${cost.toLocaleString('pt-BR')}\nReceita: 70% da original`, [{ text: 'Cancelar', onPress: () => resolve(false) }, { text: 'Criar', onPress: () => resolve(true) }]));
+    if (!doIt) return;
+    setFranchising(company.id);
+    try {
+      const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/create-franchise`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
+      if (Platform.OS === 'web') window.alert(`Franquia Criada!\n\n${r.data.message}`);
+      else Alert.alert('Franquia Criada!', r.data.message);
+      await loadData(); await refreshUser();
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || 'Erro';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Erro', msg);
+    } finally { setFranchising(null); }
+  };
   const [mergeFrom, setMergeFrom] = useState<string | null>(null);
   const [mergeTo, setMergeTo] = useState<string | null>(null);
 
@@ -199,6 +221,15 @@ export default function Companies() {
                 <Text style={s.metaText}>👥 {c.employees} func.</Text>
                 <Text style={s.metaText}>💰 Total: R$ {(c.total_collected || 0).toLocaleString('pt-BR', {maximumFractionDigits: 0})}</Text>
               </View>
+              {c.is_franchise && (
+                <View style={s.franchiseBadge}><Ionicons name="git-branch" size={14} color="#9C27B0" /><Text style={s.franchiseBadgeText}>Franquia de {c.parent_company_name}</Text></View>
+              )}
+              {!c.is_franchise && FRANCHISE_SEGMENTS.includes(c.segment) && (
+                <TouchableOpacity style={[s.franchiseBtn, franchising === c.id && s.disabled]} onPress={() => handleCreateFranchise(c)} disabled={franchising === c.id}>
+                  <Ionicons name="git-branch" size={16} color="#9C27B0" />
+                  <Text style={s.franchiseBtnText}>{franchising === c.id ? 'Criando...' : 'Criar Franquia (60% custo, 70% receita)'}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
         </>)}
@@ -362,4 +393,9 @@ const s = StyleSheet.create({
   mergeOption: { backgroundColor: '#2a2a2a', borderRadius: 10, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#3a3a3a' },
   mergeSelected: { borderColor: '#2196F3', backgroundColor: '#1a2a3a' },
   mergeOptionText: { color: '#fff', fontSize: 14 },
+  franchiseBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#9C27B015', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  franchiseBadgeText: { color: '#9C27B0', fontSize: 12, fontWeight: '600' },
+  franchiseBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#9C27B0', backgroundColor: '#9C27B010' },
+  franchiseBtnText: { color: '#9C27B0', fontSize: 12, fontWeight: 'bold' },
+  disabled: { opacity: 0.5 },
 });

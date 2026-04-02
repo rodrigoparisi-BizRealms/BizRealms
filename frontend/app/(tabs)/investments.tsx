@@ -179,6 +179,10 @@ export default function Investments() {
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const [detailHistory, setDetailHistory] = useState<AssetHistory[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  
+  // Market events
+  const [marketEvents, setMarketEvents] = useState<any[]>([]);
+  const [triggeringEvent, setTriggeringEvent] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -187,13 +191,15 @@ export default function Investments() {
   const loadData = async () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [marketRes, portfolioRes] = await Promise.all([
+      const [marketRes, portfolioRes, eventsRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/market`, { headers }),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/portfolio`, { headers }),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/market/events`, { headers }).catch(() => ({ data: { active_events: [] } })),
       ]);
       setAssets(marketRes.data);
       setHoldings(portfolioRes.data.holdings);
       setSummary(portfolioRes.data.summary);
+      setMarketEvents(eventsRes.data.active_events || []);
     } catch (error) {
       console.error('Error loading investments:', error);
     } finally {
@@ -236,6 +242,17 @@ export default function Investments() {
   const showAlert = (title: string, msg: string) => {
     if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
     else Alert.alert(title, msg);
+  };
+
+  const handleTriggerEvent = async () => {
+    setTriggeringEvent(true);
+    try {
+      const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/market/trigger-event`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      showAlert('Evento!', r.data.message);
+      await loadData();
+    } catch (e: any) {
+      showAlert('Aguarde', e.response?.data?.detail || 'Erro');
+    } finally { setTriggeringEvent(false); }
   };
 
   const handleTrade = async () => {
@@ -353,6 +370,43 @@ export default function Investments() {
                   </Text>
                   <Ionicons name="chevron-forward" size={20} color="#888" />
                 </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Market Events Banner */}
+            {marketEvents.length > 0 && (
+              <View style={styles.eventsBanner}>
+                {marketEvents.map((ev: any) => {
+                  const hrs = Math.floor((ev.seconds_remaining || 0) / 3600);
+                  const mins = Math.floor(((ev.seconds_remaining || 0) % 3600) / 60);
+                  return (
+                    <View key={ev.id} style={[styles.eventCard, { borderLeftColor: ev.color || '#4CAF50', borderLeftWidth: 4 }]}>
+                      <View style={styles.eventRow}>
+                        <Ionicons name={(ev.icon || 'flash') as any} size={20} color={ev.color || '#4CAF50'} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.eventTitle, { color: ev.color || '#4CAF50' }]}>{ev.title}</Text>
+                          <Text style={styles.eventDesc}>{ev.description}</Text>
+                        </View>
+                        <Text style={styles.eventTimer}>{hrs}h{mins.toString().padStart(2, '0')}m</Text>
+                      </View>
+                      <View style={styles.eventEffects}>
+                        {Object.entries(ev.effect || {}).map(([cat, mult]: [string, any]) => (
+                          <View key={cat} style={[styles.effectChip, { backgroundColor: mult > 1 ? '#4CAF5020' : '#F4433620' }]}>
+                            <Text style={[styles.effectText, { color: mult > 1 ? '#4CAF50' : '#F44336' }]}>
+                              {cat.toUpperCase()} {mult > 1 ? '+' : ''}{((mult - 1) * 100).toFixed(0)}%
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+            {marketEvents.length === 0 && (
+              <TouchableOpacity style={styles.triggerEventBtn} onPress={handleTriggerEvent} disabled={triggeringEvent}>
+                <Ionicons name="newspaper" size={18} color="#FFD700" />
+                <Text style={styles.triggerEventText}>{triggeringEvent ? 'Aguarde...' : 'Gerar Evento de Mercado'}</Text>
               </TouchableOpacity>
             )}
 
@@ -953,6 +1007,18 @@ const styles = StyleSheet.create({
   tradePrice: { color: '#4CAF50', fontSize: 16, fontWeight: 'bold', marginTop: 4 },
   tradeAvailable: { color: '#FF9800', fontSize: 13, marginTop: 4 },
   tradeLabel: { color: '#888', fontSize: 14, marginBottom: 8 },
+  // Market Events
+  eventsBanner: { marginBottom: 12, gap: 8 },
+  eventCard: { backgroundColor: '#2a2a2a', borderRadius: 12, padding: 12 },
+  eventRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  eventTitle: { fontSize: 14, fontWeight: 'bold' },
+  eventDesc: { color: '#888', fontSize: 11, marginTop: 2 },
+  eventTimer: { color: '#888', fontSize: 12, fontWeight: 'bold' },
+  eventEffects: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  effectChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  effectText: { fontSize: 10, fontWeight: 'bold' },
+  triggerEventBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginBottom: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FFD70040', backgroundColor: '#2a2a1a' },
+  triggerEventText: { color: '#FFD700', fontSize: 13, fontWeight: 'bold' },
   tradeInput: {
     backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16,
     color: '#fff', fontSize: 24, fontWeight: 'bold', textAlign: 'center',

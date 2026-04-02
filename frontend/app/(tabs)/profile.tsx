@@ -42,6 +42,51 @@ export default function Profile() {
   const [certIssuer, setCertIssuer] = useState('');
   const [certBoost, setCertBoost] = useState('5');
 
+  // Personal data form
+  const [showPersonalModal, setShowPersonalModal] = useState(false);
+  const [personalData, setPersonalData] = useState({
+    full_name: '',
+    address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    phone: '',
+  });
+  const [savingPersonal, setSavingPersonal] = useState(false);
+
+  const showAlert = (title: string, msg: string) => {
+    if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
+    else Alert.alert(title, msg);
+  };
+
+  const openPersonalData = () => {
+    setPersonalData({
+      full_name: (user as any)?.full_name || user?.name || '',
+      address: (user as any)?.address || '',
+      city: (user as any)?.city || '',
+      state: (user as any)?.state || '',
+      zip_code: (user as any)?.zip_code || '',
+      phone: (user as any)?.phone || '',
+    });
+    setShowPersonalModal(true);
+  };
+
+  const handleSavePersonalData = async () => {
+    setSavingPersonal(true);
+    try {
+      await axios.put(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/user/personal-data`,
+        personalData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showAlert('Sucesso!', 'Dados pessoais atualizados com sucesso');
+      await refreshUser();
+      setShowPersonalModal(false);
+    } catch (e: any) {
+      showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar dados');
+    } finally { setSavingPersonal(false); }
+  };
+
   const handleLogout = async () => {
     await logout();
     router.replace('/(auth)/login');
@@ -447,6 +492,42 @@ export default function Profile() {
           )}
         </View>
 
+        {/* Personal Data Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="person-circle" size={22} color="#4CAF50" />
+            <Text style={styles.sectionTitle}>Dados Pessoais</Text>
+            <TouchableOpacity style={styles.addButton} onPress={openPersonalData}>
+              <Ionicons name="create" size={20} color="#fff" />
+              <Text style={styles.addButtonText}>Editar</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.card}>
+            <View style={styles.cardContent}>
+              <View style={{ gap: 6 }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Ionicons name="person" size={16} color="#888" />
+                  <Text style={styles.personalLabel}>{(user as any)?.full_name || user?.name || 'Não informado'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Ionicons name="mail" size={16} color="#888" />
+                  <Text style={styles.personalLabel}>{user?.email || 'Não informado'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Ionicons name="call" size={16} color="#888" />
+                  <Text style={styles.personalLabel}>{(user as any)?.phone || 'Não informado'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Ionicons name="location" size={16} color="#888" />
+                  <Text style={styles.personalLabel}>
+                    {(user as any)?.address ? `${(user as any).address}, ${(user as any).city || ''} - ${(user as any).state || ''}` : 'Não informado'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out" size={24} color="#F44336" />
@@ -647,6 +728,50 @@ export default function Profile() {
                 <Text style={styles.submitButtonText}>Adicionar Certificação</Text>
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Personal Data Modal */}
+      <Modal visible={showPersonalModal} animationType="slide" transparent onRequestClose={() => setShowPersonalModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Dados Pessoais</Text>
+                <TouchableOpacity onPress={() => setShowPersonalModal(false)}>
+                  <Ionicons name="close" size={28} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={{ maxHeight: 420 }}>
+                <Text style={styles.inputLabel}>Nome Completo</Text>
+                <TextInput style={styles.input} value={personalData.full_name} onChangeText={v => setPersonalData(p => ({...p, full_name: v}))} placeholder="Nome completo" placeholderTextColor="#666" />
+
+                <Text style={styles.inputLabel}>Telefone Celular</Text>
+                <TextInput style={styles.input} value={personalData.phone} onChangeText={v => setPersonalData(p => ({...p, phone: v}))} placeholder="(11) 99999-9999" placeholderTextColor="#666" keyboardType="phone-pad" />
+
+                <Text style={styles.inputLabel}>Endereço</Text>
+                <TextInput style={styles.input} value={personalData.address} onChangeText={v => setPersonalData(p => ({...p, address: v}))} placeholder="Rua, número, complemento" placeholderTextColor="#666" />
+
+                <Text style={styles.inputLabel}>Cidade</Text>
+                <TextInput style={styles.input} value={personalData.city} onChangeText={v => setPersonalData(p => ({...p, city: v}))} placeholder="Cidade" placeholderTextColor="#666" />
+
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Estado</Text>
+                    <TextInput style={styles.input} value={personalData.state} onChangeText={v => setPersonalData(p => ({...p, state: v}))} placeholder="UF" placeholderTextColor="#666" maxLength={2} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>CEP</Text>
+                    <TextInput style={styles.input} value={personalData.zip_code} onChangeText={v => setPersonalData(p => ({...p, zip_code: v}))} placeholder="00000-000" placeholderTextColor="#666" keyboardType="numeric" />
+                  </View>
+                </View>
+
+                <TouchableOpacity style={[styles.submitButton, savingPersonal && { opacity: 0.5 }]} onPress={handleSavePersonalData} disabled={savingPersonal}>
+                  <Text style={styles.submitButtonText}>{savingPersonal ? 'Salvando...' : 'Salvar Dados'}</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -857,6 +982,11 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
     marginLeft: 8,
+  },
+  personalLabel: {
+    color: '#ccc',
+    fontSize: 14,
+    flex: 1,
   },
 
   // Empty State

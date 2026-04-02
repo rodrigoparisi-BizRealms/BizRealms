@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-  Alert, ActivityIndicator, Platform,
+  Alert, ActivityIndicator, Platform, Modal, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,8 +26,12 @@ export default function Patrimonio() {
   const [viewMode, setViewMode] = useState<'owned' | 'store'>('owned');
   const [filterCat, setFilterCat] = useState('all');
   const [buying, setBuying] = useState<string | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryName, setGalleryName] = useState('');
+  const [galleryIdx, setGalleryIdx] = useState(0);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (token) loadData(); }, [token]);
 
   const loadData = async () => {
     try {
@@ -76,6 +80,22 @@ export default function Patrimonio() {
         await loadData(); await refreshUser();
       } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
     });
+  };
+
+  const openGallery = async (asset: any) => {
+    setGalleryName(asset.name);
+    setGalleryIdx(0);
+    try {
+      // Generate a key from the asset name for image lookup
+      const nameKey = asset.name.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      const r = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/images/${nameKey}`);
+      setGalleryImages(r.data.images || []);
+    } catch {
+      setGalleryImages([]);
+    }
+    setShowGallery(true);
   };
 
   const filtered = filterCat === 'all' ? (viewMode === 'store' ? store : owned) : (viewMode === 'store' ? store : owned).filter(a => a.category === filterCat);
@@ -190,6 +210,10 @@ export default function Patrimonio() {
                 <Text style={s.storePrice}>R$ {a.price.toLocaleString('pt-BR')}</Text>
               </View>
               <Text style={s.aDesc}>{a.description}</Text>
+              <TouchableOpacity style={s.photoBtn} onPress={() => openGallery(a)}>
+                <Ionicons name="images" size={16} color="#9C27B0" />
+                <Text style={s.photoBtnText}>Ver Fotos</Text>
+              </TouchableOpacity>
               <View style={s.storeMeta}>
                 <Text style={[s.metaChip, { color: appreciation >= 0 ? '#4CAF50' : '#F44336' }]}>
                   {appreciation >= 0 ? '📈' : '📉'} {appreciation > 0 ? '+' : ''}{(appreciation * 100).toFixed(0)}%/mês
@@ -209,6 +233,41 @@ export default function Patrimonio() {
           );
         })}
       </ScrollView>
+
+      {/* Image Gallery Modal */}
+      <Modal visible={showGallery} animationType="fade" transparent onRequestClose={() => setShowGallery(false)}>
+        <View style={s.galleryOverlay}>
+          <View style={s.galleryHeader}>
+            <Text style={s.galleryTitle}>{galleryName}</Text>
+            <TouchableOpacity onPress={() => setShowGallery(false)}>
+              <Ionicons name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          {galleryImages.length > 0 ? (
+            <>
+              <Image source={{ uri: galleryImages[galleryIdx] }} style={s.galleryImage} resizeMode="cover" />
+              <View style={s.galleryNav}>
+                <TouchableOpacity style={s.galleryNavBtn} onPress={() => setGalleryIdx(i => Math.max(0, i - 1))} disabled={galleryIdx === 0}>
+                  <Ionicons name="chevron-back" size={28} color={galleryIdx === 0 ? '#444' : '#fff'} />
+                </TouchableOpacity>
+                <Text style={s.galleryCount}>{galleryIdx + 1} / {galleryImages.length}</Text>
+                <TouchableOpacity style={s.galleryNavBtn} onPress={() => setGalleryIdx(i => Math.min(galleryImages.length - 1, i + 1))} disabled={galleryIdx >= galleryImages.length - 1}>
+                  <Ionicons name="chevron-forward" size={28} color={galleryIdx >= galleryImages.length - 1 ? '#444' : '#fff'} />
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal style={s.thumbRow}>
+                {galleryImages.map((img, i) => (
+                  <TouchableOpacity key={i} onPress={() => setGalleryIdx(i)}>
+                    <Image source={{ uri: img }} style={[s.thumb, i === galleryIdx && s.thumbActive]} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          ) : (
+            <View style={s.center}><Text style={s.loadText}>Sem fotos disponíveis</Text></View>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -225,9 +284,9 @@ const s = StyleSheet.create({
   tActive: { backgroundColor: '#9C27B0' },
   tText: { color: '#888', fontSize: 13, fontWeight: 'bold' },
   tTextActive: { color: '#fff' },
-  filterScroll: { marginHorizontal: 16, marginTop: 12, marginBottom: 4 },
-  filterRow: { flexDirection: 'row', gap: 8 },
-  fChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2a2a2a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
+  filterScroll: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, maxHeight: 40 },
+  filterRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  fChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2a2a2a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, height: 32 },
   fActive: { backgroundColor: '#9C27B0' },
   fText: { color: '#888', fontSize: 12, fontWeight: 'bold' },
   fTextActive: { color: '#fff' },
@@ -270,4 +329,17 @@ const s = StyleSheet.create({
   emptySub: { color: '#666', fontSize: 14, textAlign: 'center', marginTop: 8, maxWidth: 280 },
   goBtn: { backgroundColor: '#9C27B0', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12, marginTop: 20 },
   goBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, paddingVertical: 6 },
+  photoBtnText: { color: '#9C27B0', fontSize: 13, fontWeight: 'bold' },
+  galleryOverlay: { flex: 1, backgroundColor: '#000', justifyContent: 'center' },
+  galleryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 40 },
+  galleryTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  galleryImage: { width: '100%', height: 350 },
+  galleryNav: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 24, paddingVertical: 16 },
+  galleryNavBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  galleryCount: { color: '#888', fontSize: 14 },
+  thumbRow: { paddingHorizontal: 16 },
+  thumb: { width: 70, height: 50, borderRadius: 8, marginRight: 8, borderWidth: 2, borderColor: 'transparent' },
+  thumbActive: { borderColor: '#9C27B0' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

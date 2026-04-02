@@ -3107,17 +3107,49 @@ ASSET_IMAGES = {
 
 @api_router.get("/assets/images/{asset_key}")
 async def get_asset_images(asset_key: str):
-    """Get images for an asset"""
+    """Get images for an asset by key or name"""
+    # Direct key match
     images = ASSET_IMAGES.get(asset_key)
-    if not images:
-        # Try category defaults
-        if "moto" in asset_key or "fiat" in asset_key or "civic" in asset_key or "bmw" in asset_key or "ferrari" in asset_key:
-            images = ASSET_IMAGES.get("default_vehicle", [])
-        elif "kit" in asset_key or "apart" in asset_key or "casa" in asset_key or "mans" in asset_key:
-            images = ASSET_IMAGES.get("default_property", [])
-        else:
-            images = ASSET_IMAGES.get("default_luxury", [])
-    return {"images": images}
+    if images:
+        return {"images": images}
+    
+    # Fuzzy name match
+    key_lower = asset_key.lower()
+    for img_key in ASSET_IMAGES:
+        if img_key in key_lower or key_lower in img_key:
+            return {"images": ASSET_IMAGES[img_key]}
+    
+    # Category-based defaults via keyword matching
+    if any(w in key_lower for w in ['moto', 'bike', 'cg', 'yamaha', 'honda']):
+        return {"images": ASSET_IMAGES.get("moto_cg160", [])}
+    if any(w in key_lower for w in ['fiat', 'uno', 'gol', 'carro', 'popular']):
+        return {"images": ASSET_IMAGES.get("fiat_uno", [])}
+    if any(w in key_lower for w in ['civic', 'corolla', 'sedan']):
+        return {"images": ASSET_IMAGES.get("civic_touring", [])}
+    if any(w in key_lower for w in ['bmw', 'suv', 'audi', 'mercedes']):
+        return {"images": ASSET_IMAGES.get("bmw_x5", [])}
+    if any(w in key_lower for w in ['kitnet', 'kit', 'studio', 'quitinete']):
+        return {"images": ASSET_IMAGES.get("kitnet", [])}
+    if any(w in key_lower for w in ['apartamento', 'apart', 'apto']):
+        return {"images": ASSET_IMAGES.get("apartamento", [])}
+    if any(w in key_lower for w in ['casa', 'condominio', 'sobrado']):
+        return {"images": ASSET_IMAGES.get("casa_condominio", [])}
+    if any(w in key_lower for w in ['mansao', 'mansion', 'palacio']):
+        return {"images": ASSET_IMAGES.get("mansao", [])}
+    if any(w in key_lower for w in ['rolex', 'relogio', 'watch']):
+        return {"images": ASSET_IMAGES.get("rolex", [])}
+    if any(w in key_lower for w in ['iate', 'yacht', 'barco', 'lancha']):
+        return {"images": ASSET_IMAGES.get("iate", [])}
+    if any(w in key_lower for w in ['ferrari', 'lamborghini', 'porsche', 'esportivo']):
+        return {"images": ASSET_IMAGES.get("default_vehicle", [])}
+    
+    # Last resort: category fallback
+    if any(w in key_lower for w in ['veiculo', 'carro', 'moto']):
+        return {"images": ASSET_IMAGES.get("default_vehicle", [])}
+    if any(w in key_lower for w in ['imovel', 'casa', 'apart', 'terreno']):
+        return {"images": ASSET_IMAGES.get("default_property", [])}
+    
+    return {"images": ASSET_IMAGES.get("default_luxury", [])}
 
 
 # Include the router in the main app

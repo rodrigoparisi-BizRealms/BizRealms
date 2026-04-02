@@ -93,7 +93,7 @@ export default function Jobs() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [jobsRes, currentJobRes, boostRes, appsRes] = await Promise.all([
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs`),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/available-for-level`, { headers }),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/current`, { headers }).catch(() => ({ data: null })),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/ads/current-boost`, { headers }).catch(() => ({ data: { active: false, multiplier: 1, ads_watched: 0, seconds_remaining: 0 } })),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/jobs/my-applications`, { headers }).catch(() => ({ data: [] })),
@@ -497,13 +497,19 @@ export default function Jobs() {
               const isApplyingThis = applying === job.id;
 
               return (
-                <View key={job.id} style={[styles.jobCard, isApplied && styles.jobCardApplied]}>
+                <View key={job.id} style={[styles.jobCard, isApplied && styles.jobCardApplied, job.is_premium && styles.premiumJobCard]}>
+                  {job.is_premium && (
+                    <View style={styles.premiumBadge}>
+                      <Ionicons name="star" size={12} color="#000" />
+                      <Text style={styles.premiumBadgeText}>PREMIUM Nv{job.min_level}+</Text>
+                    </View>
+                  )}
                   <View style={styles.jobHeader}>
                     <View style={styles.jobTitleContainer}>
                       <Text style={styles.jobTitle}>{job.title}</Text>
                       <Text style={styles.jobCompany}>{job.company}</Text>
                     </View>
-                    <Text style={styles.jobSalary}>
+                    <Text style={[styles.jobSalary, job.is_premium && { color: '#FFD700' }]}>
                       R$ {job.salary.toLocaleString('pt-BR')}
                     </Text>
                   </View>
@@ -892,6 +898,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#555',
     opacity: 0.85,
+  },
+  premiumJobCard: {
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    backgroundColor: '#2a2a1a',
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFD700',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  premiumBadgeText: {
+    color: '#000',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   jobHeader: {
     flexDirection: 'row',
