@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bizrealms.game",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Take profile photos for your avatar",
         "NSPhotoLibraryUsageDescription": "Choose profile photos from gallery",
@@ -19,6 +20,7 @@
     },
     "android": {
       "package": "com.bizrealms.game",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f1723"
@@ -27,7 +29,10 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "SCHEDULE_EXACT_ALARM"
       ]
     },
     "web": {
@@ -47,7 +52,15 @@
         }
       ],
       "expo-localization",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#4CAF50"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

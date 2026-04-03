@@ -1,9 +1,16 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 export default function TabsLayout() {
   const { t } = useLanguage();
+  const { token } = useAuth();
+  
+  // Register for push notifications when user is authenticated
+  usePushNotifications(token);
+  
   return (
     <Tabs
       screenOptions={{

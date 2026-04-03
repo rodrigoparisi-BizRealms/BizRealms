@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,28 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import axios from 'axios';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+
+// Required for web-based auth sessions
+WebBrowser.maybeCompleteAuthSession();
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Google OAuth Config
+const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
+const GOOGLE_DISCOVERY = {
+  authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenEndpoint: 'https://oauth2.googleapis.com/token',
+  revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
+};
 
 const showMsg = (title: string, msg: string) => {
   if (Platform.OS === 'web') window.alert(`${title}\n${msg}`);
@@ -27,9 +41,37 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const { login } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
+
+  // Google OAuth request
+  const redirectUri = AuthSession.makeRedirectUri({ preferLocalhost: false });
+  const [googleRequest, googleResponse, googlePromptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: GOOGLE_CLIENT_ID,
+      scopes: ['openid', 'profile', 'email'],
+      redirectUri,
+      responseType: AuthSession.ResponseType.Token,
+    },
+    GOOGLE_DISCOVERY
+  );
+
+  // Handle Google OAuth response
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { access_token } = googleResponse.params;
+      if (access_token) {
+        handleSocialAuth('google', access_token);
+      }
+    } else if (googleResponse?.type === 'error') {
+      console.error('Google auth error:', googleResponse.error);
+      setSocialLoading(null);
+    } else if (googleResponse?.type === 'dismiss') {
+      setSocialLoading(null);
+    }
+  }, [googleResponse]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -67,18 +109,52 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    // TODO: Replace with real Google OAuth when Client ID is configured
-    // For now, show a message that credentials need to be configured
-    showMsg('Google Sign-In', 'Configure GOOGLE_CLIENT_ID in .env to enable Google authentication. The flow is fully implemented and ready.');
+    if (!GOOGLE_CLIENT_ID) {
+      showMsg(
+        'Google Sign-In',
+        'Configure EXPO_PUBLIC_GOOGLE_CLIENT_ID no .env para habilitar autenticação Google. Crie um projeto no Google Cloud Console > APIs & Services > Credentials > OAuth 2.0 Client IDs.'
+      );
+      return;
+    }
+    setSocialLoading('google');
+    try {
+      await googlePromptAsync();
+    } catch (e: any) {
+      console.error('Google prompt error:', e);
+      showMsg(t('general.error'), 'Erro ao iniciar Google Sign-In');
+      setSocialLoading(null);
+    }
   };
 
   const handleAppleLogin = async () => {
-    // TODO: Replace with real Apple Sign-In when Apple Developer account is configured
-    // Apple Sign-In only works on iOS devices with expo-apple-authentication
-    if (Platform.OS === 'ios') {
-      showMsg('Apple Sign-In', 'Configure Apple Developer credentials to enable. The flow is fully implemented and ready.');
-    } else {
-      showMsg('Apple Sign-In', 'Apple Sign-In is available on iOS devices only.');
+    if (Platform.OS !== 'ios') {
+      showMsg('Apple Sign-In', 'Apple Sign-In está disponível apenas em dispositivos iOS.');
+      return;
+    }
+    setSocialLoading('apple');
+    try {
+      const AppleAuth = await import('expo-apple-authentication');
+      const credential = await AppleAuth.signInAsync({
+        requestedScopes: [
+          AppleAuth.AppleAuthenticationScope.FULL_NAME,
+          AppleAuth.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      
+      if (credential.identityToken) {
+        const fullName = credential.fullName;
+        const name = fullName ? `${fullName.givenName || ''} ${fullName.familyName || ''}`.trim() : undefined;
+        await handleSocialAuth('apple', credential.identityToken, name, credential.email || undefined);
+      } else {
+        showMsg(t('general.error'), 'Não foi possível obter credenciais da Apple');
+      }
+    } catch (e: any) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        console.error('Apple auth error:', e);
+        showMsg(t('general.error'), 'Erro ao iniciar Apple Sign-In');
+      }
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -145,13 +221,29 @@ export default function Login() {
           </View>
 
           {/* Social Auth Buttons */}
-          <TouchableOpacity style={styles.socialBtn} onPress={handleGoogleLogin}>
-            <Ionicons name="logo-google" size={22} color="#DB4437" />
+          <TouchableOpacity
+            style={[styles.socialBtn, socialLoading === 'google' && styles.buttonDisabled]}
+            onPress={handleGoogleLogin}
+            disabled={!!socialLoading || loading}
+          >
+            {socialLoading === 'google' ? (
+              <ActivityIndicator size="small" color="#DB4437" />
+            ) : (
+              <Ionicons name="logo-google" size={22} color="#DB4437" />
+            )}
             <Text style={styles.socialBtnText}>{t('auth.continueWithGoogle')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.socialBtn, styles.appleBtn]} onPress={handleAppleLogin}>
-            <Ionicons name="logo-apple" size={22} color="#fff" />
+          <TouchableOpacity
+            style={[styles.socialBtn, styles.appleBtn, socialLoading === 'apple' && styles.buttonDisabled]}
+            onPress={handleAppleLogin}
+            disabled={!!socialLoading || loading}
+          >
+            {socialLoading === 'apple' ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="logo-apple" size={22} color="#fff" />
+            )}
             <Text style={[styles.socialBtnText, styles.appleBtnText]}>{t('auth.continueWithApple')}</Text>
           </TouchableOpacity>
 

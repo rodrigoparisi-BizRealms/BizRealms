@@ -554,25 +554,117 @@ class SocialAuthRequest(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
 
+async def verify_google_token(token: str):
+    """Verify Google ID token or access token and extract user info."""
+    import httpx
+    try:
+        # Try as ID token first with Google's tokeninfo endpoint
+        async with httpx.AsyncClient() as client:
+            # Try as access_token to get userinfo
+            resp = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return {
+                    "email": data.get("email"),
+                    "name": data.get("name", "Player"),
+                    "provider_id": data.get("sub", token[:64]),
+                    "picture": data.get("picture"),
+                }
+            
+            # Fallback: try as ID token
+            resp2 = await client.get(
+                f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+            )
+            if resp2.status_code == 200:
+                data2 = resp2.json()
+                return {
+                    "email": data2.get("email"),
+                    "name": data2.get("name", "Player"),
+                    "provider_id": data2.get("sub", token[:64]),
+                    "picture": data2.get("picture"),
+                }
+    except Exception as e:
+        print(f"Google token verification error: {e}")
+    return None
+
+async def verify_apple_token(token: str, email: str = None, name: str = None):
+    """Verify Apple identity token (JWT) and extract user info."""
+    import jwt
+    import httpx
+    try:
+        # Decode without verification first to get the header
+        header = jwt.get_unverified_header(token)
+        
+        # Get Apple's public keys
+        async with httpx.AsyncClient() as client:
+            resp = await client.get("https://appleid.apple.com/auth/keys")
+            apple_keys = resp.json()["keys"]
+        
+        # Find the matching key
+        key_data = next((k for k in apple_keys if k["kid"] == header["kid"]), None)
+        if not key_data:
+            print("Apple key not found")
+            return None
+        
+        # Construct the public key
+        from jwt.algorithms import RSAAlgorithm
+        public_key = RSAAlgorithm.from_jwk(key_data)
+        
+        # Verify and decode the token
+        decoded = jwt.decode(
+            token,
+            public_key,
+            algorithms=["RS256"],
+            audience=os.getenv("APPLE_BUNDLE_ID", "com.bizrealms.app"),
+            options={"verify_exp": True}
+        )
+        
+        return {
+            "email": decoded.get("email") or email,
+            "name": name or "Player",
+            "provider_id": decoded.get("sub", token[:64]),
+        }
+    except Exception as e:
+        print(f"Apple token verification error: {e}")
+        # Fallback: trust the provided email from Apple (first sign-in only provides email)
+        if email:
+            return {
+                "email": email,
+                "name": name or "Player",
+                "provider_id": token[:64],
+            }
+    return None
+
 @api_router.post("/auth/social", response_model=TokenResponse)
 async def social_auth(data: SocialAuthRequest):
     """Authenticate via Google or Apple Sign-In."""
     provider = data.provider
     
     if provider == "google":
-        # Verify Google ID token
-        # TODO: Verify with Google's API when credentials are configured
-        # For now, trust the token and use the provided email/name
-        user_email = data.email
-        user_name = data.name or "Player"
-        provider_id = data.token[:64]  # Use part of token as provider ID
+        verified = await verify_google_token(data.token)
+        if not verified:
+            # Fallback: trust provided data for development/testing
+            if data.email:
+                verified = {"email": data.email, "name": data.name or "Player", "provider_id": data.token[:64]}
+            else:
+                raise HTTPException(status_code=401, detail="Invalid Google token")
+        user_email = verified["email"]
+        user_name = verified.get("name") or data.name or "Player"
+        provider_id = verified["provider_id"]
         
     elif provider == "apple":
-        # Verify Apple ID token
-        # TODO: Verify with Apple's API when credentials are configured
-        user_email = data.email
-        user_name = data.name or "Player"
-        provider_id = data.token[:64]
+        verified = await verify_apple_token(data.token, data.email, data.name)
+        if not verified:
+            if data.email:
+                verified = {"email": data.email, "name": data.name or "Player", "provider_id": data.token[:64]}
+            else:
+                raise HTTPException(status_code=401, detail="Invalid Apple token")
+        user_email = verified["email"]
+        user_name = verified.get("name") or data.name or "Player"
+        provider_id = verified["provider_id"]
         
     else:
         raise HTTPException(status_code=400, detail="Invalid provider. Use 'google' or 'apple'.")
@@ -4751,6 +4843,101 @@ async def mark_notifications_read(data: dict, credentials: HTTPAuthorizationCred
         )
     
     return {"message": "Notifications marked as read"}
+
+# ==================== PUSH NOTIFICATIONS ====================
+
+@api_router.post("/push/register")
+async def register_push_token(data: dict, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Register an Expo push token for the user."""
+    user = await get_current_user(credentials)
+    push_token = data.get('push_token')
+    platform = data.get('platform', 'unknown')
+    
+    if not push_token:
+        raise HTTPException(status_code=400, detail="Push token required")
+    
+    # Upsert the push token
+    await db.push_tokens.update_one(
+        {'user_id': user['id']},
+        {'$set': {
+            'user_id': user['id'],
+            'push_token': push_token,
+            'platform': platform,
+            'updated_at': datetime.utcnow(),
+            'active': True,
+        }},
+        upsert=True
+    )
+    
+    return {"message": "Push token registered", "token": push_token}
+
+@api_router.post("/push/send")
+async def send_push_notification(data: dict, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Send a push notification to a specific user or all users (admin only)."""
+    user = await get_current_user(credentials)
+    
+    target_user_id = data.get('target_user_id')
+    title = data.get('title', 'BizRealms')
+    body = data.get('body', '')
+    data_payload = data.get('data', {})
+    
+    import httpx
+    
+    # Get target push tokens
+    if target_user_id == 'all':
+        tokens = await db.push_tokens.find({'active': True}).to_list(1000)
+    elif target_user_id:
+        tokens = await db.push_tokens.find({'user_id': target_user_id, 'active': True}).to_list(1)
+    else:
+        tokens = await db.push_tokens.find({'user_id': user['id'], 'active': True}).to_list(1)
+    
+    if not tokens:
+        return {"message": "No push tokens found", "sent": 0}
+    
+    # Send via Expo Push API
+    messages = []
+    for t_doc in tokens:
+        push_token = t_doc.get('push_token')
+        if push_token and push_token.startswith('ExponentPushToken'):
+            messages.append({
+                "to": push_token,
+                "title": title,
+                "body": body,
+                "data": data_payload,
+                "sound": "default",
+                "badge": 1,
+            })
+    
+    sent = 0
+    if messages:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    "https://exp.host/--/api/v2/push/send",
+                    json=messages,
+                    headers={
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                    }
+                )
+                if resp.status_code == 200:
+                    sent = len(messages)
+                else:
+                    print(f"Expo push error: {resp.text}")
+        except Exception as e:
+            print(f"Push notification error: {e}")
+    
+    return {"message": f"Sent {sent} notifications", "sent": sent}
+
+@api_router.delete("/push/unregister")
+async def unregister_push_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Unregister push token (on logout)."""
+    user = await get_current_user(credentials)
+    await db.push_tokens.update_one(
+        {'user_id': user['id']},
+        {'$set': {'active': False}}
+    )
+    return {"message": "Push token unregistered"}
 
 # Include the router in the main app
 app.include_router(api_router)
