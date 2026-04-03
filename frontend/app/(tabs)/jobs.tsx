@@ -349,6 +349,22 @@ export default function Jobs() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4CAF50" />
         }
       >
+        {/* Courses Banner */}
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1a2a1a', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#4CAF5040' }}
+          onPress={() => router.push('/(tabs)/courses')}
+          activeOpacity={0.7}
+        >
+          <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#4CAF5025', justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="school" size={22} color="#4CAF50" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Cursos Harvard & MIT</Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>Aumente suas habilidades e desbloqueie vagas melhores</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#4CAF50" />
+        </TouchableOpacity>
+
         {/* ===== CURRENT JOB SECTION ===== */}
         {currentJob && (
           <View style={styles.currentJobCard}>

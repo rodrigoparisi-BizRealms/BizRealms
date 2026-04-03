@@ -536,30 +536,55 @@ export default function Profile() {
           )}
         </View>
 
-        {/* Work Experience Section */}
+        {/* Work Experience Section - Summary */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="briefcase" size={22} color="#9C27B0" />
             <Text style={styles.sectionTitle}>{t('profile.experience')}</Text>
           </View>
           {user.work_experience && user.work_experience.length > 0 ? (
-            user.work_experience.map((exp: any) => (
-              <View key={exp.id} style={styles.card}>
-                <View style={styles.cardIcon}>
-                  <Ionicons name="briefcase" size={24} color="#9C27B0" />
+            <View style={styles.card}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
+                <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: '#9C27B025', justifyContent: 'center', alignItems: 'center' }}>
+                  <Ionicons name="briefcase" size={26} color="#9C27B0" />
                 </View>
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>{exp.position}</Text>
-                  <Text style={styles.cardSubtitle}>{exp.company}</Text>
-                  <Text style={styles.cardInfo}>
-                    R$ {exp.salary?.toLocaleString('pt-BR') || '0'}/mês
-                    {exp.is_current && (
-                      <Text style={styles.currentBadge}> (Atual)</Text>
-                    )}
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
+                    {user.work_experience.length} {user.work_experience.length === 1 ? 'emprego' : 'empregos'}
                   </Text>
+                  {(() => {
+                    const currentJob = user.work_experience.find((e: any) => e.is_current);
+                    const totalSalary = user.work_experience.reduce((s: number, e: any) => s + (e.salary || 0), 0);
+                    const totalXp = user.work_experience.reduce((s: number, e: any) => s + (e.experience_gained || 0), 0);
+                    return (
+                      <>
+                        {currentJob && (
+                          <Text style={{ color: '#4CAF50', fontSize: 13, fontWeight: '600' }}>
+                            Atual: {currentJob.position} — {currentJob.company}
+                          </Text>
+                        )}
+                        <View style={{ flexDirection: 'row', gap: 16, marginTop: 2 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Ionicons name="cash" size={14} color="#FFD700" />
+                            <Text style={{ color: '#aaa', fontSize: 12 }}>
+                              R$ {totalSalary.toLocaleString('pt-BR')}/mês total
+                            </Text>
+                          </View>
+                          {totalXp > 0 && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <Ionicons name="star" size={14} color="#FF9800" />
+                              <Text style={{ color: '#aaa', fontSize: 12 }}>
+                                {totalXp.toLocaleString('pt-BR')} XP
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </>
+                    );
+                  })()}
                 </View>
               </View>
-            ))
+            </View>
           ) : (
             <View style={styles.emptyCard}>
               <Ionicons name="briefcase-outline" size={32} color="#555" />
@@ -723,12 +748,12 @@ export default function Profile() {
               )}
               {/* Hidden iframe for audio - uses YouTube playlist for auto-advance */}
               {activeTrack && isPlaying && Platform.OS === 'web' && (
-                <View style={{ width: 0, height: 0, overflow: 'hidden' }}>
+                <View style={{ height: 2, overflow: 'hidden', marginBottom: -2 }}>
                   {/* @ts-ignore */}
                   <iframe
                     key={activeTrack.id}
-                    src={`https://www.youtube.com/embed/${activeTrack.youtubeId}?autoplay=1&loop=1&playlist=${ALL_YOUTUBE_IDS}&rel=0`}
-                    style={{ width: 1, height: 1, border: 'none', opacity: 0 }}
+                    src={`https://www.youtube.com/embed/${activeTrack.youtubeId}?autoplay=1&loop=1&playlist=${ALL_YOUTUBE_IDS}&rel=0&enablejsapi=1`}
+                    style={{ width: 300, height: 200, border: 'none', position: 'absolute', top: 0, left: 0 }}
                     allow="autoplay; encrypted-media"
                   />
                 </View>

@@ -312,27 +312,6 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
-        {/* Courses Panel */}
-        <TouchableOpacity
-          style={[styles.panelCard, { borderWidth: 1, borderColor: '#4CAF5030' }]}
-          onPress={() => { play('click'); router.push('/(tabs)/courses'); }}
-          activeOpacity={0.7}
-        >
-          <View style={styles.panelHeader}>
-            <View style={styles.panelTitleRow}>
-              <View style={[styles.panelIconBg, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
-                <Ionicons name="school" size={20} color="#4CAF50" />
-              </View>
-              <Text style={styles.panelTitle}>{t('home.courses')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#555" />
-          </View>
-          <View style={styles.panelEmpty}>
-            <Text style={[styles.panelEmptyText, { color: '#4CAF50' }]}>{t('home.coursesDesc')}</Text>
-            <Text style={styles.panelEmptyHint}>{t('home.coursesHint')}</Text>
-          </View>
-        </TouchableOpacity>
-
         {/* AI Coach Panel with Rotating Tips */}
         <TouchableOpacity
           style={[styles.panelCard, { borderWidth: 1, borderColor: '#FFD70030' }]}
@@ -580,19 +559,6 @@ export default function Home() {
           </View>
         </View>
 
-        {/* Skills */}
-        <View style={styles.skillsCard}>
-          <Text style={styles.sectionTitle}>Habilidades</Text>
-          {Object.entries(stats.skills).map(([skill, level]: [string, any]) => (
-            <View key={skill} style={styles.skillRow}>
-              <Text style={styles.skillName}>{skill.charAt(0).toUpperCase() + skill.slice(1)}</Text>
-              <View style={styles.skillBar}>
-                <View style={[styles.skillFill, { width: `${level * 10}%` }]} />
-              </View>
-              <Text style={styles.skillLevel}>{level}/10</Text>
-            </View>
-          ))}
-        </View>
       </ScrollView>
       <TutorialOverlay />
     </SafeAreaView>
