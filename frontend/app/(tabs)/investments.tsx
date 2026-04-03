@@ -20,6 +20,8 @@ import Svg, { Polyline } from 'react-native-svg';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -160,6 +162,7 @@ const chartStyles = StyleSheet.create({
 
 export default function Investments() {
   const { token, refreshUser } = useAuth();
+  const { trigger: haptic } = useHaptics();
   const { t, formatMoney: fmtCurrency } = useLanguage();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -298,10 +301,7 @@ export default function Investments() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>Carregando mercado...</Text>
-        </View>
+        <SkeletonList count={4} style={{ padding: 16 }} />
       </SafeAreaView>
     );
   }

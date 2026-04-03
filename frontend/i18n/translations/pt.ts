@@ -512,6 +512,23 @@ export default {
     acceptTerms: 'Li e aceito os',
     and: 'e a',
   },
+  tutorial: {
+    welcomeTitle: 'Bem-vindo ao BizRealms!',
+    welcomeDesc: 'Construa seu império empresarial! Gerencie empregos, empresas, investimentos e suba no ranking.',
+    jobsTitle: 'Consiga um Emprego',
+    jobsDesc: 'Comece candidatando-se a vagas. Seu salário é a base para investir e crescer.',
+    companiesTitle: 'Crie Empresas',
+    companiesDesc: 'Compre ou crie empresas para gerar renda passiva. Franquias e fusões aumentam seus lucros.',
+    investTitle: 'Invista no Mercado',
+    investDesc: 'Compre ações, cripto e fundos. Acompanhe o mercado e lucre com suas decisões.',
+    bankTitle: 'Banco On-line',
+    bankDesc: 'Use cartão de crédito, acumule milhas, pegue empréstimos. Gerencie suas finanças como um magnata.',
+    rankTitle: 'Conquiste o Topo!',
+    rankDesc: 'Suba no ranking semanal e mensal. Os melhores jogadores ganham prêmios em dinheiro real!',
+    skip: 'Pular',
+    next: 'Próximo',
+    start: 'Começar!',
+  },
   // Currency
   currency: {
     symbol: 'R$',

@@ -16,6 +16,8 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
+import { SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -60,6 +62,7 @@ interface AdBoost {
 
 export default function Jobs() {
   const { token, refreshUser } = useAuth();
+  const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -328,10 +331,7 @@ export default function Jobs() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>Carregando vagas...</Text>
-        </View>
+        <SkeletonList count={4} style={{ padding: 16 }} />
       </SafeAreaView>
     );
   }

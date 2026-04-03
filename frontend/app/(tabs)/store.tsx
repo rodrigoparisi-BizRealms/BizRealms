@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -19,6 +21,7 @@ const CATEGORY_CFG: Record<string, { label: string; icon: string; color: string 
 
 export default function Store() {
   const { token, user, refreshUser } = useAuth();
+  const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const [items, setItems] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -112,10 +115,7 @@ export default function Store() {
 
   if (loading) return (
     <SafeAreaView style={s.container}>
-      <View style={s.center}>
-        <ActivityIndicator size="large" color="#E91E63" />
-        <Text style={s.loadText}>{t('general.loading')}</Text>
-      </View>
+      <SkeletonList count={4} style={{ padding: 16 }} />
     </SafeAreaView>
   );
 

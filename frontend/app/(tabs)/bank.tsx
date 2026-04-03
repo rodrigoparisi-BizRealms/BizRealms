@@ -10,6 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
+import { SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -34,6 +36,7 @@ export default function Bank() {
   const { token, user, refreshUser } = useAuth();
   const router = useRouter();
   const { play } = useSounds();
+  const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const [bankData, setBankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -186,10 +189,7 @@ export default function Bank() {
   if (loading) {
     return (
       <SafeAreaView style={s.container}>
-        <View style={s.center}>
-          <ActivityIndicator size="large" color="#1E88E5" />
-          <Text style={s.loadingText}>{t('general.loading')}</Text>
-        </View>
+        <SkeletonList count={4} style={{ padding: 16 }} />
       </SafeAreaView>
     );
   }

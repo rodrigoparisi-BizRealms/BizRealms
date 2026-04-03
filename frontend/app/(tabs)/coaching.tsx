@@ -10,6 +10,8 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSounds } from '../../hooks/useSounds';
+import { SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const API = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -34,6 +36,7 @@ export default function Coaching() {
   const { t } = useLanguage();
   const router = useRouter();
   const { play } = useSounds();
+  const { trigger: haptic } = useHaptics();
   const scrollRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -187,10 +190,7 @@ export default function Coaching() {
               <View style={s.coachAvatarSmall}>
                 <Ionicons name="sparkles" size={14} color="#FFD700" />
               </View>
-              <View style={[s.msgBubble, s.coachBubble, s.typingBubble]}>
-                <ActivityIndicator size="small" color="#FFD700" />
-                <Text style={s.typingText}>{t('coaching.analyzing')}</Text>
-              </View>
+              <SkeletonList count={4} style={{ padding: 16 }} />
             </View>
           )}
 

@@ -9,6 +9,8 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
+import { SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -42,6 +44,7 @@ export default function Companies() {
   const [offers, setOffers] = useState<any[]>([]);
   const [respondingOffer, setRespondingOffer] = useState<string | null>(null);
   const { play } = useSounds();
+  const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
 
   const FRANCHISE_SEGMENTS = ['restaurante', 'loja', 'fabrica'];
@@ -203,7 +206,7 @@ export default function Companies() {
 
   const hasBoostActive = owned.some(c => c.ad_boost_active);
 
-  if (loading) return (<SafeAreaView style={s.container}><View style={s.center}><ActivityIndicator size="large" color="#4CAF50" /><Text style={s.loadingText}>{t('general.loading')}</Text></View></SafeAreaView>);
+  if (loading) return (<SafeAreaView style={s.container}><SkeletonList count={4} style={{ padding: 16 }} /></SafeAreaView>);
 
   return (
     <SafeAreaView style={s.container}>

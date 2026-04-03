@@ -16,6 +16,9 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
+import TutorialOverlay from '../../components/TutorialOverlay';
+import { SkeletonStats, SkeletonList } from '../../components/SkeletonLoader';
+import { useHaptics } from '../../hooks/useHaptics';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -35,6 +38,7 @@ export default function Home() {
   const { user, token, refreshUser } = useAuth();
   const router = useRouter();
   const { play } = useSounds();
+  const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const fm = (v: number) => formatMoney(v, true);
   const [stats, setStats] = useState<any>(null);
@@ -77,9 +81,9 @@ export default function Home() {
   if (!user || !stats) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>{t('general.loading')}</Text>
+        <View style={{ flex: 1, padding: 16, paddingTop: 40 }}>
+          <SkeletonStats />
+          <SkeletonList count={4} style={{ marginTop: 24 }} />
         </View>
       </SafeAreaView>
     );
@@ -560,6 +564,7 @@ export default function Home() {
           ))}
         </View>
       </ScrollView>
+      <TutorialOverlay />
     </SafeAreaView>
   );
 }

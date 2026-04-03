@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { SkeletonList } from '../components/SkeletonLoader';
 
 const API = process.env.EXPO_PUBLIC_BACKEND_URL;
 
