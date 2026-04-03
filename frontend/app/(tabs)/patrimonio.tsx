@@ -23,26 +23,30 @@ export default function Patrimonio() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState<'owned' | 'store'>('owned');
+  const [viewMode, setViewMode] = useState<'owned' | 'store' | 'offers'>('owned');
   const [filterCat, setFilterCat] = useState('all');
   const [buying, setBuying] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryName, setGalleryName] = useState('');
   const [galleryIdx, setGalleryIdx] = useState(0);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [respondingOffer, setRespondingOffer] = useState<string | null>(null);
 
   useEffect(() => { if (token) loadData(); }, [token]);
 
   const loadData = async () => {
     try {
       const h = { Authorization: `Bearer ${token}` };
-      const [storeRes, ownedRes] = await Promise.all([
+      const [storeRes, ownedRes, offersRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/store`, { headers: h }),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/owned`, { headers: h }),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/offers`, { headers: h }).catch(() => null),
       ]);
       setStore(storeRes.data);
       setOwned(ownedRes.data.assets);
       setSummary(ownedRes.data.summary);
+      if (offersRes) setOffers(offersRes.data.offers || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -82,6 +86,25 @@ export default function Patrimonio() {
     });
   };
 
+  const handleOfferRespond = (offer: any, action: 'accept' | 'decline') => {
+    const msg = action === 'accept'
+      ? `Aceitar oferta de ${offer.buyer_name} de R$ ${offer.offer_amount.toLocaleString('pt-BR')} por "${offer.asset_name}"?`
+      : `Recusar oferta de ${offer.buyer_name}?`;
+    confirmAction(action === 'accept' ? 'Aceitar Oferta' : 'Recusar Oferta', msg, async () => {
+      setRespondingOffer(offer.id);
+      try {
+        const r = await axios.post(
+          `${EXPO_PUBLIC_BACKEND_URL}/api/assets/offers/respond`,
+          { offer_id: offer.id, action },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        showAlert(action === 'accept' ? 'Vendido!' : 'Recusado', r.data.message);
+        await loadData(); await refreshUser();
+      } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
+      finally { setRespondingOffer(null); }
+    });
+  };
+
   const openGallery = async (asset: any) => {
     setGalleryName(asset.name);
     setGalleryIdx(0);
@@ -111,6 +134,10 @@ export default function Patrimonio() {
         <TouchableOpacity style={[s.tBtn, viewMode === 'owned' && s.tActive]} onPress={() => setViewMode('owned')}>
           <Ionicons name="wallet" size={16} color={viewMode === 'owned' ? '#fff' : '#888'} />
           <Text style={[s.tText, viewMode === 'owned' && s.tTextActive]}>Meus Bens ({owned.length})</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.tBtn, viewMode === 'offers' && { backgroundColor: '#FF9800' }]} onPress={() => setViewMode('offers')}>
+          <Ionicons name="pricetag" size={16} color={viewMode === 'offers' ? '#fff' : '#888'} />
+          <Text style={[s.tText, viewMode === 'offers' && s.tTextActive]}>Ofertas {offers.length > 0 ? `(${offers.length})` : ''}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.tBtn, viewMode === 'store' && s.tActive]} onPress={() => setViewMode('store')}>
           <Ionicons name="cart" size={16} color={viewMode === 'store' ? '#fff' : '#888'} />
@@ -187,6 +214,64 @@ export default function Patrimonio() {
                 <Text style={s.aStatus}>Status: +{a.status_boost} pts</Text>
                 <TouchableOpacity style={s.sellBtn} onPress={() => handleSell(a)}>
                   <Text style={s.sellText}>Vender</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
+
+        {/* OFFERS */}
+        {viewMode === 'offers' && offers.length === 0 && (
+          <View style={s.empty}>
+            <Ionicons name="pricetag-outline" size={64} color="#555" />
+            <Text style={s.emptyTitle}>Nenhuma oferta</Text>
+            <Text style={s.emptySub}>Ofertas de compra para seus bens aparecerão aqui. Compre mais ativos para receber mais ofertas!</Text>
+          </View>
+        )}
+
+        {viewMode === 'offers' && offers.map(offer => {
+          const isProfit = offer.offer_amount >= offer.purchase_price;
+          const profitPct = offer.purchase_price > 0 ? ((offer.offer_amount - offer.purchase_price) / offer.purchase_price * 100).toFixed(0) : '0';
+          const hrs = Math.floor(offer.remaining_minutes / 60);
+          const mins = offer.remaining_minutes % 60;
+          return (
+            <View key={offer.id} style={[s.assetCard, { borderLeftColor: offer.reason_type === 'high' ? '#4CAF50' : offer.reason_type === 'low' ? '#F44336' : '#FF9800', borderLeftWidth: 4 }]}>
+              <View style={s.aHeader}>
+                <View style={[s.aIcon, { backgroundColor: offer.reason_type === 'high' ? '#4CAF50' : offer.reason_type === 'low' ? '#F44336' : '#FF9800' }]}>
+                  <Text style={{ fontSize: 20 }}>{offer.reason_emoji}</Text>
+                </View>
+                <View style={s.aInfo}>
+                  <Text style={s.aName}>{offer.asset_name}</Text>
+                  <Text style={s.aSub}>De: {offer.buyer_name}</Text>
+                </View>
+                <View style={s.aValues}>
+                  <Text style={[s.aValue, { color: '#FFD700' }]}>R$ {offer.offer_amount.toLocaleString('pt-BR')}</Text>
+                  <Text style={[s.aProfit, { color: isProfit ? '#4CAF50' : '#F44336' }]}>
+                    {isProfit ? '+' : ''}{profitPct}%
+                  </Text>
+                </View>
+              </View>
+              <Text style={s.aDesc}>{offer.reason}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 8 }}>
+                <Text style={{ color: '#888', fontSize: 11 }}>Comprado por: R$ {offer.purchase_price.toLocaleString('pt-BR')}</Text>
+                <Text style={{ color: '#FF9800', fontSize: 11, fontWeight: '600' }}>Expira em {hrs}h {mins}min</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#4CAF50', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}
+                  onPress={() => handleOfferRespond(offer, 'accept')}
+                  disabled={respondingOffer === offer.id}
+                >
+                  {respondingOffer === offer.id ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="checkmark" size={18} color="#fff" />}
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>Aceitar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#2a2a2a', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#3a3a3a' }}
+                  onPress={() => handleOfferRespond(offer, 'decline')}
+                  disabled={respondingOffer === offer.id}
+                >
+                  <Ionicons name="close" size={18} color="#F44336" />
+                  <Text style={{ color: '#F44336', fontWeight: '600', fontSize: 14 }}>Recusar</Text>
                 </TouchableOpacity>
               </View>
             </View>

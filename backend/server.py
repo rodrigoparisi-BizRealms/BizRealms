@@ -4500,6 +4500,166 @@ async def respond_to_offer(request: dict, current_user: dict = Depends(get_curre
     }
 
 
+# ==================== ASSET OFFERS ====================
+
+ASSET_OFFER_REASONS = [
+    {"reason": "Colecionador interessado no imóvel", "emoji": "🏠", "multiplier_range": (1.10, 1.60), "type": "high"},
+    {"reason": "Construtora quer o terreno", "emoji": "🏗️", "multiplier_range": (1.15, 1.45), "type": "high"},
+    {"reason": "Investidor imobiliário estrangeiro", "emoji": "🌍", "multiplier_range": (1.08, 1.35), "type": "high"},
+    {"reason": "Mercado imobiliário aquecido", "emoji": "📈", "multiplier_range": (1.05, 1.30), "type": "high"},
+    {"reason": "Oferta de mercado padrão", "emoji": "📋", "multiplier_range": (0.90, 1.15), "type": "neutral"},
+    {"reason": "Comprador aproveitando oportunidade", "emoji": "🦅", "multiplier_range": (0.80, 1.05), "type": "neutral"},
+    {"reason": "Crise imobiliária - preço reduzido", "emoji": "📉", "multiplier_range": (0.65, 0.90), "type": "low"},
+    {"reason": "Venda urgente por necessidade do comprador", "emoji": "⚠️", "multiplier_range": (0.70, 0.85), "type": "low"},
+]
+
+@api_router.get("/assets/offers")
+async def get_asset_offers(current_user: dict = Depends(get_current_user)):
+    """Get active purchase offers for user's assets. Generates new ones if needed."""
+    user_id = current_user['id']
+    now = datetime.utcnow()
+
+    # Clean expired offers
+    await db.asset_offers.delete_many({"user_id": user_id, "expires_at": {"$lt": now}})
+
+    # Get active pending offers
+    active_offers = await db.asset_offers.find({
+        "user_id": user_id, "status": "pending", "expires_at": {"$gt": now}
+    }).to_list(50)
+
+    # Get user's assets
+    user_assets = await db.user_assets.find({"user_id": user_id}).to_list(500)
+    if not user_assets:
+        return {"offers": [], "message": "Você não possui bens ou imóveis"}
+
+    # Check cooldown
+    assets_with_recent = set()
+    recent = await db.asset_offers.find({
+        "user_id": user_id, "created_at": {"$gt": now - timedelta(hours=3)}
+    }).to_list(500)
+    for o in recent:
+        assets_with_recent.add(o.get('asset_id'))
+
+    # Generate new offers (25% chance per asset)
+    new_offers = []
+    for asset in user_assets:
+        if asset.get('id', str(asset.get('_id'))) in assets_with_recent:
+            continue
+        if _random.random() > 0.30:
+            continue
+
+        reason_data = _random.choice(ASSET_OFFER_REASONS)
+        low, high = reason_data['multiplier_range']
+        multiplier = round(_random.uniform(low, high), 2)
+        purchase_price = asset.get('purchase_price', asset.get('price', 10000))
+        offer_amount = round(purchase_price * multiplier)
+
+        hours_to_expire = _random.randint(4, 24)
+        asset_id = asset.get('id', str(asset.get('_id')))
+
+        offer = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "asset_id": asset_id,
+            "asset_name": asset.get('name', 'Bem'),
+            "asset_category": asset.get('category', ''),
+            "buyer_name": _generate_buyer_name(),
+            "offer_amount": offer_amount,
+            "purchase_price": purchase_price,
+            "multiplier": multiplier,
+            "reason": reason_data['reason'],
+            "reason_emoji": reason_data['emoji'],
+            "reason_type": reason_data['type'],
+            "status": "pending",
+            "created_at": now,
+            "expires_at": now + timedelta(hours=hours_to_expire),
+        }
+        await db.asset_offers.insert_one(offer)
+        new_offers.append(offer)
+
+    all_active = active_offers + new_offers
+    result = []
+    for o in all_active:
+        o.pop('_id', None)
+        o['created_at'] = o['created_at'].isoformat() if isinstance(o.get('created_at'), datetime) else str(o.get('created_at', ''))
+        o['expires_at'] = o['expires_at'].isoformat() if isinstance(o.get('expires_at'), datetime) else str(o.get('expires_at', ''))
+        try:
+            exp = datetime.fromisoformat(o['expires_at']) if isinstance(o['expires_at'], str) else o['expires_at']
+            o['remaining_minutes'] = max(0, int((exp - now).total_seconds() / 60))
+        except Exception:
+            o['remaining_minutes'] = 0
+        result.append(o)
+
+    result.sort(key=lambda x: x.get('offer_amount', 0), reverse=True)
+    return {"offers": result, "total_offers": len(result)}
+
+
+@api_router.post("/assets/offers/respond")
+async def respond_to_asset_offer(request: dict, current_user: dict = Depends(get_current_user)):
+    """Accept or decline a purchase offer for an asset."""
+    offer_id = request.get('offer_id')
+    action = request.get('action')
+
+    if action not in ('accept', 'decline'):
+        raise HTTPException(status_code=400, detail="Ação inválida. Use 'accept' ou 'decline'")
+
+    offer = await db.asset_offers.find_one({
+        "id": offer_id, "user_id": current_user['id'], "status": "pending"
+    })
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta não encontrada ou já expirada")
+
+    if datetime.utcnow() > offer.get('expires_at', datetime.utcnow()):
+        await db.asset_offers.update_one({"id": offer_id}, {"$set": {"status": "expired"}})
+        raise HTTPException(status_code=400, detail="Oferta expirada!")
+
+    if action == 'decline':
+        await db.asset_offers.update_one({"id": offer_id}, {"$set": {"status": "declined"}})
+        return {"success": True, "message": f"Oferta de {offer.get('buyer_name')} recusada."}
+
+    # Accept: sell asset
+    asset = await db.user_assets.find_one({
+        "id": offer['asset_id'], "user_id": current_user['id']
+    })
+    if not asset:
+        asset = await db.user_assets.find_one({
+            "_id": ObjectId(offer['asset_id']) if ObjectId.is_valid(offer['asset_id']) else None,
+            "user_id": current_user['id']
+        })
+    if not asset:
+        await db.asset_offers.update_one({"id": offer_id}, {"$set": {"status": "expired"}})
+        raise HTTPException(status_code=404, detail="Bem não encontrado")
+
+    offer_amount = offer.get('offer_amount', 0)
+    await db.user_assets.delete_one({"_id": asset['_id']})
+
+    user = await db.users.find_one({"id": current_user['id']})
+    new_money = user['money'] + offer_amount
+    xp_bonus = round(offer_amount * 0.01)
+    new_xp = user.get('experience_points', 0) + xp_bonus
+
+    await db.users.update_one({"id": current_user['id']}, {
+        "$set": {"money": new_money, "experience_points": new_xp}
+    })
+
+    await db.asset_offers.update_one({"id": offer_id}, {"$set": {
+        "status": "accepted", "accepted_at": datetime.utcnow()
+    }})
+
+    purchase_price = offer.get('purchase_price', 0)
+    profit = offer_amount - purchase_price
+    profit_text = f"Lucro: R$ {profit:,.0f}" if profit >= 0 else f"Prejuízo: R$ {abs(profit):,.0f}"
+
+    return {
+        "success": True,
+        "message": f"'{asset.get('name')}' vendido para {offer.get('buyer_name')} por R$ {offer_amount:,.0f}!\n\n{profit_text}\nXP Bônus: +{xp_bonus:,}",
+        "offer_amount": offer_amount,
+        "profit": profit,
+        "xp_bonus": xp_bonus,
+        "new_balance": round(new_money, 2),
+    }
+
+
 # ==================== AI COACHING ====================
 
 COACHING_SYSTEM_PROMPT = """Você é o Coach Virtual de Negócios do jogo Business Empire: RichMan. 

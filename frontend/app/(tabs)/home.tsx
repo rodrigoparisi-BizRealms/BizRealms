@@ -48,6 +48,26 @@ export default function Home() {
   const [rankings, setRankings] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
+
+  const GAME_TIPS = [
+    { icon: 'briefcase', color: '#4CAF50', tip: 'Invista em cursos para desbloquear vagas com salários maiores!' },
+    { icon: 'trending-up', color: '#2196F3', tip: 'Diversifique investimentos: ações, cripto e fundos imobiliários.' },
+    { icon: 'business', color: '#FF9800', tip: 'Empresas geram renda passiva. Colete a receita diariamente!' },
+    { icon: 'diamond', color: '#9C27B0', tip: 'Imóveis valorizam com o tempo. Compre cedo para lucrar mais.' },
+    { icon: 'wallet', color: '#E91E63', tip: 'Mantenha uma reserva no banco para emergências e oportunidades.' },
+    { icon: 'trophy', color: '#FFD700', tip: 'Suba no ranking mensal para ganhar prêmios em dinheiro real!' },
+    { icon: 'school', color: '#00BCD4', tip: 'Certificações de Harvard aumentam suas habilidades rapidamente.' },
+    { icon: 'flash', color: '#FF5722', tip: 'Aceite ofertas de compra acima do valor pago para garantir lucro.' },
+  ];
+
+  // Auto-rotate tips every 6 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIndex(prev => (prev + 1) % 8);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadAllData = useCallback(async () => {
     if (!token) return;
@@ -313,7 +333,7 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
-        {/* AI Coach Panel */}
+        {/* AI Coach Panel with Rotating Tips */}
         <TouchableOpacity
           style={[styles.panelCard, { borderWidth: 1, borderColor: '#FFD70030' }]}
           onPress={() => { play('click'); router.push('/(tabs)/coaching'); }}
@@ -328,9 +348,16 @@ export default function Home() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
-          <View style={styles.panelEmpty}>
-            <Text style={[styles.panelEmptyText, { color: '#FFD700' }]}>{t('home.coachDesc')}</Text>
-            <Text style={styles.panelEmptyHint}>{t('home.coachHint')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingBottom: 14 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: GAME_TIPS[tipIndex].color + '25', justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name={GAME_TIPS[tipIndex].icon as any} size={18} color={GAME_TIPS[tipIndex].color} />
+            </View>
+            <Text style={{ flex: 1, color: '#ccc', fontSize: 13, lineHeight: 18 }}>{GAME_TIPS[tipIndex].tip}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4, paddingBottom: 10 }}>
+            {GAME_TIPS.map((_, i) => (
+              <View key={i} style={{ width: i === tipIndex ? 16 : 5, height: 5, borderRadius: 3, backgroundColor: i === tipIndex ? '#FFD700' : '#3a3a3a' }} />
+            ))}
           </View>
         </TouchableOpacity>
 

@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { useMusic, JAZZ_BLUES_TRACKS } from '../../context/MusicContext';
+import { useMusic, JAZZ_BLUES_TRACKS, ALL_YOUTUBE_IDS } from '../../context/MusicContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
@@ -26,7 +26,7 @@ const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 export default function Profile() {
   const { user, token, logout, refreshUser } = useAuth();
   const { locale, setLocale, languages, t, formatMoney } = useLanguage();
-  const { activeTrack, isPlaying, playTrack, togglePlay, stopMusic } = useMusic();
+  const { activeTrack, isPlaying, playTrack, togglePlay, stopMusic, musicEnabled, setMusicEnabled, nextTrack } = useMusic();
   const router = useRouter();
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -683,72 +683,99 @@ export default function Profile() {
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="musical-notes" size={22} color="#9C27B0" />
             <Text style={styles.sectionTitle}>Jazz & Blues</Text>
+            <TouchableOpacity
+              style={[mStyles.toggleBtn, musicEnabled && mStyles.toggleBtnActive]}
+              onPress={() => {
+                setMusicEnabled(!musicEnabled);
+                if (musicEnabled) stopMusic();
+              }}
+            >
+              <Ionicons name={musicEnabled ? 'volume-high' : 'volume-mute'} size={16} color={musicEnabled ? '#9C27B0' : '#666'} />
+              <Text style={[mStyles.toggleText, musicEnabled && { color: '#9C27B0' }]}>{musicEnabled ? 'ON' : 'OFF'}</Text>
+            </TouchableOpacity>
           </View>
-          <View style={mStyles.playerCard}>
-            {/* Now Playing */}
-            {activeTrack && isPlaying && (
-              <View style={mStyles.nowPlaying}>
-                <View style={[mStyles.npDot, { backgroundColor: activeTrack.color }]} />
-                <Ionicons name="musical-note" size={16} color={activeTrack.color} />
-                <View style={{ flex: 1 }}>
-                  <Text style={mStyles.npName} numberOfLines={1}>{activeTrack.name}</Text>
-                  <Text style={mStyles.npArtist} numberOfLines={1}>{activeTrack.artist}</Text>
-                </View>
-                <TouchableOpacity style={mStyles.playPauseBtn} onPress={togglePlay}>
-                  <Ionicons name={isPlaying ? 'pause' : 'play'} size={20} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={mStyles.stopBtn} onPress={stopMusic}>
-                  <Ionicons name="stop" size={16} color="#F44336" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {/* Hidden iframe for actual audio (web) */}
-            {activeTrack && isPlaying && Platform.OS === 'web' && (
-              <View style={{ width: 0, height: 0, overflow: 'hidden' }}>
-                {/* @ts-ignore */}
-                <iframe
-                  key={activeTrack.id}
-                  src={`https://www.youtube.com/embed/${activeTrack.youtubeId}?autoplay=1&loop=1&playlist=${activeTrack.youtubeId}&rel=0`}
-                  style={{ width: 1, height: 1, border: 'none', opacity: 0 }}
-                  allow="autoplay; encrypted-media"
-                />
-              </View>
-            )}
-            {/* Track List */}
-            {JAZZ_BLUES_TRACKS.map((track) => {
-              const isCurrent = activeTrack?.id === track.id && isPlaying;
-              return (
-                <TouchableOpacity
-                  key={track.id}
-                  style={[mStyles.trackRow, isCurrent && { backgroundColor: track.color + '15' }]}
-                  onPress={() => isCurrent ? stopMusic() : playTrack(track)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[mStyles.trackIcon, { backgroundColor: track.color + '30' }]}>
-                    <Ionicons
-                      name={isCurrent ? 'pause' : 'play'}
-                      size={16}
-                      color={track.color}
-                    />
-                  </View>
+          {!musicEnabled ? (
+            <View style={mStyles.disabledCard}>
+              <Ionicons name="volume-mute" size={28} color="#555" />
+              <Text style={mStyles.disabledText}>Som desligado</Text>
+            </View>
+          ) : (
+            <View style={mStyles.playerCard}>
+              {/* Now Playing */}
+              {activeTrack && isPlaying && (
+                <View style={mStyles.nowPlaying}>
+                  <View style={[mStyles.npDot, { backgroundColor: activeTrack.color }]} />
+                  <Ionicons name="musical-note" size={16} color={activeTrack.color} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[mStyles.trackName, isCurrent && { color: track.color }]}>
-                      {track.name}
-                    </Text>
-                    <Text style={mStyles.trackArtist}>{track.artist}</Text>
+                    <Text style={mStyles.npName} numberOfLines={1}>{activeTrack.name}</Text>
+                    <Text style={mStyles.npArtist} numberOfLines={1}>{activeTrack.artist}</Text>
                   </View>
-                  {isCurrent && (
-                    <View style={mStyles.eqBars}>
-                      <View style={[mStyles.eqBar, { height: 10, backgroundColor: track.color }]} />
-                      <View style={[mStyles.eqBar, { height: 16, backgroundColor: track.color }]} />
-                      <View style={[mStyles.eqBar, { height: 8, backgroundColor: track.color }]} />
-                      <View style={[mStyles.eqBar, { height: 14, backgroundColor: track.color }]} />
+                  <TouchableOpacity style={mStyles.skipBtn} onPress={nextTrack}>
+                    <Ionicons name="play-skip-forward" size={16} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={mStyles.playPauseBtn} onPress={togglePlay}>
+                    <Ionicons name={isPlaying ? 'pause' : 'play'} size={18} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={mStyles.stopBtn} onPress={stopMusic}>
+                    <Ionicons name="stop" size={14} color="#F44336" />
+                  </TouchableOpacity>
+                </View>
+              )}
+              {/* Hidden iframe for audio - uses YouTube playlist for auto-advance */}
+              {activeTrack && isPlaying && Platform.OS === 'web' && (
+                <View style={{ width: 0, height: 0, overflow: 'hidden' }}>
+                  {/* @ts-ignore */}
+                  <iframe
+                    key={activeTrack.id}
+                    src={`https://www.youtube.com/embed/${activeTrack.youtubeId}?autoplay=1&loop=1&playlist=${ALL_YOUTUBE_IDS}&rel=0`}
+                    style={{ width: 1, height: 1, border: 'none', opacity: 0 }}
+                    allow="autoplay; encrypted-media"
+                  />
+                </View>
+              )}
+              {/* Auto-play info */}
+              {!activeTrack && (
+                <View style={mStyles.autoPlayInfo}>
+                  <Ionicons name="shuffle" size={16} color="#9C27B0" />
+                  <Text style={mStyles.autoPlayText}>Toque para iniciar a playlist automatica</Text>
+                </View>
+              )}
+              {/* Track List */}
+              {JAZZ_BLUES_TRACKS.map((track) => {
+                const isCurrent = activeTrack?.id === track.id && isPlaying;
+                return (
+                  <TouchableOpacity
+                    key={track.id}
+                    style={[mStyles.trackRow, isCurrent && { backgroundColor: track.color + '15' }]}
+                    onPress={() => isCurrent ? stopMusic() : playTrack(track)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[mStyles.trackIcon, { backgroundColor: track.color + '30' }]}>
+                      <Ionicons
+                        name={isCurrent ? 'pause' : 'play'}
+                        size={16}
+                        color={track.color}
+                      />
                     </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[mStyles.trackName, isCurrent && { color: track.color }]}>
+                        {track.name}
+                      </Text>
+                      <Text style={mStyles.trackArtist}>{track.artist}</Text>
+                    </View>
+                    {isCurrent && (
+                      <View style={mStyles.eqBars}>
+                        <View style={[mStyles.eqBar, { height: 10, backgroundColor: track.color }]} />
+                        <View style={[mStyles.eqBar, { height: 16, backgroundColor: track.color }]} />
+                        <View style={[mStyles.eqBar, { height: 8, backgroundColor: track.color }]} />
+                        <View style={[mStyles.eqBar, { height: 14, backgroundColor: track.color }]} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Legal Links */}
@@ -1531,6 +1558,41 @@ const styles = StyleSheet.create({
 
 // Music player styles
 const mStyles = StyleSheet.create({
+  toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#2a2a2a',
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+  },
+  toggleBtnActive: {
+    backgroundColor: '#9C27B015',
+    borderColor: '#9C27B050',
+  },
+  toggleText: { color: '#666', fontSize: 12, fontWeight: 'bold' },
+  disabledCard: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 14,
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+  },
+  disabledText: { color: '#555', fontSize: 14 },
+  autoPlayInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 10,
+    backgroundColor: '#2a2a2a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  autoPlayText: { color: '#9C27B0', fontSize: 12, fontWeight: '600' },
   playerCard: {
     backgroundColor: '#1e1e1e',
     borderRadius: 14,
@@ -1548,17 +1610,25 @@ const mStyles = StyleSheet.create({
   npDot: { width: 8, height: 8, borderRadius: 4 },
   npName: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
   npArtist: { color: '#888', fontSize: 11 },
+  skipBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#3a3a3a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   playPauseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#9C27B0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   stopBtn: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: 8,
     backgroundColor: '#2a1a1a',
     justifyContent: 'center',
