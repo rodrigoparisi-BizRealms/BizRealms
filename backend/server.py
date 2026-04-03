@@ -117,9 +117,14 @@ class WorkExperience(BaseModel):
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
-    password_hash: str
+    password_hash: str = ""  # Empty for social auth users
     name: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Auth
+    email_verified: bool = False
+    auth_provider: str = "email"  # email, google, apple
+    auth_provider_id: Optional[str] = None
     
     # Character Creation
     onboarding_completed: bool = False
@@ -389,6 +394,224 @@ async def login(credentials: UserLogin):
     del user['_id']
     
     return TokenResponse(token=token, user=user)
+
+# ==================== EMAIL VERIFICATION ====================
+import random
+import string
+
+def generate_code(length=6):
+    """Generate a random numeric verification code."""
+    return ''.join(random.choices(string.digits, k=length))
+
+@api_router.post("/auth/send-verification")
+async def send_verification_code(data: dict):
+    """Send email verification code. Code is logged to console (replace with email service later)."""
+    email = data.get('email')
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    
+    user = await db.users.find_one({'email': email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.get('email_verified'):
+        return {"message": "Email already verified"}
+    
+    code = generate_code()
+    expires = datetime.utcnow() + timedelta(minutes=15)
+    
+    await db.verification_codes.delete_many({'email': email, 'type': 'email_verify'})
+    await db.verification_codes.insert_one({
+        'email': email,
+        'code': code,
+        'type': 'email_verify',
+        'expires': expires,
+        'created_at': datetime.utcnow()
+    })
+    
+    # TODO: Replace with real email service (SendGrid, etc.)
+    print(f"📧 [EMAIL VERIFICATION] Code for {email}: {code}")
+    
+    return {"message": "Verification code sent", "expires_in": 900}
+
+@api_router.post("/auth/verify-email")
+async def verify_email(data: dict):
+    """Verify email with code."""
+    email = data.get('email')
+    code = data.get('code')
+    
+    if not email or not code:
+        raise HTTPException(status_code=400, detail="Email and code required")
+    
+    record = await db.verification_codes.find_one({
+        'email': email, 'code': code, 'type': 'email_verify'
+    })
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    
+    if record['expires'] < datetime.utcnow():
+        await db.verification_codes.delete_one({'_id': record['_id']})
+        raise HTTPException(status_code=400, detail="Code expired")
+    
+    await db.users.update_one({'email': email}, {'$set': {'email_verified': True}})
+    await db.verification_codes.delete_many({'email': email, 'type': 'email_verify'})
+    
+    return {"message": "Email verified successfully"}
+
+# ==================== PASSWORD RECOVERY ====================
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: dict):
+    """Send password reset code."""
+    email = data.get('email')
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    
+    user = await db.users.find_one({'email': email})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If this email is registered, a reset code has been sent"}
+    
+    code = generate_code()
+    expires = datetime.utcnow() + timedelta(minutes=15)
+    
+    await db.verification_codes.delete_many({'email': email, 'type': 'password_reset'})
+    await db.verification_codes.insert_one({
+        'email': email,
+        'code': code,
+        'type': 'password_reset',
+        'expires': expires,
+        'created_at': datetime.utcnow()
+    })
+    
+    # TODO: Replace with real email service
+    print(f"🔑 [PASSWORD RESET] Code for {email}: {code}")
+    
+    return {"message": "If this email is registered, a reset code has been sent"}
+
+@api_router.post("/auth/verify-reset-code")
+async def verify_reset_code(data: dict):
+    """Verify password reset code is valid (without resetting yet)."""
+    email = data.get('email')
+    code = data.get('code')
+    
+    if not email or not code:
+        raise HTTPException(status_code=400, detail="Email and code required")
+    
+    record = await db.verification_codes.find_one({
+        'email': email, 'code': code, 'type': 'password_reset'
+    })
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    
+    if record['expires'] < datetime.utcnow():
+        await db.verification_codes.delete_one({'_id': record['_id']})
+        raise HTTPException(status_code=400, detail="Code expired")
+    
+    return {"message": "Code verified", "valid": True}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: dict):
+    """Reset password with verified code."""
+    email = data.get('email')
+    code = data.get('code')
+    new_password = data.get('new_password')
+    
+    if not email or not code or not new_password:
+        raise HTTPException(status_code=400, detail="Email, code, and new password required")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    record = await db.verification_codes.find_one({
+        'email': email, 'code': code, 'type': 'password_reset'
+    })
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    
+    if record['expires'] < datetime.utcnow():
+        await db.verification_codes.delete_one({'_id': record['_id']})
+        raise HTTPException(status_code=400, detail="Code expired")
+    
+    # Update password
+    await db.users.update_one(
+        {'email': email},
+        {'$set': {'password_hash': hash_password(new_password)}}
+    )
+    await db.verification_codes.delete_many({'email': email, 'type': 'password_reset'})
+    
+    return {"message": "Password reset successfully"}
+
+# ==================== SOCIAL AUTH ====================
+
+class SocialAuthRequest(BaseModel):
+    provider: str  # "google" or "apple"
+    token: str  # ID token from provider
+    name: Optional[str] = None
+    email: Optional[str] = None
+
+@api_router.post("/auth/social", response_model=TokenResponse)
+async def social_auth(data: SocialAuthRequest):
+    """Authenticate via Google or Apple Sign-In."""
+    provider = data.provider
+    
+    if provider == "google":
+        # Verify Google ID token
+        # TODO: Verify with Google's API when credentials are configured
+        # For now, trust the token and use the provided email/name
+        user_email = data.email
+        user_name = data.name or "Player"
+        provider_id = data.token[:64]  # Use part of token as provider ID
+        
+    elif provider == "apple":
+        # Verify Apple ID token
+        # TODO: Verify with Apple's API when credentials are configured
+        user_email = data.email
+        user_name = data.name or "Player"
+        provider_id = data.token[:64]
+        
+    else:
+        raise HTTPException(status_code=400, detail="Invalid provider. Use 'google' or 'apple'.")
+    
+    if not user_email:
+        raise HTTPException(status_code=400, detail="Email is required for social authentication")
+    
+    # Check if user exists with this email
+    existing_user = await db.users.find_one({'email': user_email})
+    
+    if existing_user:
+        # User exists - update provider info and log them in
+        await db.users.update_one(
+            {'email': user_email},
+            {'$set': {
+                'auth_provider': provider,
+                'auth_provider_id': provider_id,
+                'email_verified': True,  # Social auth emails are pre-verified
+            }}
+        )
+        user = await db.users.find_one({'email': user_email})
+        token = create_token(user['id'])
+        del user['password_hash']
+        del user['_id']
+        return TokenResponse(token=token, user=user)
+    else:
+        # Create new user via social auth
+        user = User(
+            email=user_email,
+            password_hash="",  # No password for social auth
+            name=user_name,
+            auth_provider=provider,
+            auth_provider_id=provider_id,
+            email_verified=True,
+        )
+        await db.users.insert_one(user.dict())
+        token = create_token(user.id)
+        user_dict = user.dict()
+        del user_dict['password_hash']
+        return TokenResponse(token=token, user=user_dict)
 
 # USER ROUTES
 @api_router.get("/user/me", response_model=UserResponse)
