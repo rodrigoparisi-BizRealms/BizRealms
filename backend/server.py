@@ -18,6 +18,21 @@ import random
 import math
 import hashlib
 
+# Shared modules (for new code and gradual migration)
+from config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRATION_DAYS, APPLE_BUNDLE_ID
+from database import db, client
+from models import (
+    Education, Certification, WorkExperience, User, UserCreate, UserLogin,
+    TokenResponse, UserResponse, EducationCreate, CertificationCreate,
+    CharacterProfileUpdate, BackgroundOption, DreamOption, Job, JobApplication,
+    Course, UserCourse, JobApplyRequest, CourseEnrollRequest, WorkRequest,
+    AdBoost, UserCourseComplete, SocialAuthRequest,
+)
+from utils import (
+    hash_password, verify_password, create_token, decode_token,
+    get_current_user, calculate_level, security,
+)
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -87,6 +102,88 @@ async def rate_limit_middleware(request: Request, call_next):
     
     response = await call_next(request)
     return response
+
+# ==================== PUBLIC LEGAL PAGES (no auth required) ====================
+from starlette.responses import HTMLResponse
+
+LEGAL_HTML_STYLE = """
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #121212; color: #ccc; padding: 24px; max-width: 720px; margin: 0 auto; line-height: 1.7; }
+  h1 { color: #4CAF50; font-size: 28px; margin-bottom: 8px; }
+  .meta { color: #888; font-size: 13px; margin-bottom: 32px; }
+  h2 { color: #4CAF50; font-size: 18px; margin: 28px 0 10px; }
+  p { margin-bottom: 12px; font-size: 15px; }
+  a { color: #4CAF50; }
+  .logo { text-align: center; margin-bottom: 24px; }
+  .logo span { font-size: 36px; font-weight: bold; color: #fff; }
+  .footer { border-top: 1px solid #333; margin-top: 40px; padding-top: 20px; text-align: center; color: #666; font-size: 12px; }
+</style>
+"""
+
+@app.get("/legal/terms", response_class=HTMLResponse)
+@app.get("/api/legal/terms", response_class=HTMLResponse)
+async def public_terms():
+    return HTMLResponse(f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Terms of Use</title>{LEGAL_HTML_STYLE}</head><body>
+<div class="logo"><span>BizRealms</span></div>
+<h1>Terms of Use</h1>
+<p class="meta">Last updated: June 2025</p>
+<h2>1. Acceptance of Terms</h2>
+<p>By downloading, installing, or using BizRealms ("the App"), you agree to be bound by these Terms of Use. If you do not agree, do not use the App.</p>
+<h2>2. Description of Service</h2>
+<p>BizRealms is a business simulation game where players manage virtual companies, investments, jobs, and assets. The in-game currency and assets have no real-world monetary value unless explicitly stated in our rewards program.</p>
+<h2>3. Account Registration</h2>
+<p>You must provide accurate information when creating an account. You are responsible for maintaining the security of your account credentials. One account per person is allowed.</p>
+<h2>4. In-App Purchases</h2>
+<p>The App may offer in-app purchases processed via Stripe. All purchases are final and non-refundable, except as required by applicable law. Virtual items purchased have no real-world value.</p>
+<h2>5. Real Money Rewards</h2>
+<p>BizRealms may offer real money rewards to top-ranked players. Eligibility, amounts, and payment methods are determined by BizRealms at its sole discretion. Players must provide valid payment information (e.g., PIX key) to receive rewards.</p>
+<h2>6. Prohibited Conduct</h2>
+<p>You may not: use cheats, exploits, or automation; create multiple accounts; harass other players; attempt to manipulate rankings; or reverse-engineer the App.</p>
+<h2>7. Intellectual Property</h2>
+<p>All content, graphics, logos, and software in BizRealms are owned by BizRealms or its licensors and are protected by intellectual property laws.</p>
+<h2>8. Termination</h2>
+<p>We may suspend or terminate your account at any time for violation of these terms or for any other reason at our discretion.</p>
+<h2>9. Limitation of Liability</h2>
+<p>BizRealms is provided "as is" without warranties. We are not liable for any indirect, incidental, or consequential damages arising from your use of the App.</p>
+<h2>10. Changes to Terms</h2>
+<p>We may update these terms at any time. Continued use of the App after changes constitutes acceptance of the new terms.</p>
+<h2>11. Contact</h2>
+<p>For questions about these Terms, contact us at: <a href="mailto:support@bizrealms.com">support@bizrealms.com</a></p>
+<div class="footer">&copy; 2025 BizRealms. All rights reserved. | <a href="/legal/privacy">Privacy Policy</a></div>
+</body></html>""")
+
+@app.get("/legal/privacy", response_class=HTMLResponse)
+@app.get("/api/legal/privacy", response_class=HTMLResponse)
+async def public_privacy():
+    return HTMLResponse(f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Privacy Policy</title>{LEGAL_HTML_STYLE}</head><body>
+<div class="logo"><span>BizRealms</span></div>
+<h1>Privacy Policy</h1>
+<p class="meta">Last updated: June 2025</p>
+<h2>1. Information We Collect</h2>
+<p>We collect information you provide directly: name, email address, and optional profile data (avatar, city). We also collect gameplay data (progress, transactions, rankings) and device information (OS, language, timezone).</p>
+<h2>2. How We Use Your Information</h2>
+<p>We use your information to: provide and improve the game experience; manage your account; process in-app purchases and rewards; maintain rankings; send notifications about game events; and prevent fraud and abuse.</p>
+<h2>3. Information Sharing</h2>
+<p>We do not sell your personal information. We may share limited data with: payment processors (Stripe, for purchases and rewards); analytics providers (aggregated, anonymized data); and law enforcement (when required by law).</p>
+<h2>4. Data Security</h2>
+<p>We implement industry-standard security measures including encryption, secure authentication (JWT), password hashing (bcrypt), and regular security audits to protect your data.</p>
+<h2>5. Your Rights</h2>
+<p>You have the right to: access your personal data; correct inaccurate data; delete your account and associated data; export your data; and opt-out of marketing communications.</p>
+<h2>6. Cookies &amp; Tracking</h2>
+<p>The App uses local storage for authentication tokens and user preferences. We do not use third-party tracking cookies.</p>
+<h2>7. Children's Privacy</h2>
+<p>BizRealms is not intended for children under 13 (or the minimum age in your jurisdiction). We do not knowingly collect data from children.</p>
+<h2>8. International Data Transfers</h2>
+<p>Your data may be processed in servers located outside your country. We ensure appropriate safeguards are in place for international transfers.</p>
+<h2>9. Data Retention</h2>
+<p>We retain your data for as long as your account is active. After account deletion, we may retain anonymized data for analytics purposes.</p>
+<h2>10. Changes to This Policy</h2>
+<p>We may update this policy from time to time. We will notify you of significant changes through the App.</p>
+<h2>11. Contact Us</h2>
+<p>For privacy-related questions or to exercise your rights, contact us at: <a href="mailto:privacy@bizrealms.com">privacy@bizrealms.com</a></p>
+<div class="footer">&copy; 2025 BizRealms. All rights reserved. | <a href="/legal/terms">Terms of Use</a></div>
+</body></html>""")
 
 # ==================== MODELS ====================
 

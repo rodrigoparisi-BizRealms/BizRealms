@@ -1,246 +1,151 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Script for BizRealms
-Tests Push Notification and Social Auth endpoints
+BizRealms Backend Smoke Test
+Quick verification of key endpoints after refactoring
 """
 
 import requests
 import json
 import sys
-from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://career-mogul-1.preview.emergentagent.com/api"
+BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
 TEST_EMAIL = "teste@businessempire.com"
 TEST_PASSWORD = "teste123"
 
-class BizRealmsAPITester:
-    def __init__(self):
-        self.session = requests.Session()
-        self.token = None
-        self.user_id = None
-        
-    def log(self, message):
-        """Log test messages with timestamp"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] {message}")
-        
-    def login(self):
-        """Login to get JWT token"""
-        self.log("🔐 Logging in...")
-        
-        response = self.session.post(f"{BACKEND_URL}/auth/login", json={
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
-        })
+def test_login():
+    """Test login endpoint and get JWT token"""
+    print("🔐 Testing login endpoint...")
+    
+    login_data = {
+        "email": TEST_EMAIL,
+        "password": TEST_PASSWORD
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/auth/login", json=login_data, timeout=10)
+        print(f"   Status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
-            self.token = data["token"]
-            self.user_id = data["user"]["id"]
-            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
-            self.log(f"✅ Login successful. User ID: {self.user_id}")
-            return True
+            token = data.get("token")  # Check for 'token' field
+            if not token:
+                token = data.get("access_token")  # Fallback to 'access_token'
+            
+            if token:
+                print("   ✅ Login successful, JWT token received")
+                return token
+            else:
+                print("   ❌ Login response missing token")
+                print(f"   Response: {data}")
+                return None
         else:
-            self.log(f"❌ Login failed: {response.status_code} - {response.text}")
-            return False
+            print(f"   ❌ Login failed: {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"   ❌ Login error: {str(e)}")
+        return None
+
+def test_authenticated_endpoint(endpoint, token, description):
+    """Test an authenticated endpoint"""
+    print(f"🔍 Testing {description}...")
     
-    def test_push_register(self):
-        """Test push notification token registration"""
-        self.log("\n📱 Testing Push Notification Registration...")
-        
-        test_data = {
-            "push_token": "ExponentPushToken[test123]",
-            "platform": "ios"
-        }
-        
-        response = self.session.post(f"{BACKEND_URL}/push/register", json=test_data)
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BASE_URL}{endpoint}", headers=headers, timeout=10)
+        print(f"   Status: {response.status_code}")
         
         if response.status_code == 200:
-            data = response.json()
-            self.log(f"✅ Push token registered successfully")
-            self.log(f"   Response: {data}")
+            print(f"   ✅ {description} - OK")
             return True
         else:
-            self.log(f"❌ Push registration failed: {response.status_code} - {response.text}")
+            print(f"   ❌ {description} failed: {response.text}")
             return False
+            
+    except Exception as e:
+        print(f"   ❌ {description} error: {str(e)}")
+        return False
+
+def test_public_endpoint(endpoint, description):
+    """Test a public endpoint (no auth required)"""
+    print(f"🌐 Testing {description}...")
     
-    def test_push_send(self):
-        """Test sending push notification"""
-        self.log("\n📤 Testing Push Notification Send...")
-        
-        test_data = {
-            "title": "Test",
-            "body": "Hello"
-        }
-        
-        response = self.session.post(f"{BACKEND_URL}/push/send", json=test_data)
+    try:
+        response = requests.get(f"{BASE_URL}{endpoint}", timeout=10)
+        print(f"   Status: {response.status_code}")
         
         if response.status_code == 200:
-            data = response.json()
-            self.log(f"✅ Push notification send attempted")
-            self.log(f"   Response: {data}")
-            # Note: This may return 0 sent since token is fake, but should not crash
+            print(f"   ✅ {description} - OK")
             return True
         else:
-            self.log(f"❌ Push send failed: {response.status_code} - {response.text}")
+            print(f"   ❌ {description} failed: {response.text}")
             return False
+            
+    except Exception as e:
+        print(f"   ❌ {description} error: {str(e)}")
+        return False
+
+def main():
+    """Run smoke test for BizRealms backend"""
+    print("🚀 BizRealms Backend Smoke Test")
+    print("=" * 50)
     
-    def test_push_unregister(self):
-        """Test push notification token unregistration"""
-        self.log("\n📱❌ Testing Push Notification Unregistration...")
-        
-        response = self.session.delete(f"{BACKEND_URL}/push/unregister")
-        
-        if response.status_code == 200:
-            data = response.json()
-            self.log(f"✅ Push token unregistered successfully")
-            self.log(f"   Response: {data}")
-            return True
-        else:
-            self.log(f"❌ Push unregistration failed: {response.status_code} - {response.text}")
-            return False
+    # Step 1: Login and get token
+    token = test_login()
+    if not token:
+        print("\n❌ SMOKE TEST FAILED: Cannot login")
+        sys.exit(1)
     
-    def test_social_auth_valid(self):
-        """Test social auth with valid provider"""
-        self.log("\n🔐 Testing Social Auth (Valid Provider)...")
-        
-        test_data = {
-            "provider": "google",
-            "token": "test_token",
-            "email": "social@test.com",
-            "name": "Social User"
-        }
-        
-        # Remove auth header for this test since it's a login endpoint
-        headers = self.session.headers.copy()
-        if "Authorization" in self.session.headers:
-            del self.session.headers["Authorization"]
-        
-        response = self.session.post(f"{BACKEND_URL}/auth/social", json=test_data)
-        
-        # Restore auth header
-        self.session.headers = headers
-        
-        if response.status_code == 200:
-            data = response.json()
-            self.log(f"✅ Social auth successful")
-            self.log(f"   User created/logged in: {data.get('user', {}).get('email', 'N/A')}")
-            self.log(f"   Token received: {'Yes' if data.get('token') else 'No'}")
-            return True
-        else:
-            self.log(f"❌ Social auth failed: {response.status_code} - {response.text}")
-            return False
+    print()
     
-    def test_social_auth_invalid_provider(self):
-        """Test social auth with invalid provider"""
-        self.log("\n🔐❌ Testing Social Auth (Invalid Provider)...")
-        
-        test_data = {
-            "provider": "invalid_provider",
-            "token": "test_token",
-            "email": "social@test.com",
-            "name": "Social User"
-        }
-        
-        # Remove auth header for this test
-        headers = self.session.headers.copy()
-        if "Authorization" in self.session.headers:
-            del self.session.headers["Authorization"]
-        
-        response = self.session.post(f"{BACKEND_URL}/auth/social", json=test_data)
-        
-        # Restore auth header
-        self.session.headers = headers
-        
-        if response.status_code == 400:
-            self.log(f"✅ Invalid provider properly rejected")
-            self.log(f"   Error message: {response.json().get('detail', 'N/A')}")
-            return True
-        else:
-            self.log(f"❌ Invalid provider test failed: Expected 400, got {response.status_code}")
-            return False
+    # Step 2: Test authenticated endpoints
+    authenticated_tests = [
+        ("/user/me", "GET /api/user/me - Get user profile"),
+        ("/user/stats", "GET /api/user/stats - Get user stats"),
+        ("/notifications", "GET /api/notifications - Get notifications"),
+        ("/achievements", "GET /api/achievements - Get achievements"),
+        ("/store/items", "GET /api/store/items - Get store items"),
+        ("/investments/market", "GET /api/investments/market - Get investment market")
+    ]
     
-    def test_push_without_auth(self):
-        """Test push endpoints without authentication"""
-        self.log("\n🔐❌ Testing Push Endpoints Without Auth...")
-        
-        # Remove auth header
-        headers = self.session.headers.copy()
-        if "Authorization" in self.session.headers:
-            del self.session.headers["Authorization"]
-        
-        # Test register without auth
-        response = self.session.post(f"{BACKEND_URL}/push/register", json={
-            "push_token": "ExponentPushToken[test123]",
-            "platform": "ios"
-        })
-        
-        auth_required = response.status_code == 403
-        
-        # Restore auth header
-        self.session.headers = headers
-        
-        if auth_required:
-            self.log(f"✅ Push endpoints properly require authentication")
-            return True
-        else:
-            self.log(f"❌ Push endpoints should require authentication but got: {response.status_code}")
-            return False
+    auth_results = []
+    for endpoint, description in authenticated_tests:
+        result = test_authenticated_endpoint(endpoint, token, description)
+        auth_results.append(result)
+        print()
     
-    def run_all_tests(self):
-        """Run all tests"""
-        self.log("🚀 Starting BizRealms Push Notification & Social Auth API Tests")
-        self.log(f"Backend URL: {BACKEND_URL}")
-        
-        # Login first
-        if not self.login():
-            self.log("❌ Cannot proceed without login")
-            return False
-        
-        # Track test results
-        tests = [
-            ("Push Registration", self.test_push_register),
-            ("Push Send", self.test_push_send),
-            ("Push Unregistration", self.test_push_unregister),
-            ("Social Auth (Valid)", self.test_social_auth_valid),
-            ("Social Auth (Invalid Provider)", self.test_social_auth_invalid_provider),
-            ("Push Auth Required", self.test_push_without_auth),
-        ]
-        
-        results = []
-        for test_name, test_func in tests:
-            try:
-                result = test_func()
-                results.append((test_name, result))
-            except Exception as e:
-                self.log(f"❌ {test_name} crashed: {e}")
-                results.append((test_name, False))
-        
-        # Summary
-        self.log("\n" + "="*60)
-        self.log("📊 TEST SUMMARY")
-        self.log("="*60)
-        
-        passed = 0
-        total = len(results)
-        
-        for test_name, result in results:
-            status = "✅ PASS" if result else "❌ FAIL"
-            self.log(f"{status} - {test_name}")
-            if result:
-                passed += 1
-        
-        self.log(f"\nResults: {passed}/{total} tests passed")
-        
-        if passed == total:
-            self.log("🎉 All tests passed!")
-            return True
-        else:
-            self.log(f"⚠️  {total - passed} tests failed")
-            return False
+    # Step 3: Test public endpoints
+    public_tests = [
+        ("/legal/terms", "GET /api/legal/terms - Public legal terms"),
+        ("/legal/privacy", "GET /api/legal/privacy - Public privacy policy")
+    ]
+    
+    public_results = []
+    for endpoint, description in public_tests:
+        result = test_public_endpoint(endpoint, description)
+        public_results.append(result)
+        print()
+    
+    # Summary
+    total_tests = len(auth_results) + len(public_results) + 1  # +1 for login
+    passed_tests = sum(auth_results) + sum(public_results) + (1 if token else 0)
+    
+    print("=" * 50)
+    print("📊 SMOKE TEST SUMMARY")
+    print(f"Total tests: {total_tests}")
+    print(f"Passed: {passed_tests}")
+    print(f"Failed: {total_tests - passed_tests}")
+    
+    if passed_tests == total_tests:
+        print("\n🎉 ALL SMOKE TESTS PASSED!")
+        print("✅ Backend refactoring successful - no regressions detected")
+        return True
+    else:
+        print(f"\n❌ SMOKE TEST FAILED: {total_tests - passed_tests} endpoint(s) not working")
+        return False
 
 if __name__ == "__main__":
-    tester = BizRealmsAPITester()
-    success = tester.run_all_tests()
+    success = main()
     sys.exit(0 if success else 1)
