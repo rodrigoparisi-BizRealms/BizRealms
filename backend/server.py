@@ -292,6 +292,7 @@ class UserResponse(BaseModel):
     phone: str = ""
     pix_key: Optional[str] = None
     pix_type: Optional[str] = None
+    paypal_email: Optional[str] = None
     education: List[Education] = []
     certifications: List[Certification] = []
     work_experience: List[WorkExperience] = []
@@ -3296,9 +3297,9 @@ async def get_prize_pool(current_user: dict = Depends(get_current_user)):
     # Check user's position
     user_pos = next((i + 1 for i, r in enumerate(rankings) if r['user_id'] == current_user['id']), None)
     
-    # Check if user has PIX key configured
+    # Check if user has PayPal configured
     user_doc = await db.users.find_one({"id": current_user['id']})
-    has_pix = bool(user_doc.get('pix_key'))
+    has_paypal = bool(user_doc.get('paypal_email'))
     
     # Check if there are unclaimed real rewards for user
     unclaimed_real = await db.real_money_rewards.find_one({
@@ -3326,8 +3327,8 @@ async def get_prize_pool(current_user: dict = Depends(get_current_user)):
         "top3": top3,
         "user_position": user_pos,
         "total_players": total_players,
-        "has_pix_key": has_pix,
-        "pix_key": user_doc.get('pix_key', ''),
+        "has_paypal": has_paypal,
+        "paypal_email": user_doc.get('paypal_email', ''),
         "days_remaining": days_remaining,
         "has_unclaimed_reward": unclaimed_real is not None,
         "unclaimed_reward": {
@@ -3340,36 +3341,35 @@ async def get_prize_pool(current_user: dict = Depends(get_current_user)):
     }
 
 
-@api_router.post("/rewards/update-pix")
-async def update_pix_key(request: dict, current_user: dict = Depends(get_current_user)):
-    """Update user's PIX key for receiving real money rewards"""
-    pix_key = request.get('pix_key', '').strip()
-    pix_type = request.get('pix_type', 'cpf')  # cpf, email, phone, random
-    
-    if not pix_key:
-        raise HTTPException(status_code=400, detail="Chave PIX não pode estar vazia")
-    
+@api_router.post("/rewards/update-paypal")
+async def update_paypal_email(request: dict, current_user: dict = Depends(get_current_user)):
+    """Update user's PayPal email for receiving real money rewards"""
+    paypal_email = request.get('paypal_email', '').strip()
+
+    if not paypal_email:
+        raise HTTPException(status_code=400, detail="PayPal email cannot be empty")
+    if '@' not in paypal_email or '.' not in paypal_email:
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
     await db.users.update_one({"id": current_user['id']}, {
         "$set": {
-            "pix_key": pix_key,
-            "pix_type": pix_type,
-            "pix_updated_at": datetime.utcnow(),
+            "paypal_email": paypal_email,
+            "paypal_updated_at": datetime.utcnow(),
         }
     })
-    
-    return {"success": True, "message": f"Chave PIX atualizada: {pix_key}"}
 
-@api_router.delete("/rewards/delete-pix")
-async def delete_pix_key(current_user: dict = Depends(get_current_user)):
-    """Remove user's PIX key."""
+    return {"success": True, "message": f"PayPal updated: {paypal_email}"}
+
+@api_router.delete("/rewards/delete-paypal")
+async def delete_paypal_email(current_user: dict = Depends(get_current_user)):
+    """Remove user's PayPal email."""
     await db.users.update_one({"id": current_user['id']}, {
         "$unset": {
-            "pix_key": "",
-            "pix_type": "",
-            "pix_updated_at": "",
+            "paypal_email": "",
+            "paypal_updated_at": "",
         }
     })
-    return {"success": True, "message": "Chave PIX removida com sucesso"}
+    return {"success": True, "message": "PayPal removed successfully"}
 
 
 @api_router.post("/rewards/distribute-monthly")
@@ -3426,13 +3426,13 @@ async def distribute_monthly_rewards(current_user: dict = Depends(get_current_us
 
 @api_router.post("/rewards/claim-real")
 async def claim_real_money_reward(request: dict, current_user: dict = Depends(get_current_user)):
-    """Claim a real money reward (requires PIX key)"""
+    """Claim a real money reward (requires PayPal)"""
     reward_id = request.get('reward_id')
     
-    # Check PIX key
+    # Check PayPal
     user = await db.users.find_one({"id": current_user['id']})
-    if not user.get('pix_key'):
-        raise HTTPException(status_code=400, detail="Configure sua chave PIX no perfil antes de resgatar!")
+    if not user.get('paypal_email'):
+        raise HTTPException(status_code=400, detail="Set up your PayPal email in your profile before claiming!")
     
     reward = await db.real_money_rewards.find_one({
         "id": reward_id,
@@ -3447,7 +3447,7 @@ async def claim_real_money_reward(request: dict, current_user: dict = Depends(ge
         "$set": {
             "claimed": True,
             "claimed_at": datetime.utcnow(),
-            "pix_key_used": user.get('pix_key'),
+            "paypal_email_used": user.get('paypal_email'),
             "status": "processing",  # In production: pending -> processing -> paid
         }
     })
