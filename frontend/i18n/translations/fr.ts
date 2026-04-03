@@ -138,5 +138,8 @@ export default {
     save: 'Enregistrer', saving: 'Enregistrement...', back: 'Retour', close: 'Fermer', yes: 'Oui', no: 'Non',
     description: 'Description', amount: 'Montant', remove: 'Supprimer', delete: 'Supprimer', add: 'Ajouter',
   },
+  achievements: { title: 'Succès', subtitle: 'Débloquez des succès et gagnez des récompenses', unlocked: 'Débloqué', locked: 'Verrouillé', progress: 'Progrès' },
+  notifications: { title: 'Notifications', markAllRead: 'Tout marquer comme lu', empty: 'Aucune notification', unread: 'non lues' },
+  payments: { processing: 'Traitement du paiement...', success: 'Paiement confirmé!', cancelled: 'Paiement annulé', error: 'Erreur de paiement', openCheckout: 'Payer avec Stripe', realPayment: 'Paiement réel via Stripe', securePayment: 'Paiement sécurisé traité par Stripe', checkingPayment: 'Vérification du paiement...' },
   currency: { symbol: '€', code: 'EUR' },
 };

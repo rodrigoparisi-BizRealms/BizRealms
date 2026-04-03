@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
@@ -31,7 +32,8 @@ export default function Store() {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix'>('credit_card');
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
@@ -62,21 +64,77 @@ export default function Store() {
 
   const openPayment = (item: any) => {
     setSelectedItem(item);
-    setPaymentMethod('credit_card');
     setShowPayment(true);
   };
 
+  const handleStripeCheckout = async () => {
+    if (!selectedItem) return;
+    setStripeLoading(true);
+    setShowPayment(false);
+    try {
+      // Create Stripe Checkout Session
+      const res = await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/payments/create-checkout-session`,
+        { item_id: selectedItem.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const { session_id, checkout_url } = res.data;
+      
+      if (!checkout_url) {
+        showAlert(t('payments.error'), 'URL de checkout não disponível');
+        setStripeLoading(false);
+        return;
+      }
+
+      // Open Stripe Checkout in browser
+      const result = await WebBrowser.openBrowserAsync(checkout_url);
+      
+      // After browser closes, check payment status
+      setStripeLoading(false);
+      setCheckingPayment(true);
+      
+      try {
+        const checkRes = await axios.post(
+          `${EXPO_PUBLIC_BACKEND_URL}/api/payments/check-session`,
+          { session_id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        if (checkRes.data.status === 'paid' || checkRes.data.status === 'already_processed') {
+          haptic('success');
+          showAlert(t('payments.success'), checkRes.data.message);
+          await loadData();
+          await refreshUser();
+        } else {
+          showAlert(t('payments.cancelled'), 'Pagamento não completado. Tente novamente.');
+        }
+      } catch (checkErr: any) {
+        console.error('Error checking payment:', checkErr);
+        showAlert(t('payments.error'), 'Não foi possível verificar o pagamento. Se você pagou, o item será entregue em breve.');
+      }
+    } catch (e: any) {
+      console.error('Stripe error:', e);
+      showAlert(t('payments.error'), e.response?.data?.detail || 'Erro ao criar sessão de pagamento');
+    } finally {
+      setStripeLoading(false);
+      setCheckingPayment(false);
+      setSelectedItem(null);
+    }
+  };
+
   const handlePurchase = async () => {
+    // This is the mock fallback purchase method
     if (!selectedItem) return;
     setPurchasing(selectedItem.id);
     setShowPayment(false);
     try {
       const r = await axios.post(
         `${EXPO_PUBLIC_BACKEND_URL}/api/store/purchase`,
-        { item_id: selectedItem.id, payment_method: paymentMethod },
+        { item_id: selectedItem.id, payment_method: 'demo' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      showAlert('Compra Realizada!', r.data.message);
+      showAlert(t('store.purchaseSuccess') || 'Compra Realizada!', r.data.message);
       await loadData();
       await refreshUser();
     } catch (e: any) {
@@ -203,10 +261,20 @@ export default function Store() {
           </View>
         )}
 
-        {/* Mock Payment Notice */}
-        <View style={s.mockNotice}>
-          <Ionicons name="information-circle" size={18} color="#FF9800" />
-          <Text style={s.mockText}>Modo demonstração - pagamentos simulados. Integração com cartão e PIX em breve!</Text>
+        {/* Stripe Loading Overlay */}
+        {(stripeLoading || checkingPayment) && (
+          <View style={s.stripeLoadingBar}>
+            <ActivityIndicator size="small" color="#635BFF" />
+            <Text style={s.stripeLoadingText}>
+              {checkingPayment ? t('payments.checkingPayment') : t('payments.processing')}
+            </Text>
+          </View>
+        )}
+
+        {/* Stripe Notice */}
+        <View style={s.stripeNotice}>
+          <Ionicons name="shield-checkmark" size={18} color="#635BFF" />
+          <Text style={s.stripeText}>{t('payments.securePayment')}</Text>
         </View>
 
         {filtered.map(item => {
@@ -263,7 +331,7 @@ export default function Store() {
         })}
       </ScrollView>
 
-      {/* Payment Modal */}
+      {/* Payment Modal - Stripe */}
       <Modal visible={showPayment} animationType="slide" transparent onRequestClose={() => setShowPayment(false)}>
         <View style={s.modalOverlay}>
           <View style={s.modal}>
@@ -286,34 +354,38 @@ export default function Store() {
                   <Text style={s.sumPrice}>R$ {selectedItem.price_brl.toFixed(2).replace('.', ',')}</Text>
                 </View>
 
-                {/* Payment Method */}
-                <Text style={s.label}>{t('store.paymentMethod')}</Text>
-                <View style={s.payMethods}>
-                  <TouchableOpacity
-                    style={[s.payOption, paymentMethod === 'credit_card' && s.payActive]}
-                    onPress={() => setPaymentMethod('credit_card')}
-                  >
-                    <Ionicons name="card" size={24} color={paymentMethod === 'credit_card' ? '#fff' : '#888'} />
-                    <Text style={[s.payLabel, paymentMethod === 'credit_card' && s.payLabelActive]}>{t('store.creditCard')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[s.payOption, paymentMethod === 'pix' && s.payActive]}
-                    onPress={() => setPaymentMethod('pix')}
-                  >
-                    <Ionicons name="qr-code" size={24} color={paymentMethod === 'pix' ? '#fff' : '#888'} />
-                    <Text style={[s.payLabel, paymentMethod === 'pix' && s.payLabelActive]}>{t('store.pix')}</Text>
-                  </TouchableOpacity>
+                {/* Stripe Pay Button */}
+                <TouchableOpacity
+                  style={s.stripeBtn}
+                  onPress={handleStripeCheckout}
+                  disabled={stripeLoading}
+                >
+                  {stripeLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="card" size={20} color="#fff" />
+                      <Text style={s.stripeBtnText}>{t('payments.openCheckout')}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {/* Stripe Security Info */}
+                <View style={s.stripeInfoRow}>
+                  <Ionicons name="lock-closed" size={14} color="#635BFF" />
+                  <Text style={s.stripeInfoText}>{t('payments.realPayment')}</Text>
                 </View>
 
-                {/* Mock Notice */}
-                <View style={s.mockNoticeModal}>
-                  <Ionicons name="shield-checkmark" size={16} color="#4CAF50" />
-                  <Text style={s.mockTextModal}>Modo demo - nenhum valor real será cobrado</Text>
+                {/* Demo Purchase Option */}
+                <View style={s.dividerRow}>
+                  <View style={s.dividerLine} />
+                  <Text style={s.dividerText}>ou</Text>
+                  <View style={s.dividerLine} />
                 </View>
 
-                <TouchableOpacity style={s.confirmBtn} onPress={handlePurchase}>
-                  <Ionicons name="lock-closed" size={18} color="#fff" />
-                  <Text style={s.confirmText}>Comprar por R$ {selectedItem.price_brl.toFixed(2).replace('.', ',')}</Text>
+                <TouchableOpacity style={s.demoBtn} onPress={handlePurchase}>
+                  <Ionicons name="game-controller" size={18} color="#888" />
+                  <Text style={s.demoBtnText}>Comprar com moeda do jogo (demo)</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -385,9 +457,11 @@ const s = StyleSheet.create({
   dailyDesc: { color: '#888', fontSize: 12, marginTop: 2 },
   dailyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD700', borderRadius: 12, paddingVertical: 12 },
   dailyBtnText: { color: '#000', fontSize: 14, fontWeight: 'bold' },
-  // Mock Notice
-  mockNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#2a2a1a', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FF9800' },
-  mockText: { flex: 1, color: '#FF9800', fontSize: 12 },
+  // Stripe Notice
+  stripeNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#635BFF50' },
+  stripeText: { flex: 1, color: '#635BFF', fontSize: 12, fontWeight: '600' },
+  stripeLoadingBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#635BFF' },
+  stripeLoadingText: { color: '#635BFF', fontSize: 14, fontWeight: '600' },
   // Item Card
   itemCard: { backgroundColor: '#2a2a2a', borderRadius: 16, padding: 16, marginBottom: 12, position: 'relative' as any },
   popularBadge: { position: 'absolute' as any, top: -6, right: 0, backgroundColor: '#E91E63', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 4, zIndex: 1 },
@@ -414,13 +488,16 @@ const s = StyleSheet.create({
   sumReward: { color: '#4CAF50', fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
   sumPrice: { color: '#FFD700', fontSize: 28, fontWeight: 'bold' },
   label: { color: '#888', fontSize: 14, marginBottom: 12 },
-  payMethods: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  payOption: { flex: 1, alignItems: 'center', padding: 16, borderRadius: 12, backgroundColor: '#2a2a2a', borderWidth: 2, borderColor: '#3a3a3a', gap: 8 },
-  payActive: { borderColor: '#E91E63', backgroundColor: '#2a1a2a' },
-  payLabel: { color: '#888', fontSize: 13, fontWeight: 'bold' },
-  payLabelActive: { color: '#fff' },
-  mockNoticeModal: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16, padding: 10, backgroundColor: '#1a2a1a', borderRadius: 8 },
-  mockTextModal: { color: '#4CAF50', fontSize: 12 },
+  // Stripe Checkout Styles
+  stripeBtn: { backgroundColor: '#635BFF', borderRadius: 14, padding: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, marginBottom: 12 },
+  stripeBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  stripeInfoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 16 },
+  stripeInfoText: { color: '#635BFF', fontSize: 12, fontWeight: '600' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#333' },
+  dividerText: { color: '#666', fontSize: 12 },
+  demoBtn: { backgroundColor: '#2a2a2a', borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#3a3a3a' },
+  demoBtnText: { color: '#888', fontSize: 13, fontWeight: '600' },
   confirmBtn: { backgroundColor: '#E91E63', borderRadius: 14, padding: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   confirmText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   // History

@@ -615,6 +615,42 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* Quick Links - Achievements & Notifications */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="apps" size={22} color="#FFD700" />
+            <Text style={styles.sectionTitle}>{t('profile.quickLinks') || 'Atalhos'}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.quickLinkCard}
+            onPress={() => router.push('/achievements')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.quickLinkIcon, { backgroundColor: '#FFD70020' }]}>
+              <Ionicons name="trophy" size={22} color="#FFD700" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.quickLinkTitle}>{t('achievements.title')}</Text>
+              <Text style={styles.quickLinkDesc}>{t('achievements.subtitle')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickLinkCard}
+            onPress={() => router.push('/notifications')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.quickLinkIcon, { backgroundColor: '#4CAF5020' }]}>
+              <Ionicons name="notifications" size={22} color="#4CAF50" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.quickLinkTitle}>{t('notifications.title')}</Text>
+              <Text style={styles.quickLinkDesc}>{t('notifications.empty')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#555" />
+          </TouchableOpacity>
+        </View>
+
         {/* Legal Links */}
         <View style={styles.legalSection}>
           <TouchableOpacity style={styles.legalLink} onPress={() => router.push('/legal/terms')}>
@@ -1185,6 +1221,34 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+
+  // Quick Links
+  quickLinkCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    gap: 12,
+  },
+  quickLinkIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickLinkTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  quickLinkDesc: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 2,
   },
 
   // Legal Links

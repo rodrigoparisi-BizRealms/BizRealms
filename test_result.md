@@ -630,6 +630,54 @@ test_credentials:
     name: "Jogador Teste"
     note: "User already created during backend curl tests"
 
+  - task: "Notifications System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Notifications system fully functional. GET /api/notifications returns notifications list with unread_count (3 notifications, 3 unread). POST /api/notifications/read successfully marks individual notifications as read by ID. POST /api/notifications/read with 'all' parameter successfully marks all notifications as read. Notification structure includes proper fields: id, type, title, message, icon, read status, created_at. Authentication required and working correctly."
+
+  - task: "Achievements System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Achievements system fully functional. GET /api/achievements returns 10 total achievements with 3 unlocked (level_5, level_10, first_loan). Achievement structure includes id, icon, color, XP rewards, money rewards, unlocked status, and unlocked_at timestamp. POST /api/achievements/check successfully checks user progress and unlocks new achievements based on conditions (first_job, first_company, first_investment, millionaire, level milestones, etc.). No new achievements unlocked during test as user already has qualifying achievements. Authentication required and working correctly."
+
+  - task: "Stripe Checkout Session"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Stripe Checkout system fully functional. POST /api/payments/create-checkout-session successfully creates real Stripe checkout sessions with valid session_id and checkout_url. Tested with 'pack_starter' item (R$ 4.90). Returns proper Stripe session ID (cs_live_...) and functional checkout URL. POST /api/payments/check-session correctly handles session status checking - returns 'unpaid' status for new sessions and 'Pagamento pendente' message. Error handling working: invalid session IDs properly rejected with 400 status and descriptive Stripe error message. Real Stripe API integration confirmed working."
+
+  - task: "Payments History"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Payments history endpoint fully functional. GET /api/payments/history successfully returns user's purchase history from store_purchases collection. Currently returns empty array (0 purchases) which is correct for test user. Response structure includes purchases array with proper fields: item_name, price_brl, payment_method, status, created_at. Authentication required and working correctly."
+
 agent_communication:
   - agent: "main"
     message: "Implemented Phase 1-2: Authentication system + Character profile system with education and certifications. Backend fully tested with curl and all endpoints working. Frontend implemented but not tested yet. Ready for comprehensive backend testing agent run."
@@ -657,5 +705,7 @@ agent_communication:
     message: "🎉 BANK SYSTEM & COMPANY SELL TESTING COMPLETE! ✅ Comprehensive testing of Bank System and Company Sell endpoints completed successfully. ALL ENDPOINTS WORKING PERFECTLY: BANK SYSTEM (7 endpoints): ✅ GET /api/bank/account (auto-creates credit card on first access, returns balance R$ 49,149.70, credit card with R$ 74,000 limit, loans, available trips, loan limits) ✅ POST /api/bank/credit-card/purchase (R$ 5,000 purchase successful, earned 5,000 miles correctly - 1 mile per R$1 ratio working) ✅ POST /api/bank/credit-card/pay-bill (full bill payment R$ 5,000, bill cleared completely, amount=0 pays full bill) ✅ POST /api/bank/credit-card/redeem-miles (trip_nacional redeemed for 5,000 miles, gained 2,000 XP correctly, user leveled up from 69 to 71) ✅ POST /api/bank/loan/apply (R$ 10,000 small loan approved, 12 months, R$ 1,259.22/month payment, money added to balance, max 3 loans limit working) ✅ POST /api/bank/loan/pay (monthly installment R$ 1,259.22 paid successfully, remaining balance updated correctly) ✅ POST /api/bank/loan/payoff (early payoff with R$ 3,351.47 savings discount working correctly). COMPANY SELL SYSTEM: ✅ POST /api/companies/sell (sold 'Bazar Popular' for R$ 8,000 - exactly 80% of R$ 10,000 purchase price, money added to balance, parent company sale deletes franchises automatically). Credit card auto-creation, miles calculation (1:1), XP rewards, loan calculations, early payoff discounts, and company sell pricing all verified. Authentication required and working. Both systems are production-ready."
   - agent: "testing"
     message: "🎉 COMPANY PURCHASE OFFERS SYSTEM TESTING COMPLETE! ✅ Comprehensive testing of Company Purchase Offers system completed successfully. ALL ENDPOINTS WORKING PERFECTLY: ✅ GET /api/companies/offers (generates random offers with 35% chance per company, 2-hour cooldown working correctly, proper offer structure with buyer_name, offer_amount, purchase_price, reason, reason_emoji, remaining_minutes) ✅ POST /api/companies/offers/respond with action='decline' (properly removes declined offers from active list, status updated to 'declined') ✅ POST /api/companies/offers/respond with action='accept' (sells company at offer price, adds money to user balance, gives XP bonus, removes company from owned list, deletes franchises if parent company) ✅ Complete test flow verified: login → get owned companies (3 companies: Bazar Popular, Lanchonete do Zé, Horta Orgânica) → get offers (2 generated with realistic details) → decline offer (Nova Era Group offer for Horta Orgânica successfully removed) → accept offer (Lanchonete do Zé sold to Fênix Capital for R$ 17,250 with R$ 2,250 profit, +172 XP bonus, company removed from owned list) ✅ Offer generation mechanics: 35% chance per company, 2-hour cooldown prevents spam, offers expire in 4-24 hours, realistic buyer names (individuals and companies), multiplier-based pricing (0.8x-1.3x), contextual reasons with emojis ✅ Authentication required and working correctly. System is production-ready with full purchase offer functionality."
+  - agent: "main"
+    message: "NEW FEATURES IMPLEMENTED: 1) Achievements & Notifications UI navigation - Added trophy and bell icons with unread badge in home screen header, Quick Links section in Profile page. Routes /achievements and /notifications are now accessible from home header and profile. 2) Stripe Checkout Frontend Integration - Store now has 'Pay with Stripe' button that creates a Stripe Checkout Session and opens it via expo-web-browser. After payment, it checks session status and delivers items. Demo purchase option also kept as fallback. NEW BACKEND ENDPOINTS: POST /api/payments/create-checkout-session, POST /api/payments/check-session. i18n keys added for all 6 languages. Login credentials: teste@businessempire.com / teste123. TEST: 1) GET /api/notifications (should return notifications list with unread_count), 2) GET /api/achievements (should return achievements list), 3) POST /api/achievements/check (checks user's progress), 4) POST /api/payments/create-checkout-session with body {item_id: 'pack_starter'}, 5) POST /api/payments/check-session with body {session_id: 'test_id'}."
   - agent: "testing"
-    message: "🎉 REAL MONEY REWARDS SYSTEM TESTING COMPLETE! ✅ Comprehensive testing of Real Money Rewards system completed successfully. ALL 4 ENDPOINTS WORKING PERFECTLY: ✅ GET /api/rewards/prize-pool (returns current_month 2026-04, prize_pool_total R$ 260.00, distribution 60%/30%/10%, top3 players, user_position 1st, total_players 4, has_pix_key status, days_remaining 28, has_unclaimed_reward status, history) ✅ POST /api/rewards/update-pix (successfully updates PIX key 12345678901 with type cpf, proper validation and confirmation message) ✅ POST /api/rewards/distribute-monthly (distributes monthly prizes to top 3 players, creates records in real_money_rewards collection, prevents duplicate distribution with proper error message) ✅ POST /api/rewards/claim-real (claims real money reward R$ 156.00 for 1st place, requires PIX key validation, marks reward as claimed, provides payment confirmation message with 5-day processing timeline) ✅ Complete test flow verified: login → get prize pool (user in 1st position) → update PIX key → verify PIX key saved → distribute monthly rewards → verify unclaimed reward available → claim reward successfully → verify reward claimed and no longer available ✅ Edge cases tested: duplicate distribution prevention working, duplicate claim prevention working, PIX key requirement enforced ✅ Prize pool calculation working: base revenue R$ 5000 + (4 players × R$ 50) = R$ 5200, 5% = R$ 260 prize pool ✅ Authentication required and working correctly. Real Money Rewards system is production-ready with complete end-to-end functionality."
+    message: "🎉 NEW ENDPOINTS TESTING COMPLETE! ✅ Comprehensive testing of newly implemented endpoints completed successfully. ALL 4 NEW SYSTEMS WORKING PERFECTLY: ✅ NOTIFICATIONS SYSTEM: GET /api/notifications (returns 3 notifications with unread_count), POST /api/notifications/read (marks individual/all notifications as read) ✅ ACHIEVEMENTS SYSTEM: GET /api/achievements (10 total achievements, 3 unlocked), POST /api/achievements/check (checks progress, no new unlocks for current user) ✅ STRIPE CHECKOUT: POST /api/payments/create-checkout-session (creates real Stripe sessions with valid URLs), POST /api/payments/check-session (handles session status checking, proper error handling for invalid IDs) ✅ PAYMENTS HISTORY: GET /api/payments/history (returns purchase history, currently empty for test user). Real Stripe API integration confirmed working with live session creation. All endpoints require JWT authentication and handle errors gracefully. Note: Correct item_id is 'pack_starter' not 'money_starter' as mentioned in review request. All systems are production-ready."

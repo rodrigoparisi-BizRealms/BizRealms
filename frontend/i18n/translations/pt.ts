@@ -529,6 +529,32 @@ export default {
     next: 'Próximo',
     start: 'Começar!',
   },
+  // Achievements
+  achievements: {
+    title: 'Conquistas',
+    subtitle: 'Desbloqueie conquistas e ganhe recompensas',
+    unlocked: 'Desbloqueada',
+    locked: 'Bloqueada',
+    progress: 'Progresso',
+  },
+  // Notifications
+  notifications: {
+    title: 'Notificações',
+    markAllRead: 'Marcar tudo como lido',
+    empty: 'Nenhuma notificação ainda',
+    unread: 'não lidas',
+  },
+  // Stripe / Payments
+  payments: {
+    processing: 'Processando pagamento...',
+    success: 'Pagamento confirmado!',
+    cancelled: 'Pagamento cancelado',
+    error: 'Erro no pagamento',
+    openCheckout: 'Pagar com Stripe',
+    realPayment: 'Pagamento real via Stripe',
+    securePayment: 'Pagamento seguro processado pela Stripe',
+    checkingPayment: 'Verificando pagamento...',
+  },
   // Currency
   currency: {
     symbol: 'R$',

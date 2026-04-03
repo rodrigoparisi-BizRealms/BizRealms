@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend Testing Script for Real Money Rewards System
-Business Empire Game - Testing Agent
+Backend Testing Script for BizRealms Game App
+Tests the newly implemented endpoints: Notifications, Achievements, Stripe Checkout, and Payments History
 """
 
 import requests
@@ -10,36 +10,11 @@ import sys
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://career-mogul-1.preview.emergentagent.com/api"
+BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
 TEST_EMAIL = "teste@businessempire.com"
 TEST_PASSWORD = "teste123"
 
-class Colors:
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    BOLD = '\033[1m'
-    END = '\033[0m'
-
-def print_success(message):
-    print(f"{Colors.GREEN}✅ {message}{Colors.END}")
-
-def print_error(message):
-    print(f"{Colors.RED}❌ {message}{Colors.END}")
-
-def print_info(message):
-    print(f"{Colors.BLUE}ℹ️  {message}{Colors.END}")
-
-def print_warning(message):
-    print(f"{Colors.YELLOW}⚠️  {message}{Colors.END}")
-
-def print_header(message):
-    print(f"\n{Colors.BOLD}{Colors.BLUE}{'='*60}{Colors.END}")
-    print(f"{Colors.BOLD}{Colors.BLUE}{message}{Colors.END}")
-    print(f"{Colors.BOLD}{Colors.BLUE}{'='*60}{Colors.END}")
-
-class RealMoneyRewardsTest:
+class BizRealmsAPITester:
     def __init__(self):
         self.token = None
         self.session = requests.Session()
@@ -47,10 +22,14 @@ class RealMoneyRewardsTest:
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         })
-
+    
+    def log(self, message, level="INFO"):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
     def login(self):
         """Login and get JWT token"""
-        print_header("AUTHENTICATION TEST")
+        self.log("🔐 Attempting login...")
         
         login_data = {
             "email": TEST_EMAIL,
@@ -58,313 +37,317 @@ class RealMoneyRewardsTest:
         }
         
         try:
-            response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
+            response = self.session.post(f"{BASE_URL}/auth/login", json=login_data)
             
             if response.status_code == 200:
                 data = response.json()
-                self.token = data.get('token')  # Backend returns 'token' not 'access_token'
+                self.token = data.get('token')
                 if self.token:
-                    self.session.headers.update({
-                        'Authorization': f'Bearer {self.token}'
-                    })
-                    print_success(f"Login successful for {TEST_EMAIL}")
-                    print_info(f"JWT Token: {self.token[:50]}...")
+                    self.session.headers.update({'Authorization': f'Bearer {self.token}'})
+                    self.log("✅ Login successful")
                     return True
                 else:
-                    print_error("No access token in response")
+                    self.log("❌ Login failed: No token in response", "ERROR")
                     return False
             else:
-                print_error(f"Login failed: {response.status_code} - {response.text}")
+                self.log(f"❌ Login failed: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            print_error(f"Login error: {str(e)}")
+            self.log(f"❌ Login error: {str(e)}", "ERROR")
             return False
-
-    def test_prize_pool_endpoint(self):
-        """Test GET /api/rewards/prize-pool"""
-        print_header("TESTING PRIZE POOL ENDPOINT")
+    
+    def test_notifications_system(self):
+        """Test notifications endpoints"""
+        self.log("\n📢 TESTING NOTIFICATIONS SYSTEM")
         
+        # Test GET /api/notifications
+        self.log("Testing GET /api/notifications...")
         try:
-            response = self.session.get(f"{BACKEND_URL}/rewards/prize-pool")
+            response = self.session.get(f"{BASE_URL}/notifications")
             
             if response.status_code == 200:
                 data = response.json()
-                print_success("Prize pool endpoint working")
+                notifications = data.get('notifications', [])
+                unread_count = data.get('unread_count', 0)
                 
-                # Validate required fields
-                required_fields = [
-                    'current_month', 'prize_pool_total', 'distribution', 
-                    'top3', 'user_position', 'total_players', 'has_pix_key', 
-                    'days_remaining', 'has_unclaimed_reward', 'history'
-                ]
+                self.log(f"✅ GET /api/notifications successful")
+                self.log(f"   📊 Total notifications: {len(notifications)}")
+                self.log(f"   📊 Unread count: {unread_count}")
                 
-                missing_fields = [field for field in required_fields if field not in data]
-                if missing_fields:
-                    print_error(f"Missing required fields: {missing_fields}")
-                    return False
+                # Show first few notifications
+                for i, notif in enumerate(notifications[:3]):
+                    self.log(f"   📝 Notification {i+1}: {notif.get('title', 'No title')} - {notif.get('message', 'No message')}")
                 
-                # Validate distribution structure
-                distribution = data.get('distribution', {})
-                if not all(pos in distribution for pos in ['1st', '2nd', '3rd']):
-                    print_error("Distribution missing required positions")
-                    return False
+                # Test marking notification as read if we have any
+                if notifications:
+                    first_notif_id = notifications[0].get('id')
+                    if first_notif_id:
+                        self.log(f"Testing POST /api/notifications/read with ID: {first_notif_id}")
+                        read_response = self.session.post(f"{BASE_URL}/notifications/read", 
+                                                        json={"notification_id": first_notif_id})
+                        
+                        if read_response.status_code == 200:
+                            self.log("✅ Mark single notification as read successful")
+                        else:
+                            self.log(f"❌ Mark notification as read failed: {read_response.status_code} - {read_response.text}")
                 
-                print_info(f"Current month: {data['current_month']}")
-                print_info(f"Prize pool total: R$ {data['prize_pool_total']:.2f}")
-                print_info(f"Distribution - 1st: R$ {distribution['1st']:.2f}, 2nd: R$ {distribution['2nd']:.2f}, 3rd: R$ {distribution['3rd']:.2f}")
-                print_info(f"Total players: {data['total_players']}")
-                print_info(f"User position: {data['user_position']}")
-                print_info(f"Has PIX key: {data['has_pix_key']}")
-                print_info(f"Days remaining: {data['days_remaining']}")
-                print_info(f"Has unclaimed reward: {data['has_unclaimed_reward']}")
-                print_info(f"Top 3 players: {len(data['top3'])} players")
+                # Test mark all as read
+                self.log("Testing POST /api/notifications/read (mark all)...")
+                read_all_response = self.session.post(f"{BASE_URL}/notifications/read", 
+                                                    json={"notification_id": "all"})
                 
-                # Store initial state for later comparison
-                self.initial_has_pix = data['has_pix_key']
-                self.initial_unclaimed = data['has_unclaimed_reward']
+                if read_all_response.status_code == 200:
+                    self.log("✅ Mark all notifications as read successful")
+                else:
+                    self.log(f"❌ Mark all notifications as read failed: {read_all_response.status_code} - {read_all_response.text}")
                 
                 return True
+                
             else:
-                print_error(f"Prize pool endpoint failed: {response.status_code} - {response.text}")
+                self.log(f"❌ GET /api/notifications failed: {response.status_code} - {response.text}")
                 return False
                 
         except Exception as e:
-            print_error(f"Prize pool test error: {str(e)}")
+            self.log(f"❌ Notifications test error: {str(e)}", "ERROR")
             return False
-
-    def test_update_pix_endpoint(self):
-        """Test POST /api/rewards/update-pix"""
-        print_header("TESTING UPDATE PIX ENDPOINT")
+    
+    def test_achievements_system(self):
+        """Test achievements endpoints"""
+        self.log("\n🏆 TESTING ACHIEVEMENTS SYSTEM")
         
-        pix_data = {
-            "pix_key": "12345678901",
-            "pix_type": "cpf"
-        }
-        
+        # Test GET /api/achievements
+        self.log("Testing GET /api/achievements...")
         try:
-            response = self.session.post(f"{BACKEND_URL}/rewards/update-pix", json=pix_data)
+            response = self.session.get(f"{BASE_URL}/achievements")
             
             if response.status_code == 200:
                 data = response.json()
-                print_success("PIX key update successful")
-                print_info(f"Response: {data.get('message', 'No message')}")
+                achievements = data.get('achievements', [])
+                total = data.get('total', 0)
+                unlocked = data.get('unlocked', 0)
                 
-                if data.get('success'):
-                    print_success("PIX key successfully updated")
-                    return True
-                else:
-                    print_error("PIX update returned success=False")
-                    return False
-            else:
-                print_error(f"PIX update failed: {response.status_code} - {response.text}")
-                return False
+                self.log(f"✅ GET /api/achievements successful")
+                self.log(f"   📊 Total achievements: {total}")
+                self.log(f"   📊 Unlocked achievements: {unlocked}")
                 
-        except Exception as e:
-            print_error(f"PIX update test error: {str(e)}")
-            return False
-
-    def test_prize_pool_after_pix(self):
-        """Test GET /api/rewards/prize-pool after PIX update"""
-        print_header("TESTING PRIZE POOL AFTER PIX UPDATE")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/rewards/prize-pool")
-            
-            if response.status_code == 200:
-                data = response.json()
-                print_success("Prize pool endpoint working after PIX update")
+                # Show achievements status
+                unlocked_count = 0
+                for ach in achievements:
+                    status = "🔓" if ach.get('unlocked') else "🔒"
+                    self.log(f"   {status} {ach.get('id', 'unknown')}: {ach.get('icon', '?')} (+{ach.get('xp', 0)} XP, +R$ {ach.get('money', 0)})")
+                    if ach.get('unlocked'):
+                        unlocked_count += 1
                 
-                if data.get('has_pix_key'):
-                    print_success("has_pix_key is now true")
-                    print_info(f"PIX key: {data.get('pix_key', 'Not shown')}")
-                    return True
-                else:
-                    print_error("has_pix_key is still false after PIX update")
-                    return False
-            else:
-                print_error(f"Prize pool endpoint failed: {response.status_code} - {response.text}")
-                return False
+                # Test POST /api/achievements/check
+                self.log("Testing POST /api/achievements/check...")
+                check_response = self.session.post(f"{BASE_URL}/achievements/check")
                 
-        except Exception as e:
-            print_error(f"Prize pool after PIX test error: {str(e)}")
-            return False
-
-    def test_distribute_monthly_endpoint(self):
-        """Test POST /api/rewards/distribute-monthly"""
-        print_header("TESTING DISTRIBUTE MONTHLY REWARDS")
-        
-        try:
-            response = self.session.post(f"{BACKEND_URL}/rewards/distribute-monthly")
-            
-            if response.status_code == 200:
-                data = response.json()
-                print_success("Monthly distribution endpoint working")
-                print_info(f"Response: {data.get('message', 'No message')}")
-                
-                if data.get('success'):
-                    print_success("Monthly rewards distributed successfully")
-                    return True
-                elif "já foi distribuída" in data.get('message', ''):
-                    print_warning("Monthly rewards already distributed this month")
-                    print_info("This is expected behavior - distribution only happens once per month")
-                    return True
-                else:
-                    print_error("Monthly distribution returned success=False")
-                    return False
-            else:
-                print_error(f"Monthly distribution failed: {response.status_code} - {response.text}")
-                return False
-                
-        except Exception as e:
-            print_error(f"Monthly distribution test error: {str(e)}")
-            return False
-
-    def test_prize_pool_after_distribution(self):
-        """Test GET /api/rewards/prize-pool after distribution"""
-        print_header("TESTING PRIZE POOL AFTER DISTRIBUTION")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/rewards/prize-pool")
-            
-            if response.status_code == 200:
-                data = response.json()
-                print_success("Prize pool endpoint working after distribution")
-                
-                print_info(f"Has unclaimed reward: {data['has_unclaimed_reward']}")
-                
-                if data.get('has_unclaimed_reward'):
-                    unclaimed = data.get('unclaimed_reward', {})
-                    print_success("User has unclaimed reward!")
-                    print_info(f"Reward amount: R$ {unclaimed.get('amount', 0):.2f}")
-                    print_info(f"Position: {unclaimed.get('position', 'Unknown')}")
-                    print_info(f"Month: {unclaimed.get('month', 'Unknown')}")
-                    print_info(f"Reward ID: {unclaimed.get('id', 'Unknown')}")
+                if check_response.status_code == 200:
+                    check_data = check_response.json()
+                    new_unlocks = check_data.get('new_unlocks', [])
+                    count = check_data.get('count', 0)
                     
-                    # Store reward ID for claiming test
-                    self.reward_id = unclaimed.get('id')
+                    self.log(f"✅ POST /api/achievements/check successful")
+                    self.log(f"   📊 New unlocks: {count}")
+                    
+                    if new_unlocks:
+                        for unlock in new_unlocks:
+                            self.log(f"   🎉 New achievement unlocked: {unlock}")
+                    else:
+                        self.log("   ℹ️ No new achievements unlocked")
+                    
                     return True
                 else:
-                    print_warning("User has no unclaimed rewards")
-                    print_info("This might be expected if user is not in top 3 or rewards already claimed")
-                    return True
+                    self.log(f"❌ POST /api/achievements/check failed: {check_response.status_code} - {check_response.text}")
+                    return False
+                
             else:
-                print_error(f"Prize pool endpoint failed: {response.status_code} - {response.text}")
+                self.log(f"❌ GET /api/achievements failed: {response.status_code} - {response.text}")
                 return False
                 
         except Exception as e:
-            print_error(f"Prize pool after distribution test error: {str(e)}")
+            self.log(f"❌ Achievements test error: {str(e)}", "ERROR")
             return False
-
-    def test_claim_real_reward(self):
-        """Test POST /api/rewards/claim-real"""
-        print_header("TESTING CLAIM REAL MONEY REWARD")
+    
+    def test_stripe_checkout_system(self):
+        """Test Stripe checkout endpoints"""
+        self.log("\n💳 TESTING STRIPE CHECKOUT SYSTEM")
         
-        if not hasattr(self, 'reward_id') or not self.reward_id:
-            print_warning("No reward ID available for claiming test")
-            print_info("This might be expected if user is not in top 3")
-            return True
-        
-        claim_data = {
-            "reward_id": self.reward_id
-        }
-        
+        # Test POST /api/payments/create-checkout-session
+        self.log("Testing POST /api/payments/create-checkout-session...")
         try:
-            response = self.session.post(f"{BACKEND_URL}/rewards/claim-real", json=claim_data)
+            checkout_data = {"item_id": "pack_starter"}  # Using money_starter as mentioned in review request
+            response = self.session.post(f"{BASE_URL}/payments/create-checkout-session", json=checkout_data)
             
             if response.status_code == 200:
                 data = response.json()
-                print_success("Reward claim successful")
-                print_info(f"Message: {data.get('message', 'No message')}")
-                print_info(f"Amount: R$ {data.get('amount', 0):.2f}")
-                print_info(f"Position: {data.get('position', 'Unknown')}")
+                session_id = data.get('session_id')
+                checkout_url = data.get('checkout_url')
                 
-                if data.get('success'):
-                    print_success("Real money reward claimed successfully")
+                self.log(f"✅ POST /api/payments/create-checkout-session successful")
+                self.log(f"   📊 Session ID: {session_id}")
+                self.log(f"   📊 Checkout URL: {checkout_url}")
+                
+                # Test POST /api/payments/check-session with the session ID
+                self.log("Testing POST /api/payments/check-session...")
+                check_data = {"session_id": session_id}
+                check_response = self.session.post(f"{BASE_URL}/payments/check-session", json=check_data)
+                
+                if check_response.status_code == 200:
+                    check_result = check_response.json()
+                    status = check_result.get('status')
+                    message = check_result.get('message')
+                    
+                    self.log(f"✅ POST /api/payments/check-session successful")
+                    self.log(f"   📊 Status: {status}")
+                    self.log(f"   📊 Message: {message}")
+                    
                     return True
                 else:
-                    print_error("Reward claim returned success=False")
+                    self.log(f"❌ POST /api/payments/check-session failed: {check_response.status_code} - {check_response.text}")
                     return False
-            elif response.status_code == 400:
-                error_msg = response.json().get('detail', response.text)
-                if "Configure sua chave PIX" in error_msg:
-                    print_error("PIX key not configured (this shouldn't happen after PIX update)")
-                    return False
-                else:
-                    print_warning(f"Claim failed with 400: {error_msg}")
-                    return True
+                
             elif response.status_code == 404:
-                print_warning("Reward not found or already claimed")
-                print_info("This might be expected if reward was already claimed or user not in top 3")
-                return True
+                self.log(f"❌ Item 'pack_starter' not found. Trying 'money_starter'...")
+                # Try with money_starter as mentioned in review request
+                checkout_data = {"item_id": "money_starter"}
+                response = self.session.post(f"{BASE_URL}/payments/create-checkout-session", json=checkout_data)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    session_id = data.get('session_id')
+                    checkout_url = data.get('checkout_url')
+                    
+                    self.log(f"✅ POST /api/payments/create-checkout-session successful with money_starter")
+                    self.log(f"   📊 Session ID: {session_id}")
+                    self.log(f"   📊 Checkout URL: {checkout_url}")
+                    return True
+                else:
+                    self.log(f"❌ POST /api/payments/create-checkout-session failed: {response.status_code} - {response.text}")
+                    return False
             else:
-                print_error(f"Reward claim failed: {response.status_code} - {response.text}")
+                self.log(f"❌ POST /api/payments/create-checkout-session failed: {response.status_code} - {response.text}")
                 return False
                 
         except Exception as e:
-            print_error(f"Reward claim test error: {str(e)}")
+            self.log(f"❌ Stripe checkout test error: {str(e)}", "ERROR")
             return False
-
-    def run_all_tests(self):
-        """Run all Real Money Rewards tests"""
-        print_header("REAL MONEY REWARDS SYSTEM TESTING")
-        print_info(f"Backend URL: {BACKEND_URL}")
-        print_info(f"Test User: {TEST_EMAIL}")
-        print_info(f"Test Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    def test_payments_history(self):
+        """Test payments history endpoint"""
+        self.log("\n💰 TESTING PAYMENTS HISTORY")
         
-        tests = [
-            ("Login", self.login),
-            ("Prize Pool Initial", self.test_prize_pool_endpoint),
-            ("Update PIX Key", self.test_update_pix_endpoint),
-            ("Prize Pool After PIX", self.test_prize_pool_after_pix),
-            ("Distribute Monthly", self.test_distribute_monthly_endpoint),
-            ("Prize Pool After Distribution", self.test_prize_pool_after_distribution),
-            ("Claim Real Reward", self.test_claim_real_reward),
-        ]
+        # Test GET /api/payments/history
+        self.log("Testing GET /api/payments/history...")
+        try:
+            response = self.session.get(f"{BASE_URL}/payments/history")
+            
+            if response.status_code == 200:
+                data = response.json()
+                purchases = data.get('purchases', [])
+                
+                self.log(f"✅ GET /api/payments/history successful")
+                self.log(f"   📊 Total purchases: {len(purchases)}")
+                
+                # Show recent purchases
+                for i, purchase in enumerate(purchases[:5]):
+                    item_name = purchase.get('item_name', 'Unknown item')
+                    price = purchase.get('price_brl', 0)
+                    payment_method = purchase.get('payment_method', 'unknown')
+                    status = purchase.get('status', 'unknown')
+                    created_at = purchase.get('created_at', 'unknown')
+                    
+                    self.log(f"   💳 Purchase {i+1}: {item_name} - R$ {price} ({payment_method}) - {status} - {created_at}")
+                
+                return True
+                
+            else:
+                self.log(f"❌ GET /api/payments/history failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Payments history test error: {str(e)}", "ERROR")
+            return False
+    
+    def test_check_session_with_invalid_id(self):
+        """Test check-session endpoint with invalid session ID"""
+        self.log("\n🔍 TESTING CHECK-SESSION WITH INVALID ID")
         
-        results = []
-        
-        for test_name, test_func in tests:
-            print(f"\n{Colors.YELLOW}Running: {test_name}{Colors.END}")
-            try:
-                result = test_func()
-                results.append((test_name, result))
-                if result:
-                    print_success(f"{test_name} - PASSED")
+        self.log("Testing POST /api/payments/check-session with invalid session_id...")
+        try:
+            check_data = {"session_id": "some_test_id"}
+            response = self.session.post(f"{BASE_URL}/payments/check-session", json=check_data)
+            
+            # This should handle the error gracefully
+            if response.status_code in [200, 400, 404]:
+                if response.status_code == 200:
+                    data = response.json()
+                    self.log(f"✅ POST /api/payments/check-session handled invalid ID gracefully")
+                    self.log(f"   📊 Response: {data}")
                 else:
-                    print_error(f"{test_name} - FAILED")
-            except Exception as e:
-                print_error(f"{test_name} - ERROR: {str(e)}")
-                results.append((test_name, False))
+                    self.log(f"✅ POST /api/payments/check-session properly rejected invalid ID: {response.status_code}")
+                    self.log(f"   📊 Error: {response.text}")
+                return True
+            else:
+                self.log(f"❌ POST /api/payments/check-session failed unexpectedly: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Check session invalid ID test error: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Run all tests"""
+        self.log("🚀 STARTING BIZREALMS BACKEND API TESTING")
+        self.log(f"🌐 Base URL: {BASE_URL}")
+        self.log(f"👤 Test User: {TEST_EMAIL}")
+        
+        # Login first
+        if not self.login():
+            self.log("❌ Cannot proceed without authentication", "ERROR")
+            return False
+        
+        # Run all tests
+        results = {
+            "notifications": self.test_notifications_system(),
+            "achievements": self.test_achievements_system(),
+            "stripe_checkout": self.test_stripe_checkout_system(),
+            "payments_history": self.test_payments_history(),
+            "check_session_invalid": self.test_check_session_with_invalid_id()
+        }
         
         # Summary
-        print_header("TEST RESULTS SUMMARY")
-        passed = sum(1 for _, result in results if result)
+        self.log("\n📊 TEST SUMMARY")
+        self.log("=" * 50)
+        
+        passed = 0
         total = len(results)
         
-        for test_name, result in results:
+        for test_name, result in results.items():
             status = "✅ PASS" if result else "❌ FAIL"
-            print(f"{status} - {test_name}")
+            self.log(f"{status} {test_name.replace('_', ' ').title()}")
+            if result:
+                passed += 1
         
-        print(f"\n{Colors.BOLD}Overall: {passed}/{total} tests passed{Colors.END}")
+        self.log("=" * 50)
+        self.log(f"📈 OVERALL RESULT: {passed}/{total} tests passed")
         
         if passed == total:
-            print_success("🎉 ALL TESTS PASSED! Real Money Rewards system is working correctly.")
+            self.log("🎉 ALL TESTS PASSED!")
             return True
         else:
-            print_error(f"❌ {total - passed} tests failed. Please check the issues above.")
+            self.log("⚠️ SOME TESTS FAILED!")
             return False
 
 def main():
-    """Main test execution"""
-    tester = RealMoneyRewardsTest()
+    """Main function"""
+    tester = BizRealmsAPITester()
     success = tester.run_all_tests()
     
     if success:
-        print(f"\n{Colors.GREEN}{Colors.BOLD}✅ REAL MONEY REWARDS SYSTEM: FULLY FUNCTIONAL{Colors.END}")
         sys.exit(0)
     else:
-        print(f"\n{Colors.RED}{Colors.BOLD}❌ REAL MONEY REWARDS SYSTEM: ISSUES FOUND{Colors.END}")
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -513,6 +513,32 @@ export default {
     next: 'Next',
     start: 'Let\'s Go!',
   },
+  // Achievements
+  achievements: {
+    title: 'Achievements',
+    subtitle: 'Unlock achievements and earn rewards',
+    unlocked: 'Unlocked',
+    locked: 'Locked',
+    progress: 'Progress',
+  },
+  // Notifications
+  notifications: {
+    title: 'Notifications',
+    markAllRead: 'Mark all as read',
+    empty: 'No notifications yet',
+    unread: 'unread',
+  },
+  // Stripe / Payments
+  payments: {
+    processing: 'Processing payment...',
+    success: 'Payment confirmed!',
+    cancelled: 'Payment cancelled',
+    error: 'Payment error',
+    openCheckout: 'Pay with Stripe',
+    realPayment: 'Real payment via Stripe',
+    securePayment: 'Secure payment processed by Stripe',
+    checkingPayment: 'Checking payment...',
+  },
   currency: {
     symbol: '$',
     code: 'USD',

@@ -47,23 +47,26 @@ export default function Home() {
   const [assets, setAssets] = useState<any>(null);
   const [rankings, setRankings] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   const loadAllData = useCallback(async () => {
     if (!token) return;
     const h = { Authorization: `Bearer ${token}` };
     try {
-      const [statsRes, portfolioRes, companiesRes, assetsRes, rankingsRes] = await Promise.all([
+      const [statsRes, portfolioRes, companiesRes, assetsRes, rankingsRes, notifsRes] = await Promise.all([
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/user/stats`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/portfolio`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/owned`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/owned`, { headers: h }).catch(() => null),
         axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/rankings?period=weekly`, { headers: h }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/notifications`, { headers: h }).catch(() => null),
       ]);
       if (statsRes) setStats(statsRes.data);
       if (portfolioRes) setPortfolio(portfolioRes.data);
       if (companiesRes) setCompanies(companiesRes.data);
       if (assetsRes) setAssets(assetsRes.data);
       if (rankingsRes) setRankings(rankingsRes.data);
+      if (notifsRes) setUnreadNotifs(notifsRes.data.unread_count || 0);
     } catch (e) {
       console.error('Error loading dashboard:', e);
     }
@@ -143,8 +146,29 @@ export default function Home() {
               </Text>
             </View>
           </View>
-          <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>{t('home.lv')} {stats.level}</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => { haptic('light'); router.push('/achievements'); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trophy" size={22} color="#FFD700" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => { haptic('light'); router.push('/notifications'); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="notifications" size={22} color="#888" />
+              {unreadNotifs > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>{unreadNotifs > 9 ? '9+' : unreadNotifs}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelText}>{t('home.lv')} {stats.level}</Text>
+            </View>
           </View>
         </View>
 
@@ -595,6 +619,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#2a2a2a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative' as const,
+  },
+  notifBadge: {
+    position: 'absolute' as const,
+    top: -4,
+    right: -4,
+    backgroundColor: '#F44336',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold' as const,
   },
   avatar: {
     width: 48,

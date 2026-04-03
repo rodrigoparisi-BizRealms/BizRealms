@@ -4475,6 +4475,153 @@ async def payment_history(credentials: HTTPAuthorizationCredentials = Depends(se
         p['created_at'] = p['created_at'].isoformat() if isinstance(p.get('created_at'), datetime) else str(p.get('created_at', ''))
     return {"purchases": purchases}
 
+@api_router.post("/payments/create-checkout-session")
+async def create_checkout_session(data: dict, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create a Stripe Checkout Session for a store item."""
+    user = await get_current_user(credentials)
+    item_id = data.get('item_id')
+    
+    # Find item in store
+    item = next((i for i in STORE_ITEMS if i['id'] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    
+    # Price in centavos (BRL uses centavos)
+    price_cents = int(item['price_brl'] * 100)
+    
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'brl',
+                    'product_data': {
+                        'name': item['name'],
+                        'description': item.get('description', ''),
+                    },
+                    'unit_amount': price_cents,
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url='https://bizrealms.app/payment-success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url='https://bizrealms.app/payment-cancel',
+            metadata={
+                'user_id': user['id'],
+                'item_id': item_id,
+                'item_name': item['name'],
+            },
+        )
+        return {
+            "session_id": session.id,
+            "checkout_url": session.url,
+        }
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/payments/check-session")
+async def check_session_status(data: dict, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Check Stripe session status and deliver item if paid."""
+    user = await get_current_user(credentials)
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID required")
+    
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        if session.payment_status == 'paid':
+            # Check if already processed
+            existing = await db.store_purchases.find_one({'stripe_session_id': session_id})
+            if existing:
+                return {"status": "already_processed", "message": "Compra já foi processada!"}
+            
+            item_id = session.metadata.get('item_id')
+            item_name = session.metadata.get('item_name')
+            user_id = session.metadata.get('user_id')
+            
+            # Verify user matches
+            if user_id != user['id']:
+                raise HTTPException(status_code=403, detail="Sessão não pertence a este usuário")
+            
+            # Find item
+            item = next((i for i in STORE_ITEMS if i['id'] == item_id), None)
+            if not item:
+                raise HTTPException(status_code=404, detail="Item não encontrado")
+            
+            # Record purchase
+            purchase = {
+                "id": str(uuid.uuid4()),
+                "user_id": user['id'],
+                "item_id": item_id,
+                "item_name": item['name'],
+                "category": item['category'],
+                "price_brl": item['price_brl'],
+                "payment_method": "stripe",
+                "stripe_session_id": session_id,
+                "transaction_id": session.payment_intent or session.id,
+                "status": "completed",
+                "created_at": datetime.utcnow(),
+            }
+            await db.store_purchases.insert_one(purchase)
+            
+            # Deliver item rewards
+            reward = item.get('game_reward', {})
+            update_ops = {}
+            message_parts = []
+            
+            if reward.get('money'):
+                update_ops['$inc'] = update_ops.get('$inc', {})
+                update_ops['$inc']['money'] = reward['money']
+                message_parts.append(f"+R$ {reward['money']:,.0f}")
+            
+            if reward.get('xp'):
+                update_ops['$inc'] = update_ops.get('$inc', {})
+                update_ops['$inc']['experience_points'] = reward['xp']
+                message_parts.append(f"+{reward['xp']:,.0f} XP")
+            
+            if update_ops:
+                await db.users.update_one({'id': user['id']}, update_ops)
+            
+            # Handle earnings boost
+            if reward.get('earnings_multiplier'):
+                boost_end = datetime.utcnow() + timedelta(hours=reward['duration_hours'])
+                await db.ad_boosts.update_one(
+                    {'user_id': user['id']},
+                    {'$set': {
+                        'multiplier': reward['earnings_multiplier'],
+                        'expires_at': boost_end,
+                        'active': True,
+                    }},
+                    upsert=True
+                )
+                message_parts.append(f"{reward['earnings_multiplier']}x por {reward['duration_hours']}h")
+            
+            # Add notification
+            await db.notifications.insert_one({
+                'user_id': user['id'],
+                'type': 'purchase',
+                'title': 'Compra Confirmada!',
+                'message': f'{item_name} — {", ".join(message_parts)}',
+                'icon': 'cart',
+                'read': False,
+                'created_at': datetime.utcnow(),
+            })
+            
+            return {
+                "status": "paid",
+                "message": f"Compra confirmada! {', '.join(message_parts)}",
+                "item_name": item_name,
+            }
+        elif session.payment_status == 'unpaid':
+            return {"status": "unpaid", "message": "Pagamento pendente"}
+        else:
+            return {"status": session.payment_status, "message": "Status do pagamento: " + session.payment_status}
+    
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ==================== ACHIEVEMENTS / BADGES ====================
 
 ACHIEVEMENTS = [
