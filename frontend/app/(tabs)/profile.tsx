@@ -80,6 +80,25 @@ export default function Profile() {
   };
 
   const handleSavePersonalData = async () => {
+    // Validate required fields
+    const required = [
+      { field: 'full_name', label: 'Nome completo' },
+      { field: 'phone', label: 'Telefone' },
+      { field: 'address', label: 'Endereço' },
+      { field: 'city', label: 'Cidade' },
+      { field: 'state', label: 'Estado (UF)' },
+      { field: 'zip_code', label: 'CEP' },
+    ];
+    const missing = required.filter(r => !(personalData as any)[r.field]?.trim());
+    if (missing.length > 0) {
+      showAlert('Campos obrigatórios', `Preencha todos os campos:\n${missing.map(m => '• ' + m.label).join('\n')}`);
+      return;
+    }
+    // Validate state (2 chars)
+    if (personalData.state.trim().length !== 2) {
+      showAlert('UF inválido', 'O estado deve ter exatamente 2 letras (ex: SP, RJ, MG)');
+      return;
+    }
     setSavingPersonal(true);
     try {
       await axios.put(
@@ -887,25 +906,30 @@ export default function Profile() {
                 </TouchableOpacity>
               </View>
               <ScrollView style={{ maxHeight: 420 }}>
-                <Text style={styles.inputLabel}>Nome Completo</Text>
+                <View style={{ backgroundColor: '#2a1a1a', borderRadius: 10, padding: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="alert-circle" size={18} color="#FF9800" />
+                  <Text style={{ color: '#FF9800', fontSize: 12, flex: 1 }}>Todos os campos são obrigatórios *</Text>
+                </View>
+
+                <Text style={styles.inputLabel}>Nome Completo *</Text>
                 <TextInput style={styles.input} value={personalData.full_name} onChangeText={v => setPersonalData(p => ({...p, full_name: v}))} placeholder="Nome completo" placeholderTextColor="#666" />
 
-                <Text style={styles.inputLabel}>Telefone Celular</Text>
+                <Text style={styles.inputLabel}>Telefone Celular *</Text>
                 <TextInput style={styles.input} value={personalData.phone} onChangeText={v => setPersonalData(p => ({...p, phone: v}))} placeholder="(11) 99999-9999" placeholderTextColor="#666" keyboardType="phone-pad" />
 
-                <Text style={styles.inputLabel}>Endereço</Text>
+                <Text style={styles.inputLabel}>Endereço *</Text>
                 <TextInput style={styles.input} value={personalData.address} onChangeText={v => setPersonalData(p => ({...p, address: v}))} placeholder="Rua, número, complemento" placeholderTextColor="#666" />
 
-                <Text style={styles.inputLabel}>Cidade</Text>
+                <Text style={styles.inputLabel}>Cidade *</Text>
                 <TextInput style={styles.input} value={personalData.city} onChangeText={v => setPersonalData(p => ({...p, city: v}))} placeholder="Cidade" placeholderTextColor="#666" />
 
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>Estado</Text>
-                    <TextInput style={styles.input} value={personalData.state} onChangeText={v => setPersonalData(p => ({...p, state: v}))} placeholder="UF" placeholderTextColor="#666" maxLength={2} />
+                    <Text style={styles.inputLabel}>Estado *</Text>
+                    <TextInput style={styles.input} value={personalData.state} onChangeText={v => setPersonalData(p => ({...p, state: v.toUpperCase()}))} placeholder="UF" placeholderTextColor="#666" maxLength={2} autoCapitalize="characters" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>CEP</Text>
+                    <Text style={styles.inputLabel}>CEP *</Text>
                     <TextInput style={styles.input} value={personalData.zip_code} onChangeText={v => setPersonalData(p => ({...p, zip_code: v}))} placeholder="00000-000" placeholderTextColor="#666" keyboardType="numeric" />
                   </View>
                 </View>

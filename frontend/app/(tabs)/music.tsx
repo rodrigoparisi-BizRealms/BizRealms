@@ -1,14 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { WebView } from 'react-native-webview';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
+import { useMusic } from '../../context/MusicContext';
 
 type PlaylistCategory = 'lofi' | 'motivation' | 'focus' | 'jazz' | 'gaming';
 
@@ -104,10 +105,8 @@ export default function Music() {
   const router = useRouter();
   const { play } = useSounds();
   const { t } = useLanguage();
-  const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { activePlaylist, isPlaying, playPlaylist, stopMusic } = useMusic();
   const [activeCategory, setActiveCategory] = useState<PlaylistCategory | 'all'>('all');
-  const webviewRef = useRef<WebView>(null);
 
   const filteredPlaylists = activeCategory === 'all'
     ? PLAYLISTS
@@ -115,49 +114,38 @@ export default function Music() {
 
   const handlePlayPlaylist = (playlist: Playlist) => {
     play('click');
-    setActivePlaylist(playlist);
-    setIsPlaying(true);
+    if (activePlaylist?.id === playlist.id && isPlaying) {
+      stopMusic();
+    } else {
+      playPlaylist(playlist);
+    }
   };
 
   const handleOpenExternal = async (url: string, appName: string) => {
     play('click');
     try {
       if (Platform.OS === 'web') {
-        // Open in new tab so user can easily return to the game
         window.open(url, '_blank');
       } else {
-        // Use in-app browser with a built-in "Done" button to return
+        // Use POPOVER style to keep a visible "Done" / close button
         await WebBrowser.openBrowserAsync(url, {
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.POPOVER,
           toolbarColor: '#1a1a1a',
-          controlsColor: '#fff',
+          controlsColor: '#4CAF50',
+          dismissButtonStyle: 'close',
+          showTitle: true,
+          enableBarCollapsing: false,
         });
       }
     } catch (e) {
-      console.error(`Failed to open ${appName}:`, e);
+      // Fallback: try with Linking API (opens native app with back gesture)
+      try {
+        await Linking.openURL(url);
+      } catch (linkErr) {
+        console.error(`Failed to open ${appName}:`, linkErr);
+      }
     }
   };
-
-  const getYouTubeEmbedHTML = (videoId: string) => `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #1a1a1a; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        iframe { border-radius: 12px; width: 100%; height: 100%; border: none; }
-      </style>
-    </head>
-    <body>
-      <iframe
-        src="https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&rel=0&modestbranding=1&playsinline=1"
-        allow="autoplay; encrypted-media"
-        allowfullscreen
-      ></iframe>
-    </body>
-    </html>
-  `;
 
   return (
     <SafeAreaView style={s.container}>
@@ -170,71 +158,37 @@ export default function Music() {
         <Ionicons name="musical-notes" size={28} color="#9C27B0" />
       </View>
 
-      {/* Active Player */}
+      {/* Now Playing Banner */}
       {activePlaylist && isPlaying && (
-        <View style={s.playerContainer}>
-          <View style={s.playerWebview}>
-            {Platform.OS === 'web' ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${activePlaylist.youtubeId}?autoplay=1&loop=1&rel=0&modestbranding=1`}
-                style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
-            ) : (
-              <WebView
-                ref={webviewRef}
-                source={{ html: getYouTubeEmbedHTML(activePlaylist.youtubeId) }}
-                style={s.webview}
-                allowsInlineMediaPlayback
-                mediaPlaybackRequiresUserAction={false}
-                javaScriptEnabled
-                onShouldStartLoadWithRequest={(request) => {
-                  // Allow initial embed loads but intercept external navigation
-                  if (request.url.includes('youtube.com/embed') || request.url === 'about:blank') {
-                    return true;
-                  }
-                  // Open any other URLs in the in-app browser instead
-                  WebBrowser.openBrowserAsync(request.url).catch(() => {});
-                  return false;
-                }}
-              />
-            )}
+        <View style={s.nowPlayingBanner}>
+          <View style={[s.npDot, { backgroundColor: activePlaylist.color }]} />
+          <Ionicons name={activePlaylist.icon as any} size={20} color={activePlaylist.color} />
+          <View style={{ flex: 1 }}>
+            <Text style={s.npTitle} numberOfLines={1}>{activePlaylist.name}</Text>
+            <Text style={s.npSub} numberOfLines={1}>{activePlaylist.description}</Text>
           </View>
-          <View style={s.playerInfo}>
-            <View style={s.playerTextRow}>
-              <View style={[s.playerDot, { backgroundColor: activePlaylist.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={s.playerTitle} numberOfLines={1}>{activePlaylist.name}</Text>
-                <Text style={s.playerSub} numberOfLines={1}>{activePlaylist.description}</Text>
-              </View>
-            </View>
-            <View style={s.playerActions}>
-              {activePlaylist.spotifyUrl && (
-                <TouchableOpacity
-                  style={[s.externalBtn, { backgroundColor: '#1DB95420' }]}
-                  onPress={() => handleOpenExternal(activePlaylist.spotifyUrl!, 'Spotify')}
-                >
-                  <Ionicons name="logo-apple" size={16} color="#1DB954" />
-                  <Text style={[s.externalBtnText, { color: '#1DB954' }]}>Spotify</Text>
-                </TouchableOpacity>
-              )}
-              {activePlaylist.youtubeMusicUrl && (
-                <TouchableOpacity
-                  style={[s.externalBtn, { backgroundColor: '#FF000020' }]}
-                  onPress={() => handleOpenExternal(activePlaylist.youtubeMusicUrl!, 'YouTube Music')}
-                >
-                  <Ionicons name="logo-youtube" size={16} color="#FF0000" />
-                  <Text style={[s.externalBtnText, { color: '#FF0000' }]}>YT Music</Text>
-                </TouchableOpacity>
-              )}
+          <View style={s.npActions}>
+            {activePlaylist.spotifyUrl && (
               <TouchableOpacity
-                style={s.closePlayerBtn}
-                onPress={() => { setIsPlaying(false); setActivePlaylist(null); }}
+                style={[s.externalBtn, { backgroundColor: '#1DB95420' }]}
+                onPress={() => handleOpenExternal(activePlaylist.spotifyUrl!, 'Spotify')}
               >
-                <Ionicons name="close" size={20} color="#888" />
+                <Ionicons name="musical-note" size={14} color="#1DB954" />
+                <Text style={[s.externalBtnText, { color: '#1DB954' }]}>Spotify</Text>
               </TouchableOpacity>
-            </View>
+            )}
+            {activePlaylist.youtubeMusicUrl && (
+              <TouchableOpacity
+                style={[s.externalBtn, { backgroundColor: '#FF000020' }]}
+                onPress={() => handleOpenExternal(activePlaylist.youtubeMusicUrl!, 'YouTube Music')}
+              >
+                <Ionicons name="logo-youtube" size={14} color="#FF0000" />
+                <Text style={[s.externalBtnText, { color: '#FF0000' }]}>YT Music</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={s.closePlayerBtn} onPress={stopMusic}>
+              <Ionicons name="stop" size={18} color="#F44336" />
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -337,16 +291,12 @@ const s = StyleSheet.create({
   backBtn: { padding: 4 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#fff', flex: 1, textAlign: 'center' },
   content: { padding: 16, paddingBottom: 40 },
-  // Player
-  playerContainer: { backgroundColor: '#2a2a2a', margin: 12, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#3a3a3a' },
-  playerWebview: { height: 200, backgroundColor: '#1a1a1a' },
-  webview: { flex: 1, backgroundColor: '#1a1a1a' },
-  playerInfo: { padding: 14 },
-  playerTextRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  playerDot: { width: 10, height: 10, borderRadius: 5 },
-  playerTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  playerSub: { color: '#888', fontSize: 12, marginTop: 2 },
-  playerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Now Playing Banner
+  nowPlayingBanner: { backgroundColor: '#2a2a2a', margin: 12, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#3a3a3a', gap: 10 },
+  npDot: { width: 8, height: 8, borderRadius: 4 },
+  npTitle: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  npSub: { color: '#888', fontSize: 12, marginTop: 2 },
+  npActions: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   externalBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   externalBtnText: { fontSize: 12, fontWeight: 'bold' },
   closePlayerBtn: { marginLeft: 'auto', padding: 6, backgroundColor: '#3a3a3a', borderRadius: 8 },
