@@ -1,47 +1,88 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface Playlist {
+export interface Track {
   id: string;
   name: string;
-  description: string;
-  icon: string;
-  color: string;
-  category: string;
+  artist: string;
   youtubeId: string;
-  spotifyUrl?: string;
-  youtubeMusicUrl?: string;
+  color: string;
 }
 
+export const JAZZ_BLUES_TRACKS: Track[] = [
+  {
+    id: '1',
+    name: 'Smooth Jazz Vibes',
+    artist: 'Jazz Instrumental',
+    youtubeId: 'neV3EPgvZ3g',
+    color: '#9C27B0',
+  },
+  {
+    id: '2',
+    name: 'Late Night Blues',
+    artist: 'Blues Instrumental',
+    youtubeId: 'JjPVQsdFSKA',
+    color: '#3F51B5',
+  },
+  {
+    id: '3',
+    name: 'Relaxing Jazz Cafe',
+    artist: 'Cafe Jazz',
+    youtubeId: 'Dx5qFachd3A',
+    color: '#FF9800',
+  },
+  {
+    id: '4',
+    name: 'Blues Guitar Session',
+    artist: 'Blues Guitar',
+    youtubeId: 'gIpMz5PtVDg',
+    color: '#F44336',
+  },
+  {
+    id: '5',
+    name: 'Midnight Jazz Lounge',
+    artist: 'Jazz Lounge',
+    youtubeId: 'fEvM-OUbaKs',
+    color: '#4CAF50',
+  },
+];
+
 interface MusicContextType {
-  activePlaylist: Playlist | null;
+  activeTrack: Track | null;
   isPlaying: boolean;
-  playPlaylist: (playlist: Playlist) => void;
+  playTrack: (track: Track) => void;
+  togglePlay: () => void;
   stopMusic: () => void;
 }
 
 const MusicContext = createContext<MusicContextType>({
-  activePlaylist: null,
+  activeTrack: null,
   isPlaying: false,
-  playPlaylist: () => {},
+  playTrack: () => {},
+  togglePlay: () => {},
   stopMusic: () => {},
 });
 
 export function MusicProvider({ children }: { children: ReactNode }) {
-  const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
+  const [activeTrack, setActiveTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const playPlaylist = (playlist: Playlist) => {
-    setActivePlaylist(playlist);
+  const playTrack = (track: Track) => {
+    setActiveTrack(track);
     setIsPlaying(true);
+  };
+
+  const togglePlay = () => {
+    if (!activeTrack) return;
+    setIsPlaying(prev => !prev);
   };
 
   const stopMusic = () => {
     setIsPlaying(false);
-    setActivePlaylist(null);
+    setActiveTrack(null);
   };
 
   return (
-    <MusicContext.Provider value={{ activePlaylist, isPlaying, playPlaylist, stopMusic }}>
+    <MusicContext.Provider value={{ activeTrack, isPlaying, playTrack, togglePlay, stopMusic }}>
       {children}
     </MusicContext.Provider>
   );
