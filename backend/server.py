@@ -290,6 +290,8 @@ class UserResponse(BaseModel):
     state: str = ""
     zip_code: str = ""
     phone: str = ""
+    pix_key: Optional[str] = None
+    pix_type: Optional[str] = None
     education: List[Education] = []
     certifications: List[Certification] = []
     work_experience: List[WorkExperience] = []
@@ -3356,6 +3358,18 @@ async def update_pix_key(request: dict, current_user: dict = Depends(get_current
     })
     
     return {"success": True, "message": f"Chave PIX atualizada: {pix_key}"}
+
+@api_router.delete("/rewards/delete-pix")
+async def delete_pix_key(current_user: dict = Depends(get_current_user)):
+    """Remove user's PIX key."""
+    await db.users.update_one({"id": current_user['id']}, {
+        "$unset": {
+            "pix_key": "",
+            "pix_type": "",
+            "pix_updated_at": "",
+        }
+    })
+    return {"success": True, "message": "Chave PIX removida com sucesso"}
 
 
 @api_router.post("/rewards/distribute-monthly")

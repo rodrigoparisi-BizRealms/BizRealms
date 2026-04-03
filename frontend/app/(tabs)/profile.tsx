@@ -118,6 +118,31 @@ export default function Profile() {
     } finally { setSavingPix(false); }
   };
 
+  const handleDeletePix = async () => {
+    const doDelete = async () => {
+      try {
+        await axios.delete(
+          `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/delete-pix`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        showAlert('Sucesso', 'Chave PIX removida com sucesso');
+        await refreshUser();
+      } catch (e: any) {
+        showAlert('Erro', e.response?.data?.detail || 'Erro ao remover PIX');
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Tem certeza que deseja remover sua chave PIX?')) {
+        await doDelete();
+      }
+    } else {
+      Alert.alert('Remover PIX', 'Tem certeza que deseja remover sua chave PIX?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Remover', style: 'destructive', onPress: doDelete },
+      ]);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     router.replace('/(auth)/login');
@@ -590,65 +615,46 @@ export default function Profile() {
             <Text style={styles.sectionTitle}>{t('profile.pixKey')}</Text>
             <TouchableOpacity style={[styles.addButton, { backgroundColor: '#FFD700' }]} onPress={openPixModal}>
               <Ionicons name="create" size={20} color="#000" />
-              <Text style={[styles.addButtonText, { color: '#000' }]}>{(user as any)?.pix_key ? 'Editar' : 'Cadastrar'}</Text>
+              <Text style={[styles.addButtonText, { color: '#000' }]}>{(user as any)?.pix_key ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>
             <View style={styles.cardContent}>
               {(user as any)?.pix_key ? (
-                <View style={{ gap: 6 }}>
+                <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                    <Text style={styles.personalLabel}>Chave: {(user as any).pix_key}</Text>
+                    <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                    <Text style={{ color: '#4CAF50', fontSize: 14, fontWeight: '600' }}>Chave PIX cadastrada</Text>
                   </View>
-                  <Text style={{ color: '#888', fontSize: 12 }}>Tipo: {(user as any).pix_type || 'CPF'}</Text>
+                  <View style={{ backgroundColor: '#1a2a1a', borderRadius: 10, padding: 12, gap: 6 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: '#aaa', fontSize: 12 }}>Tipo</Text>
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{((user as any).pix_type || 'cpf').toUpperCase()}</Text>
+                    </View>
+                    <View style={{ height: 1, backgroundColor: '#333' }} />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: '#aaa', fontSize: 12 }}>Chave</Text>
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{(user as any).pix_key}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, backgroundColor: '#2a1a1a', borderRadius: 10, marginTop: 4 }}
+                    onPress={handleDeletePix}
+                  >
+                    <Ionicons name="trash" size={16} color="#F44336" />
+                    <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>Remover chave PIX</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <View style={{ gap: 6, alignItems: 'center' }}>
                   <Ionicons name="alert-circle" size={24} color="#FF9800" />
                   <Text style={{ color: '#FF9800', fontSize: 13, textAlign: 'center' }}>
-                    Cadastre sua chave PIX para receber prêmios em dinheiro real!
+                    Cadastre sua chave PIX para receber premiacao em dinheiro real!
                   </Text>
                 </View>
               )}
             </View>
           </View>
-        </View>
-
-        {/* Quick Links - Achievements & Notifications */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Ionicons name="apps" size={22} color="#FFD700" />
-            <Text style={styles.sectionTitle}>{t('profile.quickLinks') || 'Atalhos'}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.quickLinkCard}
-            onPress={() => router.push('/achievements')}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.quickLinkIcon, { backgroundColor: '#FFD70020' }]}>
-              <Ionicons name="trophy" size={22} color="#FFD700" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.quickLinkTitle}>{t('achievements.title')}</Text>
-              <Text style={styles.quickLinkDesc}>{t('achievements.subtitle')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#555" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickLinkCard}
-            onPress={() => router.push('/notifications')}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.quickLinkIcon, { backgroundColor: '#4CAF5020' }]}>
-              <Ionicons name="notifications" size={22} color="#4CAF50" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.quickLinkTitle}>{t('notifications.title')}</Text>
-              <Text style={styles.quickLinkDesc}>{t('notifications.empty')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#555" />
-          </TouchableOpacity>
         </View>
 
         {/* Legal Links */}
@@ -1221,34 +1227,6 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-
-  // Quick Links
-  quickLinkCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    gap: 12,
-  },
-  quickLinkIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickLinkTitle: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  quickLinkDesc: {
-    color: '#888',
-    fontSize: 12,
-    marginTop: 2,
   },
 
   // Legal Links
