@@ -34,10 +34,58 @@ JWT_EXPIRATION_DAYS = 30
 security = HTTPBearer()
 
 # Create the main app without a prefix
-app = FastAPI(title="Business Empire API")
+app = FastAPI(title="BizRealms API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# ==================== RATE LIMITING ====================
+from collections import defaultdict
+import time as time_module
+
+class RateLimiter:
+    """Simple in-memory rate limiter per IP and per user."""
+    def __init__(self):
+        self.requests: dict[str, list[float]] = defaultdict(list)
+    
+    def is_limited(self, key: str, max_requests: int = 60, window_seconds: int = 60) -> bool:
+        """Check if a key (IP or user_id) has exceeded rate limit."""
+        now = time_module.time()
+        # Clean old entries
+        self.requests[key] = [t for t in self.requests[key] if now - t < window_seconds]
+        if len(self.requests[key]) >= max_requests:
+            return True
+        self.requests[key].append(now)
+        return False
+
+rate_limiter = RateLimiter()
+
+# Rate limit middleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Get client IP
+    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    
+    # Different limits for different endpoint types
+    path = request.url.path
+    if path.startswith("/api/auth/"):
+        # Strict limit for auth endpoints (prevent brute force)
+        if rate_limiter.is_limited(f"auth:{client_ip}", max_requests=10, window_seconds=60):
+            return JSONResponse(status_code=429, content={"detail": "Too many requests. Please try again later."})
+    elif request.method == "POST":
+        # Moderate limit for POST actions
+        if rate_limiter.is_limited(f"post:{client_ip}", max_requests=30, window_seconds=60):
+            return JSONResponse(status_code=429, content={"detail": "Too many requests. Please slow down."})
+    else:
+        # General limit for GET requests
+        if rate_limiter.is_limited(f"get:{client_ip}", max_requests=120, window_seconds=60):
+            return JSONResponse(status_code=429, content={"detail": "Too many requests."})
+    
+    response = await call_next(request)
+    return response
 
 # ==================== MODELS ====================
 

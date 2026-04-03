@@ -445,7 +445,7 @@ export default {
     signIn: 'Sign In',
     signingIn: 'Signing in...',
     creatingAccount: 'Creating account...',
-    subtitle: 'Build Your Business Empire',
+    subtitle: 'Build Your BizRealms Empire',
     registerSubtitle: 'Start your business journey',
     fillAllFields: 'Please fill in all fields',
     passwordsDontMatch: 'Passwords do not match',
@@ -470,6 +470,12 @@ export default {
     add: 'Add',
     month: 'mo',
     skills: 'Skills',
+  },
+  legal: {
+    terms: 'Terms of Use',
+    privacy: 'Privacy Policy',
+    acceptTerms: 'I have read and accept the',
+    and: 'and the',
   },
   currency: {
     symbol: '$',

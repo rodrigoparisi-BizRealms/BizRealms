@@ -25,7 +25,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#4CAF50" />
-      <Text style={styles.text}>Business Empire</Text>
+      <Text style={styles.text}>BizRealms</Text>
     </View>
   );
 }

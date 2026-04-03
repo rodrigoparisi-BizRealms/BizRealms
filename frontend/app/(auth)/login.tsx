@@ -50,7 +50,7 @@ export default function Login() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Ionicons name="business" size={80} color="#4CAF50" />
-          <Text style={styles.title}>Business Empire</Text>
+          <Text style={styles.title}>BizRealms</Text>
           <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
         </View>
 

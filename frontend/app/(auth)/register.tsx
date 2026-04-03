@@ -21,6 +21,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { register } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
@@ -118,10 +119,30 @@ export default function Register() {
             />
           </View>
 
+          {/* Terms Checkbox */}
+          <View style={styles.termsRow}>
+            <TouchableOpacity
+              style={[styles.checkbox, acceptedTerms && styles.checkboxActive]}
+              onPress={() => setAcceptedTerms(!acceptedTerms)}
+            >
+              {acceptedTerms && <Ionicons name="checkmark" size={16} color="#fff" />}
+            </TouchableOpacity>
+            <View style={styles.termsTextRow}>
+              <Text style={styles.termsText}>{t('legal.acceptTerms')} </Text>
+              <TouchableOpacity onPress={() => router.push('/legal/terms')}>
+                <Text style={styles.termsLink}>{t('legal.terms')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.termsText}> {t('legal.and')} </Text>
+              <TouchableOpacity onPress={() => router.push('/legal/privacy')}>
+                <Text style={styles.termsLink}>{t('legal.privacy')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.button, (loading || !acceptedTerms) && styles.buttonDisabled]}
             onPress={handleRegister}
-            disabled={loading}
+            disabled={loading || !acceptedTerms}
           >
             <Text style={styles.buttonText}>
               {loading ? t('auth.creatingAccount') : t('auth.signUp')}
@@ -208,5 +229,41 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#4CAF50',
     fontSize: 16,
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    marginTop: 4,
+    gap: 10,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#555',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  checkboxActive: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  termsTextRow: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  termsText: {
+    color: '#aaa',
+    fontSize: 13,
+  },
+  termsLink: {
+    color: '#4CAF50',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
 });

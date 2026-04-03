@@ -615,6 +615,20 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* Legal Links */}
+        <View style={styles.legalSection}>
+          <TouchableOpacity style={styles.legalLink} onPress={() => router.push('/legal/terms')}>
+            <Ionicons name="document-text" size={20} color="#888" />
+            <Text style={styles.legalLinkText}>{t('legal.terms')}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#555" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.legalLink} onPress={() => router.push('/legal/privacy')}>
+            <Ionicons name="shield-checkmark" size={20} color="#888" />
+            <Text style={styles.legalLinkText}>{t('legal.privacy')}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#555" />
+          </TouchableOpacity>
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out" size={24} color="#F44336" />
@@ -1171,6 +1185,27 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+
+  // Legal Links
+  legalSection: {
+    marginTop: 16,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  legalLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a2a',
+    gap: 12,
+  },
+  legalLinkText: {
+    flex: 1,
+    color: '#ccc',
+    fontSize: 15,
   },
 
   // Photo Modal

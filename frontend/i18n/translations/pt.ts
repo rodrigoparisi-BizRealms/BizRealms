@@ -487,6 +487,12 @@ export default {
     month: 'mês',
     skills: 'Habilidades',
   },
+  legal: {
+    terms: 'Termos de Uso',
+    privacy: 'Política de Privacidade',
+    acceptTerms: 'Li e aceito os',
+    and: 'e a',
+  },
   // Currency
   currency: {
     symbol: 'R$',
