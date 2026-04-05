@@ -58,11 +58,10 @@ export default function Profile() {
   });
   const [savingPersonal, setSavingPersonal] = useState(false);
 
-  // PIX key form
-  const [showPixModal, setShowPixModal] = useState(false);
-  const [pixKey, setPixKey] = useState('');
-  const [pixType, setPixType] = useState('cpf');
-  const [savingPix, setSavingPix] = useState(false);
+  // PayPal account form
+  const [showPaypalModal, setShowPaypalModal] = useState(false);
+  const [paypalEmail, setPaypalEmail] = useState('');
+  const [savingPaypal, setSavingPaypal] = useState(false);
 
   const showAlert = (title: string, msg: string) => {
     if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
@@ -116,48 +115,48 @@ export default function Profile() {
     } finally { setSavingPersonal(false); }
   };
 
-  const openPixModal = () => {
-    setPixKey((user as any)?.pix_key || '');
-    setPixType((user as any)?.pix_type || 'cpf');
-    setShowPixModal(true);
+  const openPaypalModal = () => {
+    setPaypalEmail((user as any)?.paypal_email || '');
+    setShowPaypalModal(true);
   };
 
-  const handleSavePix = async () => {
-    if (!pixKey.trim()) { showAlert('Erro', 'Informe sua chave PIX'); return; }
-    setSavingPix(true);
+  const handleSavePaypal = async () => {
+    if (!paypalEmail.trim()) { showAlert('Erro', t('profile.paypalEmpty') || 'Informe seu e-mail PayPal'); return; }
+    if (!paypalEmail.includes('@') || !paypalEmail.includes('.')) { showAlert('Erro', t('profile.paypalInvalid') || 'E-mail inválido'); return; }
+    setSavingPaypal(true);
     try {
       await axios.post(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/update-pix`,
-        { pix_key: pixKey, pix_type: pixType },
+        `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/update-paypal`,
+        { paypal_email: paypalEmail },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      showAlert('Sucesso!', 'Chave PIX salva com sucesso!');
+      showAlert('Sucesso!', t('profile.paypalSaved') || 'Conta PayPal salva com sucesso!');
       await refreshUser();
-      setShowPixModal(false);
+      setShowPaypalModal(false);
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar PIX');
-    } finally { setSavingPix(false); }
+      showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar PayPal');
+    } finally { setSavingPaypal(false); }
   };
 
-  const handleDeletePix = async () => {
+  const handleDeletePaypal = async () => {
     const doDelete = async () => {
       try {
         await axios.delete(
-          `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/delete-pix`,
+          `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/delete-paypal`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        showAlert('Sucesso', 'Chave PIX removida com sucesso');
+        showAlert('Sucesso', t('profile.paypalRemoved') || 'Conta PayPal removida com sucesso');
         await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao remover PIX');
+        showAlert('Erro', e.response?.data?.detail || 'Erro ao remover PayPal');
       }
     };
     if (Platform.OS === 'web') {
-      if (window.confirm('Tem certeza que deseja remover sua chave PIX?')) {
+      if (window.confirm(t('profile.paypalRemoveConfirm') || 'Tem certeza que deseja remover sua conta PayPal?')) {
         await doDelete();
       }
     } else {
-      Alert.alert('Remover PIX', 'Tem certeza que deseja remover sua chave PIX?', [
+      Alert.alert(t('profile.removePaypal') || 'Remover PayPal', t('profile.paypalRemoveConfirm') || 'Tem certeza que deseja remover sua conta PayPal?', [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Remover', style: 'destructive', onPress: doDelete },
       ]);
@@ -654,48 +653,43 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* PIX Key Section */}
+        {/* PayPal Account Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="wallet" size={22} color="#FFD700" />
-            <Text style={styles.sectionTitle}>{t('profile.pixKey')}</Text>
-            <TouchableOpacity style={[styles.addButton, { backgroundColor: '#FFD700' }]} onPress={openPixModal}>
-              <Ionicons name="create" size={20} color="#000" />
-              <Text style={[styles.addButtonText, { color: '#000' }]}>{(user as any)?.pix_key ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
+            <Ionicons name="logo-paypal" size={22} color="#0070BA" />
+            <Text style={styles.sectionTitle}>{t('profile.paypalAccount')}</Text>
+            <TouchableOpacity style={[styles.addButton, { backgroundColor: '#0070BA' }]} onPress={openPaypalModal}>
+              <Ionicons name="create" size={20} color="#fff" />
+              <Text style={[styles.addButtonText, { color: '#fff' }]}>{(user as any)?.paypal_email ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>
             <View style={styles.cardContent}>
-              {(user as any)?.pix_key ? (
+              {(user as any)?.paypal_email ? (
                 <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                     <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
-                    <Text style={{ color: '#4CAF50', fontSize: 14, fontWeight: '600' }}>Chave PIX cadastrada</Text>
+                    <Text style={{ color: '#4CAF50', fontSize: 14, fontWeight: '600' }}>{t('profile.paypalConfigured') || 'Conta PayPal cadastrada'}</Text>
                   </View>
-                  <View style={{ backgroundColor: '#1a2a1a', borderRadius: 10, padding: 12, gap: 6 }}>
+                  <View style={{ backgroundColor: '#1a2a3a', borderRadius: 10, padding: 12, gap: 6 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ color: '#aaa', fontSize: 12 }}>Tipo</Text>
-                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{((user as any).pix_type || 'cpf').toUpperCase()}</Text>
-                    </View>
-                    <View style={{ height: 1, backgroundColor: '#333' }} />
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ color: '#aaa', fontSize: 12 }}>Chave</Text>
-                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{(user as any).pix_key}</Text>
+                      <Text style={{ color: '#aaa', fontSize: 12 }}>E-mail</Text>
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{(user as any).paypal_email}</Text>
                     </View>
                   </View>
                   <TouchableOpacity
                     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, backgroundColor: '#2a1a1a', borderRadius: 10, marginTop: 4 }}
-                    onPress={handleDeletePix}
+                    onPress={handleDeletePaypal}
                   >
                     <Ionicons name="trash" size={16} color="#F44336" />
-                    <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>Remover chave PIX</Text>
+                    <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>{t('profile.removePaypal') || 'Remover conta PayPal'}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={{ gap: 6, alignItems: 'center' }}>
                   <Ionicons name="alert-circle" size={24} color="#FF9800" />
                   <Text style={{ color: '#FF9800', fontSize: 13, textAlign: 'center' }}>
-                    Cadastre sua chave PIX para receber premiacao em dinheiro real!
+                    {t('profile.paypalConfigHint') || 'Cadastre sua conta PayPal para receber premiação em dinheiro real!'}
                   </Text>
                 </View>
               )}
@@ -1070,58 +1064,39 @@ export default function Profile() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* PIX Modal */}
-      <Modal visible={showPixModal} animationType="slide" transparent onRequestClose={() => setShowPixModal(false)}>
+      {/* PayPal Modal */}
+      <Modal visible={showPaypalModal} animationType="slide" transparent onRequestClose={() => setShowPaypalModal(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t('profile.pixKeyLabel')}</Text>
-                <TouchableOpacity onPress={() => setShowPixModal(false)}>
+                <Text style={styles.modalTitle}>{t('profile.paypalAccount') || 'Conta PayPal'}</Text>
+                <TouchableOpacity onPress={() => setShowPaypalModal(false)}>
                   <Ionicons name="close" size={28} color="#fff" />
                 </TouchableOpacity>
               </View>
-              <Text style={{ color: '#FFD700', fontSize: 13, marginBottom: 16 }}>
-                Configure sua chave PIX para receber premiações em dinheiro real dos rankings mensais.
+              <Text style={{ color: '#0070BA', fontSize: 13, marginBottom: 16 }}>
+                {t('profile.paypalHint') || 'Configure sua conta PayPal para receber premiações em dinheiro real dos rankings mensais.'}
               </Text>
 
-              <Text style={styles.inputLabel}>{t('profile.pixType')}</Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                {[
-                  { key: 'cpf', label: 'CPF' },
-                  { key: 'email', label: 'E-mail' },
-                  { key: 'phone', label: 'Telefone' },
-                  { key: 'random', label: 'Aleatória' },
-                ].map(t => (
-                  <TouchableOpacity
-                    key={t.key}
-                    style={[
-                      { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#2a2a2a', borderWidth: 1, borderColor: '#3a3a3a' },
-                      pixType === t.key && { backgroundColor: '#FFD700', borderColor: '#FFD700' },
-                    ]}
-                    onPress={() => setPixType(t.key)}
-                  >
-                    <Text style={[{ color: '#888', fontSize: 12, fontWeight: 'bold' }, pixType === t.key && { color: '#000' }]}>{t.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.inputLabel}>Chave PIX</Text>
+              <Text style={styles.inputLabel}>{t('profile.paypalEmailLabel') || 'E-mail PayPal'}</Text>
               <TextInput
                 style={styles.input}
-                placeholder={pixType === 'cpf' ? '000.000.000-00' : pixType === 'email' ? 'email@exemplo.com' : pixType === 'phone' ? '+55 (11) 99999-9999' : 'Cole sua chave aleatória'}
+                placeholder="seuemail@exemplo.com"
                 placeholderTextColor="#555"
-                value={pixKey}
-                onChangeText={setPixKey}
-                keyboardType={pixType === 'phone' ? 'phone-pad' : pixType === 'email' ? 'email-address' : 'default'}
+                value={paypalEmail}
+                onChangeText={setPaypalEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
               />
 
               <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: '#FFD700' }, savingPix && { opacity: 0.5 }]}
-                onPress={handleSavePix}
-                disabled={savingPix}
+                style={[styles.saveButton, { backgroundColor: '#0070BA' }, savingPaypal && { opacity: 0.5 }]}
+                onPress={handleSavePaypal}
+                disabled={savingPaypal}
               >
-                <Text style={[styles.saveButtonText, { color: '#000' }]}>{savingPix ? 'Salvando...' : 'Salvar Chave PIX'}</Text>
+                <Text style={[styles.saveButtonText, { color: '#fff' }]}>{savingPaypal ? 'Salvando...' : t('profile.savePaypal') || 'Salvar Conta PayPal'}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -137,7 +137,7 @@ async def public_terms():
 <h2>4. In-App Purchases</h2>
 <p>The App may offer in-app purchases processed via Stripe. All purchases are final and non-refundable, except as required by applicable law. Virtual items purchased have no real-world value.</p>
 <h2>5. Real Money Rewards</h2>
-<p>BizRealms may offer real money rewards to top-ranked players. Eligibility, amounts, and payment methods are determined by BizRealms at its sole discretion. Players must provide valid payment information (e.g., PIX key) to receive rewards.</p>
+<p>BizRealms may offer real money rewards to top-ranked players. Eligibility, amounts, and payment methods are determined by BizRealms at its sole discretion. Players must provide valid payment information (e.g., PayPal account) to receive rewards.</p>
 <h2>6. Prohibited Conduct</h2>
 <p>You may not: use cheats, exploits, or automation; create multiple accounts; harass other players; attempt to manipulate rankings; or reverse-engineer the App.</p>
 <h2>7. Intellectual Property</h2>
@@ -290,8 +290,6 @@ class UserResponse(BaseModel):
     state: str = ""
     zip_code: str = ""
     phone: str = ""
-    pix_key: Optional[str] = None
-    pix_type: Optional[str] = None
     paypal_email: Optional[str] = None
     education: List[Education] = []
     certifications: List[Certification] = []
@@ -3454,7 +3452,7 @@ async def claim_real_money_reward(request: dict, current_user: dict = Depends(ge
     
     return {
         "success": True,
-        "message": f"Resgate de R$ {reward['amount']:.2f} solicitado!\n\nPagamento será enviado para sua chave PIX: {user['pix_key']}\n\nPrazo: até 5 dias úteis.",
+        "message": f"Resgate de R$ {reward['amount']:.2f} solicitado!\n\nPagamento será enviado para seu PayPal: {user.get('paypal_email', '')}\n\nPrazo: até 5 dias úteis.",
         "amount": reward['amount'],
         "position": reward['position'],
     }
@@ -3490,7 +3488,7 @@ async def get_store_items(category: Optional[str] = None, current_user: dict = D
 async def purchase_store_item(request: dict, current_user: dict = Depends(get_current_user)):
     """Purchase a store item (MOCK payment - real payment integration pending)"""
     item_id = request.get('item_id')
-    payment_method = request.get('payment_method', 'credit_card')  # credit_card, pix
+    payment_method = request.get('payment_method', 'credit_card')  # credit_card, paypal
 
     # Find the item
     item = next((i for i in STORE_ITEMS if i['id'] == item_id), None)

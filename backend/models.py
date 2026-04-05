@@ -89,8 +89,7 @@ class UserResponse(BaseModel):
     state: str = ""
     zip_code: str = ""
     phone: str = ""
-    pix_key: Optional[str] = None
-    pix_type: Optional[str] = None
+    paypal_email: Optional[str] = None
     education: List[Education] = []
     certifications: List[Certification] = []
     work_experience: List[WorkExperience] = []

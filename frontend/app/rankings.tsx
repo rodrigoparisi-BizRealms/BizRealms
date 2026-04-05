@@ -353,10 +353,10 @@ export default function Rankings() {
               <Text style={s.realDistPct}>10%</Text>
             </View>
           </View>
-          {!prizePool.has_pix_key && (
+          {!prizePool.has_paypal && (
             <View style={s.pixWarning}>
               <Ionicons name="warning" size={16} color="#FF9800" />
-              <Text style={s.pixWarningText}>{t('rankings.configPix')}</Text>
+              <Text style={s.pixWarningText}>{t('rankings.configPaypal')}</Text>
             </View>
           )}
           {prizePool.has_unclaimed_reward && prizePool.unclaimed_reward && (

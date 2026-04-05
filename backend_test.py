@@ -1,151 +1,310 @@
 #!/usr/bin/env python3
 """
-BizRealms Backend Smoke Test
-Quick verification of key endpoints after refactoring
+PayPal Rewards System Testing Script
+Tests the migration from PIX to PayPal for BizRealms game app
 """
 
 import requests
 import json
 import sys
+from typing import Dict, Any
 
-# Configuration
-BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
+# Backend URL from frontend/.env
+BACKEND_URL = "https://career-mogul-1.preview.emergentagent.com/api"
+
+# Test credentials from test_credentials.md
 TEST_EMAIL = "teste@businessempire.com"
 TEST_PASSWORD = "teste123"
 
-def test_login():
-    """Test login endpoint and get JWT token"""
-    print("🔐 Testing login endpoint...")
+class PayPalRewardsTest:
+    def __init__(self):
+        self.token = None
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        })
     
-    login_data = {
-        "email": TEST_EMAIL,
-        "password": TEST_PASSWORD
-    }
+    def log(self, message: str, level: str = "INFO"):
+        """Log test messages"""
+        print(f"[{level}] {message}")
     
-    try:
-        response = requests.post(f"{BASE_URL}/auth/login", json=login_data, timeout=10)
-        print(f"   Status: {response.status_code}")
+    def login(self) -> bool:
+        """Test 1: Login with credentials to get JWT token"""
+        self.log("=== TEST 1: User Login ===")
         
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("token")  # Check for 'token' field
-            if not token:
-                token = data.get("access_token")  # Fallback to 'access_token'
+        login_data = {
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        }
+        
+        try:
+            response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
+            self.log(f"Login response status: {response.status_code}")
             
-            if token:
-                print("   ✅ Login successful, JWT token received")
-                return token
+            if response.status_code == 200:
+                data = response.json()
+                self.token = data.get('token')  # Backend returns 'token' not 'access_token'
+                if self.token:
+                    self.session.headers.update({'Authorization': f'Bearer {self.token}'})
+                    self.log("✅ Login successful, JWT token obtained")
+                    return True
+                else:
+                    self.log("❌ Login failed: No access token in response", "ERROR")
+                    return False
             else:
-                print("   ❌ Login response missing token")
-                print(f"   Response: {data}")
-                return None
-        else:
-            print(f"   ❌ Login failed: {response.text}")
-            return None
-            
-    except Exception as e:
-        print(f"   ❌ Login error: {str(e)}")
-        return None
-
-def test_authenticated_endpoint(endpoint, token, description):
-    """Test an authenticated endpoint"""
-    print(f"🔍 Testing {description}...")
-    
-    headers = {"Authorization": f"Bearer {token}"}
-    
-    try:
-        response = requests.get(f"{BASE_URL}{endpoint}", headers=headers, timeout=10)
-        print(f"   Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            print(f"   ✅ {description} - OK")
-            return True
-        else:
-            print(f"   ❌ {description} failed: {response.text}")
+                self.log(f"❌ Login failed with status {response.status_code}: {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Login failed with exception: {str(e)}", "ERROR")
             return False
-            
-    except Exception as e:
-        print(f"   ❌ {description} error: {str(e)}")
-        return False
-
-def test_public_endpoint(endpoint, description):
-    """Test a public endpoint (no auth required)"""
-    print(f"🌐 Testing {description}...")
     
-    try:
-        response = requests.get(f"{BASE_URL}{endpoint}", timeout=10)
-        print(f"   Status: {response.status_code}")
+    def update_paypal_account(self) -> bool:
+        """Test 2: Update PayPal Account"""
+        self.log("=== TEST 2: Update PayPal Account ===")
         
-        if response.status_code == 200:
-            print(f"   ✅ {description} - OK")
-            return True
-        else:
-            print(f"   ❌ {description} failed: {response.text}")
-            return False
+        paypal_data = {
+            "paypal_email": "test@paypal.com"
+        }
+        
+        try:
+            response = self.session.post(f"{BACKEND_URL}/rewards/update-paypal", json=paypal_data)
+            self.log(f"Update PayPal response status: {response.status_code}")
             
-    except Exception as e:
-        print(f"   ❌ {description} error: {str(e)}")
-        return False
+            if response.status_code == 200:
+                data = response.json()
+                self.log(f"Response: {json.dumps(data, indent=2)}")
+                if data.get('success'):
+                    self.log("✅ PayPal account updated successfully")
+                    return True
+                else:
+                    self.log("❌ PayPal update failed: success=false", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ PayPal update failed with status {response.status_code}: {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ PayPal update failed with exception: {str(e)}", "ERROR")
+            return False
+    
+    def verify_paypal_saved(self) -> bool:
+        """Test 3: Verify PayPal was saved in user profile"""
+        self.log("=== TEST 3: Verify PayPal Email Saved ===")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/user/me")
+            self.log(f"Get user profile response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                paypal_email = data.get('paypal_email')
+                self.log(f"PayPal email in profile: {paypal_email}")
+                
+                if paypal_email == "test@paypal.com":
+                    self.log("✅ PayPal email correctly saved in user profile")
+                    return True
+                else:
+                    self.log(f"❌ PayPal email not saved correctly. Expected: test@paypal.com, Got: {paypal_email}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Get user profile failed with status {response.status_code}: {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Get user profile failed with exception: {str(e)}", "ERROR")
+            return False
+    
+    def delete_paypal_account(self) -> bool:
+        """Test 4: Delete PayPal Account"""
+        self.log("=== TEST 4: Delete PayPal Account ===")
+        
+        try:
+            response = self.session.delete(f"{BACKEND_URL}/rewards/delete-paypal")
+            self.log(f"Delete PayPal response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log(f"Response: {json.dumps(data, indent=2)}")
+                if data.get('success'):
+                    self.log("✅ PayPal account deleted successfully")
+                    return True
+                else:
+                    self.log("❌ PayPal deletion failed: success=false", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ PayPal deletion failed with status {response.status_code}: {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ PayPal deletion failed with exception: {str(e)}", "ERROR")
+            return False
+    
+    def verify_paypal_deleted(self) -> bool:
+        """Test 5: Verify PayPal deletion"""
+        self.log("=== TEST 5: Verify PayPal Email Deleted ===")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/user/me")
+            self.log(f"Get user profile response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                paypal_email = data.get('paypal_email')
+                self.log(f"PayPal email in profile after deletion: {paypal_email}")
+                
+                if not paypal_email or paypal_email == "":
+                    self.log("✅ PayPal email correctly removed from user profile")
+                    return True
+                else:
+                    self.log(f"❌ PayPal email not deleted correctly. Expected: empty/null, Got: {paypal_email}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Get user profile failed with status {response.status_code}: {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Get user profile failed with exception: {str(e)}", "ERROR")
+            return False
+    
+    def test_prize_pool_endpoint(self) -> bool:
+        """Test 6: Prize Pool endpoint should return has_paypal field (not has_pix_key)"""
+        self.log("=== TEST 6: Prize Pool Endpoint (has_paypal field) ===")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/rewards/prize-pool")
+            self.log(f"Prize pool response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log(f"Prize pool response keys: {list(data.keys())}")
+                
+                # Check for has_paypal field
+                has_paypal = data.get('has_paypal')
+                has_pix_key = data.get('has_pix_key')
+                
+                self.log(f"has_paypal field: {has_paypal}")
+                self.log(f"has_pix_key field: {has_pix_key}")
+                
+                if 'has_paypal' in data and 'has_pix_key' not in data:
+                    self.log("✅ Prize pool endpoint correctly returns has_paypal field (no has_pix_key)")
+                    return True
+                elif 'has_pix_key' in data:
+                    self.log("❌ Prize pool endpoint still contains has_pix_key field (should be removed)", "ERROR")
+                    return False
+                else:
+                    self.log("❌ Prize pool endpoint missing has_paypal field", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Prize pool endpoint failed with status {response.status_code}: {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Prize pool endpoint failed with exception: {str(e)}", "ERROR")
+            return False
+    
+    def test_old_pix_endpoints_removed(self) -> bool:
+        """Test 7 & 8: Verify old PIX endpoints are gone"""
+        self.log("=== TEST 7 & 8: Verify Old PIX Endpoints Removed ===")
+        
+        success = True
+        
+        # Test update-pix endpoint
+        try:
+            response = self.session.post(f"{BACKEND_URL}/rewards/update-pix", json={"pix_key": "test"})
+            self.log(f"Update PIX endpoint response status: {response.status_code}")
+            
+            if response.status_code in [404, 405]:
+                self.log("✅ POST /api/rewards/update-pix correctly returns 404/405 (endpoint removed)")
+            else:
+                self.log(f"❌ POST /api/rewards/update-pix should return 404/405, got {response.status_code}", "ERROR")
+                success = False
+                
+        except Exception as e:
+            self.log(f"Update PIX endpoint test failed with exception: {str(e)}", "ERROR")
+            success = False
+        
+        # Test delete-pix endpoint
+        try:
+            response = self.session.delete(f"{BACKEND_URL}/rewards/delete-pix")
+            self.log(f"Delete PIX endpoint response status: {response.status_code}")
+            
+            if response.status_code in [404, 405]:
+                self.log("✅ DELETE /api/rewards/delete-pix correctly returns 404/405 (endpoint removed)")
+            else:
+                self.log(f"❌ DELETE /api/rewards/delete-pix should return 404/405, got {response.status_code}", "ERROR")
+                success = False
+                
+        except Exception as e:
+            self.log(f"Delete PIX endpoint test failed with exception: {str(e)}", "ERROR")
+            success = False
+        
+        return success
+    
+    def run_all_tests(self) -> Dict[str, bool]:
+        """Run all PayPal migration tests"""
+        self.log("🚀 Starting PayPal Rewards System Tests")
+        self.log(f"Backend URL: {BACKEND_URL}")
+        self.log(f"Test User: {TEST_EMAIL}")
+        
+        results = {}
+        
+        # Test 1: Login
+        results['login'] = self.login()
+        if not results['login']:
+            self.log("❌ Cannot proceed without login", "ERROR")
+            return results
+        
+        # Test 2: Update PayPal Account
+        results['update_paypal'] = self.update_paypal_account()
+        
+        # Test 3: Verify PayPal was saved
+        results['verify_paypal_saved'] = self.verify_paypal_saved()
+        
+        # Test 4: Delete PayPal Account
+        results['delete_paypal'] = self.delete_paypal_account()
+        
+        # Test 5: Verify PayPal deletion
+        results['verify_paypal_deleted'] = self.verify_paypal_deleted()
+        
+        # Test 6: Prize Pool endpoint
+        results['prize_pool_has_paypal'] = self.test_prize_pool_endpoint()
+        
+        # Test 7 & 8: Old PIX endpoints removed
+        results['old_pix_endpoints_removed'] = self.test_old_pix_endpoints_removed()
+        
+        return results
+    
+    def print_summary(self, results: Dict[str, bool]):
+        """Print test summary"""
+        self.log("\n" + "="*50)
+        self.log("📊 TEST SUMMARY")
+        self.log("="*50)
+        
+        total_tests = len(results)
+        passed_tests = sum(1 for result in results.values() if result)
+        
+        for test_name, result in results.items():
+            status = "✅ PASS" if result else "❌ FAIL"
+            self.log(f"{test_name}: {status}")
+        
+        self.log(f"\nTotal: {passed_tests}/{total_tests} tests passed")
+        
+        if passed_tests == total_tests:
+            self.log("🎉 ALL TESTS PASSED - PayPal migration successful!")
+        else:
+            self.log("⚠️  SOME TESTS FAILED - PayPal migration needs attention")
 
 def main():
-    """Run smoke test for BizRealms backend"""
-    print("🚀 BizRealms Backend Smoke Test")
-    print("=" * 50)
+    """Main test execution"""
+    tester = PayPalRewardsTest()
+    results = tester.run_all_tests()
+    tester.print_summary(results)
     
-    # Step 1: Login and get token
-    token = test_login()
-    if not token:
-        print("\n❌ SMOKE TEST FAILED: Cannot login")
+    # Exit with error code if any tests failed
+    if not all(results.values()):
         sys.exit(1)
-    
-    print()
-    
-    # Step 2: Test authenticated endpoints
-    authenticated_tests = [
-        ("/user/me", "GET /api/user/me - Get user profile"),
-        ("/user/stats", "GET /api/user/stats - Get user stats"),
-        ("/notifications", "GET /api/notifications - Get notifications"),
-        ("/achievements", "GET /api/achievements - Get achievements"),
-        ("/store/items", "GET /api/store/items - Get store items"),
-        ("/investments/market", "GET /api/investments/market - Get investment market")
-    ]
-    
-    auth_results = []
-    for endpoint, description in authenticated_tests:
-        result = test_authenticated_endpoint(endpoint, token, description)
-        auth_results.append(result)
-        print()
-    
-    # Step 3: Test public endpoints
-    public_tests = [
-        ("/legal/terms", "GET /api/legal/terms - Public legal terms"),
-        ("/legal/privacy", "GET /api/legal/privacy - Public privacy policy")
-    ]
-    
-    public_results = []
-    for endpoint, description in public_tests:
-        result = test_public_endpoint(endpoint, description)
-        public_results.append(result)
-        print()
-    
-    # Summary
-    total_tests = len(auth_results) + len(public_results) + 1  # +1 for login
-    passed_tests = sum(auth_results) + sum(public_results) + (1 if token else 0)
-    
-    print("=" * 50)
-    print("📊 SMOKE TEST SUMMARY")
-    print(f"Total tests: {total_tests}")
-    print(f"Passed: {passed_tests}")
-    print(f"Failed: {total_tests - passed_tests}")
-    
-    if passed_tests == total_tests:
-        print("\n🎉 ALL SMOKE TESTS PASSED!")
-        print("✅ Backend refactoring successful - no regressions detected")
-        return True
-    else:
-        print(f"\n❌ SMOKE TEST FAILED: {total_tests - passed_tests} endpoint(s) not working")
-        return False
 
 if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+    main()
