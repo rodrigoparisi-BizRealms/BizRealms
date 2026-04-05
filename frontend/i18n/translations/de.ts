@@ -89,7 +89,7 @@ export default {
     levelLabel: 'Level', certName: 'Zertifikatsname', certPlaceholder: 'z.B.: PMP, AWS...', issuer: 'Aussteller',
     issuerPlaceholder: 'Ausstellende Organisation', skillBoost: 'Fähigkeitsboost (1-10)',
     eduLevels: { highSchool: 'Gymnasium', bachelors: 'Bachelor', masters: 'Master', phd: 'Doktor' },
-    personalFullName: 'Vollständiger Name', personalPhone: 'Telefon', personalAddress: 'Adresse', personalCity: 'Stadt',
+    personalFullName: 'Vollständiger Name', identityDocument: 'Personalausweis', country: 'Land', personalPhone: 'Telefon', personalAddress: 'Adresse', personalCity: 'Stadt',
     personalState: 'Bundesland', personalZip: 'PLZ', saveData: 'Daten speichern',
     paypalEmailLabel: 'PayPal E-Mail', savePaypal: 'PayPal-Konto speichern',
     paypalConfigHint: 'Registriere dein PayPal-Konto für Echtgeldpreise!', paypalConfigured: 'PayPal-Konto registriert',
@@ -98,6 +98,8 @@ export default {
     current: 'Aktuell', boost: 'Fähigkeiten', permissionNeeded: 'Berechtigung erforderlich',
     permissionGallery: 'Wir brauchen Zugriff auf deine Galerie',
     paypalHint: 'Konfiguriere dein PayPal-Konto für Echtgeldpreise aus monatlichen Rankings.',
+    requiredFields: 'Pflichtfelder', fillAllFields: 'Bitte alle Felder ausfüllen',
+    paypalRequiresData: 'Persönliche Daten erforderlich', paypalRequiresDataMsg: 'Um dein PayPal-Konto zu registrieren, fülle zuerst deine Persönlichen Daten aus (Name und Ausweis).',
   },
   coaching: {
     title: 'KI-Coach', subtitle: 'Dein virtueller Business-Mentor', welcome: 'Hallo',

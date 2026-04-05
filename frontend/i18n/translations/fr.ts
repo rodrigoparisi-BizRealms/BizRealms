@@ -89,7 +89,7 @@ export default {
     levelLabel: 'Niveau', certName: 'Nom de Certification', certPlaceholder: 'Ex: PMP, AWS...', issuer: 'Émetteur',
     issuerPlaceholder: 'Organisation émettrice', skillBoost: 'Boost de Compétence (1-10)',
     eduLevels: { highSchool: 'Lycée', bachelors: 'Licence', masters: 'Master', phd: 'Doctorat' },
-    personalFullName: 'Nom Complet', personalPhone: 'Téléphone', personalAddress: 'Adresse', personalCity: 'Ville',
+    personalFullName: 'Nom Complet', identityDocument: "Pièce d'Identité", country: 'Pays', personalPhone: 'Téléphone', personalAddress: 'Adresse', personalCity: 'Ville',
     personalState: 'Région', personalZip: 'Code Postal', saveData: 'Enregistrer',
     paypalEmailLabel: 'E-mail PayPal', savePaypal: 'Enregistrer Compte PayPal',
     paypalConfigHint: 'Enregistrez votre compte PayPal pour des prix réels !', paypalConfigured: 'Compte PayPal enregistré',
@@ -98,6 +98,8 @@ export default {
     current: 'Actuel', boost: 'compétences', permissionNeeded: 'Permission Requise',
     permissionGallery: 'Nous avons besoin d\'accéder à votre galerie',
     paypalHint: 'Configurez votre compte PayPal pour recevoir des prix réels des classements mensuels.',
+    requiredFields: 'Champs obligatoires', fillAllFields: 'Remplissez tous les champs',
+    paypalRequiresData: 'Données Personnelles Obligatoires', paypalRequiresDataMsg: "Pour enregistrer votre PayPal, remplissez d'abord vos Données Personnelles (Nom Complet et Pièce d'Identité).",
   },
   coaching: {
     title: 'Coach IA', subtitle: 'Votre mentor business virtuel', welcome: 'Bonjour',

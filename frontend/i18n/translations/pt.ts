@@ -326,6 +326,8 @@ export default {
       phd: 'Doutorado',
     },
     personalFullName: 'Nome Completo',
+    identityDocument: 'Documento de Identidade',
+    country: 'País',
     personalPhone: 'Telefone Celular',
     personalAddress: 'Endereço',
     personalCity: 'Cidade',
@@ -347,6 +349,10 @@ export default {
     permissionNeeded: 'Permissão Necessária',
     permissionGallery: 'Precisamos de permissão para acessar sua galeria',
     paypalHint: 'Configure sua conta PayPal para receber premiações em dinheiro real dos rankings mensais.',
+    requiredFields: 'Campos obrigatórios',
+    fillAllFields: 'Preencha todos os campos',
+    paypalRequiresData: 'Dados Pessoais Obrigatórios',
+    paypalRequiresDataMsg: 'Para cadastrar sua conta PayPal, preencha primeiro seus Dados Pessoais (Nome Completo e Documento de Identidade).',
   },
   // Coaching
   coaching: {

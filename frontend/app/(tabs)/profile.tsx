@@ -50,6 +50,8 @@ export default function Profile() {
   const [showPersonalModal, setShowPersonalModal] = useState(false);
   const [personalData, setPersonalData] = useState({
     full_name: '',
+    identity_document: '',
+    country: '',
     address: '',
     city: '',
     state: '',
@@ -71,6 +73,8 @@ export default function Profile() {
   const openPersonalData = () => {
     setPersonalData({
       full_name: (user as any)?.full_name || user?.name || '',
+      identity_document: (user as any)?.identity_document || '',
+      country: (user as any)?.country || '',
       address: (user as any)?.address || '',
       city: (user as any)?.city || '',
       state: (user as any)?.state || '',
@@ -83,21 +87,18 @@ export default function Profile() {
   const handleSavePersonalData = async () => {
     // Validate required fields
     const required = [
-      { field: 'full_name', label: 'Nome completo' },
-      { field: 'phone', label: 'Telefone' },
-      { field: 'address', label: 'Endereço' },
-      { field: 'city', label: 'Cidade' },
-      { field: 'state', label: 'Estado (UF)' },
-      { field: 'zip_code', label: 'CEP' },
+      { field: 'full_name', label: t('profile.personalFullName') || 'Nome completo' },
+      { field: 'identity_document', label: t('profile.identityDocument') || 'Documento de Identidade' },
+      { field: 'country', label: t('profile.country') || 'País' },
+      { field: 'phone', label: t('profile.personalPhone') || 'Telefone' },
+      { field: 'address', label: t('profile.personalAddress') || 'Endereço' },
+      { field: 'city', label: t('profile.personalCity') || 'Cidade' },
+      { field: 'state', label: t('profile.personalState') || 'Estado' },
+      { field: 'zip_code', label: t('profile.personalZip') || 'CEP/Código Postal' },
     ];
     const missing = required.filter(r => !(personalData as any)[r.field]?.trim());
     if (missing.length > 0) {
-      showAlert('Campos obrigatórios', `Preencha todos os campos:\n${missing.map(m => '• ' + m.label).join('\n')}`);
-      return;
-    }
-    // Validate state (2 chars)
-    if (personalData.state.trim().length !== 2) {
-      showAlert('UF inválido', 'O estado deve ter exatamente 2 letras (ex: SP, RJ, MG)');
+      showAlert(t('profile.requiredFields') || 'Campos obrigatórios', `${t('profile.fillAllFields') || 'Preencha todos os campos'}:\n${missing.map(m => '• ' + m.label).join('\n')}`);
       return;
     }
     setSavingPersonal(true);
@@ -123,6 +124,16 @@ export default function Profile() {
   const handleSavePaypal = async () => {
     if (!paypalEmail.trim()) { showAlert('Erro', t('profile.paypalEmpty') || 'Informe seu e-mail PayPal'); return; }
     if (!paypalEmail.includes('@') || !paypalEmail.includes('.')) { showAlert('Erro', t('profile.paypalInvalid') || 'E-mail inválido'); return; }
+    // Require personal data (name + identity document) before PayPal
+    const userName = (user as any)?.full_name || '';
+    const userDoc = (user as any)?.identity_document || '';
+    if (!userName.trim() || !userDoc.trim()) {
+      showAlert(
+        t('profile.paypalRequiresData') || 'Dados Pessoais Obrigatórios',
+        t('profile.paypalRequiresDataMsg') || 'Para cadastrar sua conta PayPal, preencha primeiro seus Dados Pessoais (Nome Completo e Documento de Identidade).'
+      );
+      return;
+    }
     setSavingPaypal(true);
     try {
       await axios.post(
@@ -1032,31 +1043,37 @@ export default function Profile() {
                   <Text style={{ color: '#FF9800', fontSize: 12, flex: 1 }}>Todos os campos são obrigatórios *</Text>
                 </View>
 
-                <Text style={styles.inputLabel}>Nome Completo *</Text>
+                <Text style={styles.inputLabel}>{t('profile.personalFullName') || 'Nome Completo'} *</Text>
                 <TextInput style={styles.input} value={personalData.full_name} onChangeText={v => setPersonalData(p => ({...p, full_name: v}))} placeholder="Nome completo" placeholderTextColor="#666" />
 
-                <Text style={styles.inputLabel}>Telefone Celular *</Text>
+                <Text style={styles.inputLabel}>{t('profile.identityDocument') || 'Documento de Identidade'} *</Text>
+                <TextInput style={styles.input} value={personalData.identity_document} onChangeText={v => setPersonalData(p => ({...p, identity_document: v}))} placeholder="CPF, RG, Passport, SSN..." placeholderTextColor="#666" />
+
+                <Text style={styles.inputLabel}>{t('profile.country') || 'País'} *</Text>
+                <TextInput style={styles.input} value={personalData.country} onChangeText={v => setPersonalData(p => ({...p, country: v}))} placeholder="Brasil, USA, Portugal..." placeholderTextColor="#666" />
+
+                <Text style={styles.inputLabel}>{t('profile.personalPhone') || 'Telefone Celular'} *</Text>
                 <TextInput style={styles.input} value={personalData.phone} onChangeText={v => setPersonalData(p => ({...p, phone: v}))} placeholder="(11) 99999-9999" placeholderTextColor="#666" keyboardType="phone-pad" />
 
-                <Text style={styles.inputLabel}>Endereço *</Text>
+                <Text style={styles.inputLabel}>{t('profile.personalAddress') || 'Endereço'} *</Text>
                 <TextInput style={styles.input} value={personalData.address} onChangeText={v => setPersonalData(p => ({...p, address: v}))} placeholder="Rua, número, complemento" placeholderTextColor="#666" />
 
-                <Text style={styles.inputLabel}>Cidade *</Text>
+                <Text style={styles.inputLabel}>{t('profile.personalCity') || 'Cidade'} *</Text>
                 <TextInput style={styles.input} value={personalData.city} onChangeText={v => setPersonalData(p => ({...p, city: v}))} placeholder="Cidade" placeholderTextColor="#666" />
 
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>Estado *</Text>
-                    <TextInput style={styles.input} value={personalData.state} onChangeText={v => setPersonalData(p => ({...p, state: v.toUpperCase()}))} placeholder="UF" placeholderTextColor="#666" maxLength={2} autoCapitalize="characters" />
+                    <Text style={styles.inputLabel}>{t('profile.personalState') || 'Estado/Região'} *</Text>
+                    <TextInput style={styles.input} value={personalData.state} onChangeText={v => setPersonalData(p => ({...p, state: v}))} placeholder="SP, CA, London..." placeholderTextColor="#666" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>CEP *</Text>
-                    <TextInput style={styles.input} value={personalData.zip_code} onChangeText={v => setPersonalData(p => ({...p, zip_code: v}))} placeholder="00000-000" placeholderTextColor="#666" keyboardType="numeric" />
+                    <Text style={styles.inputLabel}>{t('profile.personalZip') || 'CEP/Postal'} *</Text>
+                    <TextInput style={styles.input} value={personalData.zip_code} onChangeText={v => setPersonalData(p => ({...p, zip_code: v}))} placeholder="00000-000" placeholderTextColor="#666" />
                   </View>
                 </View>
 
                 <TouchableOpacity style={[styles.submitButton, savingPersonal && { opacity: 0.5 }]} onPress={handleSavePersonalData} disabled={savingPersonal}>
-                  <Text style={styles.submitButtonText}>{savingPersonal ? 'Salvando...' : 'Salvar Dados'}</Text>
+                  <Text style={styles.submitButtonText}>{savingPersonal ? 'Salvando...' : t('profile.saveData') || 'Salvar Dados'}</Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>

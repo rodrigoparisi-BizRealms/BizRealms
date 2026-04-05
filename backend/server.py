@@ -285,6 +285,8 @@ class UserResponse(BaseModel):
     level: int = 1
     location: str = ""
     full_name: str = ""
+    identity_document: str = ""
+    country: str = ""
     address: str = ""
     city: str = ""
     state: str = ""
@@ -824,7 +826,7 @@ async def update_avatar_photo(photo_data: dict, current_user: dict = Depends(get
 @api_router.put("/user/personal-data")
 async def update_personal_data(data: dict, current_user: dict = Depends(get_current_user)):
     """Update user personal data (name, address, phone, etc.)"""
-    allowed = ['full_name', 'address', 'city', 'state', 'zip_code', 'phone', 'name', 'email', 'location']
+    allowed = ['full_name', 'address', 'city', 'state', 'zip_code', 'phone', 'name', 'email', 'location', 'identity_document', 'country']
     update_data = {k: v for k, v in data.items() if k in allowed and v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="Nenhum dado válido para atualizar")

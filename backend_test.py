@@ -1,310 +1,306 @@
 #!/usr/bin/env python3
 """
-PayPal Rewards System Testing Script
-Tests the migration from PIX to PayPal for BizRealms game app
+Backend API Testing for BizRealms - Personal Data and PayPal Account Flow
+Testing the specific flow requested in the review.
 """
 
 import requests
 import json
 import sys
-from typing import Dict, Any
 
-# Backend URL from frontend/.env
-BACKEND_URL = "https://career-mogul-1.preview.emergentagent.com/api"
-
-# Test credentials from test_credentials.md
+# Configuration
+BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
 TEST_EMAIL = "teste@businessempire.com"
 TEST_PASSWORD = "teste123"
 
-class PayPalRewardsTest:
-    def __init__(self):
-        self.token = None
-        self.session = requests.Session()
-        self.session.headers.update({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        })
+def test_login():
+    """Test user login and get JWT token"""
+    print("🔐 Testing Login...")
     
-    def log(self, message: str, level: str = "INFO"):
-        """Log test messages"""
-        print(f"[{level}] {message}")
+    login_data = {
+        "email": TEST_EMAIL,
+        "password": TEST_PASSWORD
+    }
     
-    def login(self) -> bool:
-        """Test 1: Login with credentials to get JWT token"""
-        self.log("=== TEST 1: User Login ===")
+    try:
+        response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+        print(f"Login Response Status: {response.status_code}")
         
-        login_data = {
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
-        }
-        
-        try:
-            response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
-            self.log(f"Login response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.token = data.get('token')  # Backend returns 'token' not 'access_token'
-                if self.token:
-                    self.session.headers.update({'Authorization': f'Bearer {self.token}'})
-                    self.log("✅ Login successful, JWT token obtained")
-                    return True
-                else:
-                    self.log("❌ Login failed: No access token in response", "ERROR")
-                    return False
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get("token") or data.get("access_token")
+            if token:
+                print("✅ Login successful - JWT token received")
+                return token
             else:
-                self.log(f"❌ Login failed with status {response.status_code}: {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Login failed with exception: {str(e)}", "ERROR")
-            return False
-    
-    def update_paypal_account(self) -> bool:
-        """Test 2: Update PayPal Account"""
-        self.log("=== TEST 2: Update PayPal Account ===")
-        
-        paypal_data = {
-            "paypal_email": "test@paypal.com"
-        }
-        
-        try:
-            response = self.session.post(f"{BACKEND_URL}/rewards/update-paypal", json=paypal_data)
-            self.log(f"Update PayPal response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"Response: {json.dumps(data, indent=2)}")
-                if data.get('success'):
-                    self.log("✅ PayPal account updated successfully")
-                    return True
-                else:
-                    self.log("❌ PayPal update failed: success=false", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ PayPal update failed with status {response.status_code}: {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ PayPal update failed with exception: {str(e)}", "ERROR")
-            return False
-    
-    def verify_paypal_saved(self) -> bool:
-        """Test 3: Verify PayPal was saved in user profile"""
-        self.log("=== TEST 3: Verify PayPal Email Saved ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/user/me")
-            self.log(f"Get user profile response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                paypal_email = data.get('paypal_email')
-                self.log(f"PayPal email in profile: {paypal_email}")
-                
-                if paypal_email == "test@paypal.com":
-                    self.log("✅ PayPal email correctly saved in user profile")
-                    return True
-                else:
-                    self.log(f"❌ PayPal email not saved correctly. Expected: test@paypal.com, Got: {paypal_email}", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Get user profile failed with status {response.status_code}: {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Get user profile failed with exception: {str(e)}", "ERROR")
-            return False
-    
-    def delete_paypal_account(self) -> bool:
-        """Test 4: Delete PayPal Account"""
-        self.log("=== TEST 4: Delete PayPal Account ===")
-        
-        try:
-            response = self.session.delete(f"{BACKEND_URL}/rewards/delete-paypal")
-            self.log(f"Delete PayPal response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"Response: {json.dumps(data, indent=2)}")
-                if data.get('success'):
-                    self.log("✅ PayPal account deleted successfully")
-                    return True
-                else:
-                    self.log("❌ PayPal deletion failed: success=false", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ PayPal deletion failed with status {response.status_code}: {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ PayPal deletion failed with exception: {str(e)}", "ERROR")
-            return False
-    
-    def verify_paypal_deleted(self) -> bool:
-        """Test 5: Verify PayPal deletion"""
-        self.log("=== TEST 5: Verify PayPal Email Deleted ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/user/me")
-            self.log(f"Get user profile response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                paypal_email = data.get('paypal_email')
-                self.log(f"PayPal email in profile after deletion: {paypal_email}")
-                
-                if not paypal_email or paypal_email == "":
-                    self.log("✅ PayPal email correctly removed from user profile")
-                    return True
-                else:
-                    self.log(f"❌ PayPal email not deleted correctly. Expected: empty/null, Got: {paypal_email}", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Get user profile failed with status {response.status_code}: {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Get user profile failed with exception: {str(e)}", "ERROR")
-            return False
-    
-    def test_prize_pool_endpoint(self) -> bool:
-        """Test 6: Prize Pool endpoint should return has_paypal field (not has_pix_key)"""
-        self.log("=== TEST 6: Prize Pool Endpoint (has_paypal field) ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/rewards/prize-pool")
-            self.log(f"Prize pool response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"Prize pool response keys: {list(data.keys())}")
-                
-                # Check for has_paypal field
-                has_paypal = data.get('has_paypal')
-                has_pix_key = data.get('has_pix_key')
-                
-                self.log(f"has_paypal field: {has_paypal}")
-                self.log(f"has_pix_key field: {has_pix_key}")
-                
-                if 'has_paypal' in data and 'has_pix_key' not in data:
-                    self.log("✅ Prize pool endpoint correctly returns has_paypal field (no has_pix_key)")
-                    return True
-                elif 'has_pix_key' in data:
-                    self.log("❌ Prize pool endpoint still contains has_pix_key field (should be removed)", "ERROR")
-                    return False
-                else:
-                    self.log("❌ Prize pool endpoint missing has_paypal field", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Prize pool endpoint failed with status {response.status_code}: {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Prize pool endpoint failed with exception: {str(e)}", "ERROR")
-            return False
-    
-    def test_old_pix_endpoints_removed(self) -> bool:
-        """Test 7 & 8: Verify old PIX endpoints are gone"""
-        self.log("=== TEST 7 & 8: Verify Old PIX Endpoints Removed ===")
-        
-        success = True
-        
-        # Test update-pix endpoint
-        try:
-            response = self.session.post(f"{BACKEND_URL}/rewards/update-pix", json={"pix_key": "test"})
-            self.log(f"Update PIX endpoint response status: {response.status_code}")
-            
-            if response.status_code in [404, 405]:
-                self.log("✅ POST /api/rewards/update-pix correctly returns 404/405 (endpoint removed)")
-            else:
-                self.log(f"❌ POST /api/rewards/update-pix should return 404/405, got {response.status_code}", "ERROR")
-                success = False
-                
-        except Exception as e:
-            self.log(f"Update PIX endpoint test failed with exception: {str(e)}", "ERROR")
-            success = False
-        
-        # Test delete-pix endpoint
-        try:
-            response = self.session.delete(f"{BACKEND_URL}/rewards/delete-pix")
-            self.log(f"Delete PIX endpoint response status: {response.status_code}")
-            
-            if response.status_code in [404, 405]:
-                self.log("✅ DELETE /api/rewards/delete-pix correctly returns 404/405 (endpoint removed)")
-            else:
-                self.log(f"❌ DELETE /api/rewards/delete-pix should return 404/405, got {response.status_code}", "ERROR")
-                success = False
-                
-        except Exception as e:
-            self.log(f"Delete PIX endpoint test failed with exception: {str(e)}", "ERROR")
-            success = False
-        
-        return success
-    
-    def run_all_tests(self) -> Dict[str, bool]:
-        """Run all PayPal migration tests"""
-        self.log("🚀 Starting PayPal Rewards System Tests")
-        self.log(f"Backend URL: {BACKEND_URL}")
-        self.log(f"Test User: {TEST_EMAIL}")
-        
-        results = {}
-        
-        # Test 1: Login
-        results['login'] = self.login()
-        if not results['login']:
-            self.log("❌ Cannot proceed without login", "ERROR")
-            return results
-        
-        # Test 2: Update PayPal Account
-        results['update_paypal'] = self.update_paypal_account()
-        
-        # Test 3: Verify PayPal was saved
-        results['verify_paypal_saved'] = self.verify_paypal_saved()
-        
-        # Test 4: Delete PayPal Account
-        results['delete_paypal'] = self.delete_paypal_account()
-        
-        # Test 5: Verify PayPal deletion
-        results['verify_paypal_deleted'] = self.verify_paypal_deleted()
-        
-        # Test 6: Prize Pool endpoint
-        results['prize_pool_has_paypal'] = self.test_prize_pool_endpoint()
-        
-        # Test 7 & 8: Old PIX endpoints removed
-        results['old_pix_endpoints_removed'] = self.test_old_pix_endpoints_removed()
-        
-        return results
-    
-    def print_summary(self, results: Dict[str, bool]):
-        """Print test summary"""
-        self.log("\n" + "="*50)
-        self.log("📊 TEST SUMMARY")
-        self.log("="*50)
-        
-        total_tests = len(results)
-        passed_tests = sum(1 for result in results.values() if result)
-        
-        for test_name, result in results.items():
-            status = "✅ PASS" if result else "❌ FAIL"
-            self.log(f"{test_name}: {status}")
-        
-        self.log(f"\nTotal: {passed_tests}/{total_tests} tests passed")
-        
-        if passed_tests == total_tests:
-            self.log("🎉 ALL TESTS PASSED - PayPal migration successful!")
+                print("❌ Login failed - No token in response")
+                print(f"Response: {data}")
+                return None
         else:
-            self.log("⚠️  SOME TESTS FAILED - PayPal migration needs attention")
+            print(f"❌ Login failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Login error: {str(e)}")
+        return None
+
+def test_save_personal_data(token):
+    """Test saving personal data with new fields"""
+    print("\n👤 Testing Save Personal Data with new fields...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    personal_data = {
+        "full_name": "João da Silva",
+        "identity_document": "123.456.789-00",
+        "country": "Brasil",
+        "phone": "+5511999999999",
+        "address": "Rua Teste 123",
+        "city": "São Paulo",
+        "state": "SP",
+        "zip_code": "01234-567"
+    }
+    
+    try:
+        response = requests.put(f"{BASE_URL}/user/personal-data", json=personal_data, headers=headers)
+        print(f"Personal Data Update Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ Personal data saved successfully")
+            print(f"Response: {data}")
+            return True
+        else:
+            print(f"❌ Personal data save failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Personal data save error: {str(e)}")
+        return False
+
+def test_verify_personal_data(token):
+    """Test verifying personal data was saved correctly"""
+    print("\n🔍 Testing Verify Personal Data Saved...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BASE_URL}/user/me", headers=headers)
+        print(f"Get User Profile Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Check for required fields
+            required_fields = ["identity_document", "country", "full_name"]
+            missing_fields = []
+            
+            for field in required_fields:
+                if field not in data or data[field] is None:
+                    missing_fields.append(field)
+            
+            if not missing_fields:
+                print("✅ Personal data verification successful")
+                print(f"Full Name: {data.get('full_name')}")
+                print(f"Identity Document: {data.get('identity_document')}")
+                print(f"Country: {data.get('country')}")
+                print(f"Phone: {data.get('phone')}")
+                print(f"Address: {data.get('address')}")
+                print(f"City: {data.get('city')}")
+                print(f"State: {data.get('state')}")
+                print(f"Zip Code: {data.get('zip_code')}")
+                return True
+            else:
+                print(f"❌ Personal data verification failed - Missing fields: {missing_fields}")
+                print(f"Available fields: {list(data.keys())}")
+                return False
+        else:
+            print(f"❌ Get user profile failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Personal data verification error: {str(e)}")
+        return False
+
+def test_save_paypal_account(token):
+    """Test saving PayPal account"""
+    print("\n💳 Testing Save PayPal Account...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    paypal_data = {
+        "paypal_email": "joao@paypal.com"
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/rewards/update-paypal", json=paypal_data, headers=headers)
+        print(f"PayPal Update Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ PayPal account saved successfully")
+            print(f"Response: {data}")
+            return True
+        else:
+            print(f"❌ PayPal account save failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ PayPal account save error: {str(e)}")
+        return False
+
+def test_verify_paypal_and_personal_data(token):
+    """Test verifying both PayPal and personal data are present"""
+    print("\n🔍 Testing Verify PayPal + Personal Data Together...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BASE_URL}/user/me", headers=headers)
+        print(f"Get User Profile Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Check for both PayPal and personal data fields
+            paypal_email = data.get('paypal_email')
+            identity_document = data.get('identity_document')
+            
+            if paypal_email and identity_document:
+                print("✅ Both PayPal and personal data verification successful")
+                print(f"PayPal Email: {paypal_email}")
+                print(f"Identity Document: {identity_document}")
+                print(f"Full Name: {data.get('full_name')}")
+                print(f"Country: {data.get('country')}")
+                return True
+            else:
+                print(f"❌ Verification failed - PayPal: {paypal_email}, Identity: {identity_document}")
+                print(f"Available fields: {list(data.keys())}")
+                return False
+        else:
+            print(f"❌ Get user profile failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Combined verification error: {str(e)}")
+        return False
+
+def test_delete_paypal(token):
+    """Test deleting PayPal account"""
+    print("\n🗑️ Testing Delete PayPal Account...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.delete(f"{BASE_URL}/rewards/delete-paypal", headers=headers)
+        print(f"PayPal Delete Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print("✅ PayPal account deleted successfully")
+            print(f"Response: {data}")
+            return True
+        else:
+            print(f"❌ PayPal account delete failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ PayPal account delete error: {str(e)}")
+        return False
+
+def test_verify_paypal_deletion(token):
+    """Test verifying PayPal account was deleted"""
+    print("\n🔍 Testing Verify PayPal Deletion...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BASE_URL}/user/me", headers=headers)
+        print(f"Get User Profile Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            paypal_email = data.get('paypal_email')
+            identity_document = data.get('identity_document')
+            
+            if paypal_email is None and identity_document is not None:
+                print("✅ PayPal deletion verification successful")
+                print(f"PayPal Email: {paypal_email} (correctly deleted)")
+                print(f"Identity Document: {identity_document} (still present)")
+                return True
+            else:
+                print(f"❌ PayPal deletion verification failed")
+                print(f"PayPal Email: {paypal_email} (should be None)")
+                print(f"Identity Document: {identity_document} (should still exist)")
+                return False
+        else:
+            print(f"❌ Get user profile failed - Status: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ PayPal deletion verification error: {str(e)}")
+        return False
 
 def main():
-    """Main test execution"""
-    tester = PayPalRewardsTest()
-    results = tester.run_all_tests()
-    tester.print_summary(results)
+    """Run all tests in sequence"""
+    print("🚀 Starting BizRealms Personal Data and PayPal Account Flow Tests")
+    print(f"Backend URL: {BASE_URL}")
+    print(f"Test User: {TEST_EMAIL}")
+    print("=" * 70)
     
-    # Exit with error code if any tests failed
-    if not all(results.values()):
+    # Test sequence
+    tests_passed = 0
+    total_tests = 7
+    
+    # 1. Login
+    token = test_login()
+    if token:
+        tests_passed += 1
+    else:
+        print("\n❌ Cannot continue without valid token")
         sys.exit(1)
+    
+    # 2. Save Personal Data
+    if test_save_personal_data(token):
+        tests_passed += 1
+    
+    # 3. Verify Personal Data
+    if test_verify_personal_data(token):
+        tests_passed += 1
+    
+    # 4. Save PayPal Account
+    if test_save_paypal_account(token):
+        tests_passed += 1
+    
+    # 5. Verify PayPal + Personal Data
+    if test_verify_paypal_and_personal_data(token):
+        tests_passed += 1
+    
+    # 6. Delete PayPal
+    if test_delete_paypal(token):
+        tests_passed += 1
+    
+    # 7. Verify PayPal Deletion
+    if test_verify_paypal_deletion(token):
+        tests_passed += 1
+    
+    # Summary
+    print("\n" + "=" * 70)
+    print(f"🎯 TEST SUMMARY: {tests_passed}/{total_tests} tests passed")
+    
+    if tests_passed == total_tests:
+        print("🎉 ALL TESTS PASSED - Personal Data and PayPal flow working correctly!")
+        return True
+    else:
+        print(f"❌ {total_tests - tests_passed} tests failed")
+        return False
 
 if __name__ == "__main__":
-    main()
+    success = main()
+    sys.exit(0 if success else 1)

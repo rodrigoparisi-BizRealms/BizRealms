@@ -89,7 +89,7 @@ export default {
     levelLabel: 'Nivel', certName: 'Nombre de Certificación', certPlaceholder: 'Ej: PMP, AWS...', issuer: 'Emisor',
     issuerPlaceholder: 'Organización emisora', skillBoost: 'Boost de Habilidad (1-10)',
     eduLevels: { highSchool: 'Secundaria', bachelors: 'Licenciatura', masters: 'Maestría', phd: 'Doctorado' },
-    personalFullName: 'Nombre Completo', personalPhone: 'Teléfono', personalAddress: 'Dirección', personalCity: 'Ciudad',
+    personalFullName: 'Nombre Completo', identityDocument: 'Documento de Identidad', country: 'País', personalPhone: 'Teléfono', personalAddress: 'Dirección', personalCity: 'Ciudad',
     personalState: 'Estado', personalZip: 'Código Postal', saveData: 'Guardar Datos',
     paypalEmailLabel: 'E-mail PayPal', savePaypal: 'Guardar Cuenta PayPal',
     paypalConfigHint: '¡Registra tu cuenta PayPal para premios reales!', paypalConfigured: 'Cuenta PayPal registrada',
@@ -98,6 +98,8 @@ export default {
     current: 'Actual', boost: 'habilidades', permissionNeeded: 'Permiso Necesario',
     permissionGallery: 'Necesitamos permiso para acceder a tu galería',
     paypalHint: 'Configura tu cuenta PayPal para recibir premios de los rankings mensuales.',
+    requiredFields: 'Campos obligatorios', fillAllFields: 'Completa todos los campos',
+    paypalRequiresData: 'Datos Personales Obligatorios', paypalRequiresDataMsg: 'Para registrar tu cuenta PayPal, primero completa tus Datos Personales (Nombre Completo y Documento de Identidad).',
   },
   coaching: {
     title: 'Coach IA', subtitle: 'Tu mentor virtual de negocios', welcome: 'Hola',
