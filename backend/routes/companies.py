@@ -265,6 +265,7 @@ async def buy_company(request: dict, current_user: dict = Depends(get_current_us
         "company_name": company['name'],
         "price": company['price'],
         "monthly_revenue": company['monthly_revenue'],
+        "roi_months": round(company['price'] / company['monthly_revenue'], 1) if company['monthly_revenue'] > 0 else 0,
         "new_balance": round(new_money, 2),
     }
 
@@ -331,6 +332,13 @@ async def get_owned_companies(current_user: dict = Depends(get_current_user)):
             c['last_collection'] = c['last_collection'].isoformat()
         if c.get('purchased_at'):
             c['purchased_at'] = c['purchased_at'].isoformat()
+        # ROI calculation
+        purchase_price = c.get('purchase_price', 0)
+        total_collected = c.get('total_collected', 0)
+        monthly_rev = c.get('monthly_revenue', 1)
+        c['roi_months'] = round(purchase_price / monthly_rev, 1) if monthly_rev > 0 else 0
+        c['roi_progress'] = round((total_collected / purchase_price) * 100, 1) if purchase_price > 0 else 0
+        c['roi_recovered'] = total_collected >= purchase_price
         total_monthly += c['effective_revenue']
     return {"companies": companies, "total_monthly_revenue": total_monthly, "count": len(companies)}
 
@@ -438,6 +446,13 @@ async def sell_company(request: dict, current_user: dict = Depends(get_current_u
     # Sell price: 80% of purchase price + collected revenue bonus
     sell_price = round(company.get('purchase_price', 0) * 0.8)
     
+    # Calculate ROI info
+    purchase_price = company.get('purchase_price', 0)
+    total_collected = company.get('total_collected', 0)
+    total_return = total_collected + sell_price
+    profit = total_return - purchase_price
+    roi_positive = profit >= 0
+    
     # Also delete all franchises of this company
     if not company.get('is_franchise'):
         franchise_count = await db.user_companies.count_documents({"parent_company_id": company_id, "user_id": current_user['id']})
@@ -450,11 +465,22 @@ async def sell_company(request: dict, current_user: dict = Depends(get_current_u
     new_money = user['money'] + sell_price
     await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
     
+    roi_text = f"Lucro: +R$ {profit:,.0f}" if roi_positive else f"Prejuízo: -R$ {abs(profit):,.0f}"
+    
     return {
         "success": True,
         "message": f"Empresa '{company.get('name')}' vendida por R$ {sell_price:,.0f}!",
         "sell_price": sell_price,
         "new_balance": round(new_money, 2),
+        "roi": {
+            "purchase_price": purchase_price,
+            "total_collected": total_collected,
+            "sell_price": sell_price,
+            "total_return": total_return,
+            "profit": profit,
+            "roi_positive": roi_positive,
+            "roi_text": roi_text,
+        },
     }
 
 

@@ -153,7 +153,7 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
     """Get user statistics"""
     total_education = len(current_user.get('education', []))
     total_certifications = len(current_user.get('certifications', []))
-    total_work_experience = len(current_user.get('work_experience', []))
+    total_work_experience = len(set(exp.get('job_title', exp.get('title', '')) for exp in current_user.get('work_experience', [])))
     
     # Calculate total work experience in months
     months_experience = 0

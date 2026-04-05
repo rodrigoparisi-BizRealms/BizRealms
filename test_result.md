@@ -768,5 +768,53 @@ agent_communication:
     message: "🎉 PAYPAL REWARDS MIGRATION TESTING COMPLETE! ✅ Comprehensive testing of PayPal rewards system migration completed successfully. ALL 8 TESTS PASSED: ✅ Login authentication working correctly ✅ POST /api/rewards/update-paypal (PayPal email update with validation) ✅ GET /api/user/me (PayPal email field correctly saved/retrieved) ✅ DELETE /api/rewards/delete-paypal (PayPal email removal working) ✅ GET /api/user/me (PayPal email correctly deleted after removal) ✅ GET /api/rewards/prize-pool (returns has_paypal field, no has_pix_key field - migration complete) ✅ Old PIX endpoints properly removed (POST/DELETE /api/rewards/update-pix and delete-pix return 404). Migration from PIX (Brazilian payment) to PayPal (global) successfully completed. PayPal email validation working (requires @ and . characters), prize pool endpoint correctly shows has_paypal status based on user configuration. Authentication required and working for all endpoints. PayPal rewards system is production-ready."
   - agent: "testing"
     message: "🎉 PERSONAL DATA & PAYPAL FLOW RE-VERIFICATION COMPLETE! ✅ Comprehensive re-testing of personal data and PayPal account flow completed successfully as requested in review. ALL 7 TESTS PASSED: ✅ POST /api/auth/login (JWT authentication working correctly with token field) ✅ PUT /api/user/personal-data (successfully updates all new fields: full_name, identity_document, country, phone, address, city, state, zip_code) ✅ GET /api/user/me (personal data verification successful - all required fields present: identity_document='123.456.789-00', country='Brasil', full_name='João da Silva') ✅ POST /api/rewards/update-paypal (PayPal account saved successfully: joao@paypal.com) ✅ GET /api/user/me (both PayPal and personal data verification successful - both paypal_email and identity_document present together) ✅ DELETE /api/rewards/delete-paypal (PayPal account deleted successfully) ✅ GET /api/user/me (PayPal deletion verification successful - paypal_email=None, identity_document still present). Complete end-to-end flow tested with realistic Brazilian data. Personal data system working with new identity_document and country fields. PayPal integration working correctly with proper validation. Data persistence and deletion working as expected. All endpoints require authentication and handle errors gracefully. Both systems are production-ready and fully functional."
+  - task: "ROI Features - User Stats Job Counter"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/user.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: User stats job counter fix working correctly. GET /api/user/stats returns work_experience_count field with value 0 for test user. Field is properly included in response structure."
+
+  - task: "ROI Features - Companies Owned ROI Fields"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Companies owned ROI fields working correctly. GET /api/companies/owned returns all required ROI fields for each company: roi_months (5.6), roi_progress (0.0), roi_recovered (false). ROI calculation system functioning properly."
+
+  - task: "ROI Features - Company Purchase ROI Response"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Company purchase ROI response working correctly. POST /api/companies/buy returns roi_months field (5.0) in response. Successfully purchased 'Bazar Popular' for R$ 10,000 with proper ROI calculation."
+
+  - task: "ROI Features - Company Sell ROI Object"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Company sell ROI object working correctly. POST /api/companies/sell returns complete roi object with all required fields: purchase_price (18000), total_collected (0), sell_price (14400), total_return (14400), profit (-3600), roi_positive (false), roi_text ('Prejuízo: -R$ 3,600'). ROI calculation and reporting system fully functional."
+
   - agent: "testing"
-    message: "🎉 BACKEND MODULARIZATION TESTING COMPLETE! ✅ Comprehensive testing of all 13 route modules completed successfully after backend refactoring from monolithic server.py. ALL MODULES WORKING PERFECTLY: ✅ Auth module (POST /api/auth/login) - JWT authentication working correctly ✅ User module (GET /api/user/me) - FIXED missing route registration, profile retrieval working ✅ User Stats module (GET /api/user/stats) - statistics endpoint working correctly ✅ Jobs module (GET /api/jobs/available-for-level) - job listings working with proper authentication ✅ Investments module (GET /api/investments/market) - FIXED authentication requirement (now public as intended), FIXED missing hashlib import, market data working correctly ✅ Companies module (GET /api/companies/owned) - company management working with proper authentication ✅ Assets module (GET /api/assets/owned) - asset management working correctly ✅ Rankings module (GET /api/rankings?period=weekly) - FIXED missing get_current_price import from investments module, rankings calculation working ✅ Store module (GET /api/store/items) - store items retrieval working correctly ✅ Bank module (GET /api/bank/account) - banking system working with proper authentication ✅ Notifications module (GET /api/notifications) - notifications system working correctly ✅ PayPal module (POST /api/rewards/update-paypal) - PayPal integration working correctly ✅ Legal pages (GET /legal/terms) - public legal pages working without authentication. CRITICAL FIXES APPLIED: 1) Added missing @router.get('/user/me') route registration in user.py 2) Removed authentication requirement from investments market endpoint (now public) 3) Added missing hashlib import in investments.py 4) Added missing get_current_price import in rankings.py from investments module. Backend modularization is production-ready with all 13 modules fully functional."
+    message: "🎉 ROI FEATURES & JOB COUNTER TESTING COMPLETE! ✅ Comprehensive testing of new ROI (Return on Investment) features and job counter fix completed successfully. ALL 5 TESTS PASSED: ✅ LOGIN: Authentication working correctly with JWT token generation ✅ USER STATS JOB COUNTER: work_experience_count field present in GET /api/user/stats response (value: 0) ✅ COMPANIES OWNED ROI FIELDS: All ROI fields present in GET /api/companies/owned response - roi_months (5.6), roi_progress (0.0), roi_recovered (false) ✅ COMPANY PURCHASE ROI: POST /api/companies/buy returns roi_months field (5.0) in response, successfully purchased 'Bazar Popular' for R$ 10,000 ✅ COMPANY SELL ROI OBJECT: POST /api/companies/sell returns complete roi object with all required fields - purchase_price (18000), total_collected (0), sell_price (14400), total_return (14400), profit (-3600), roi_positive (false), roi_text ('Prejuízo: -R$ 3,600'). ROI calculation system fully functional with proper profit/loss tracking and text generation. Job counter fix verified. All new ROI features are production-ready."

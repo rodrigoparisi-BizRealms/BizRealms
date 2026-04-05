@@ -646,21 +646,27 @@ export default function Profile() {
             <Ionicons name="language" size={22} color="#2196F3" />
             <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
           </View>
-          <View style={[styles.card, { padding: 12 }]}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {languages.map(lang => (
-                <TouchableOpacity
-                  key={lang.code}
-                  style={[
-                    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, backgroundColor: '#2a2a2a', borderWidth: 2, borderColor: locale === lang.code ? '#2196F3' : 'transparent' },
-                  ]}
-                  onPress={() => setLocale(lang.code)}
-                >
-                  <Text style={{ fontSize: 18 }}>{lang.flag}</Text>
-                  <Text style={{ color: locale === lang.code ? '#2196F3' : '#ccc', fontSize: 13, fontWeight: locale === lang.code ? 'bold' : 'normal' }}>{lang.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
+            <Text style={{ color: '#888', fontSize: 11, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 }}>
+              {t('profile.languageAutoHint') || 'Idioma detectado automaticamente pelo seu dispositivo. Selecione para alterar:'}
+            </Text>
+            {languages.map((lang, idx) => (
+              <TouchableOpacity
+                key={lang.code}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 12,
+                  paddingHorizontal: 16, paddingVertical: 14,
+                  backgroundColor: locale === lang.code ? '#1a2a4a' : 'transparent',
+                  borderBottomWidth: idx < languages.length - 1 ? 1 : 0,
+                  borderBottomColor: '#2a2a2a',
+                }}
+                onPress={() => setLocale(lang.code)}
+              >
+                <Text style={{ fontSize: 24 }}>{lang.flag}</Text>
+                <Text style={{ color: locale === lang.code ? '#2196F3' : '#ccc', fontSize: 15, fontWeight: locale === lang.code ? 'bold' : 'normal', flex: 1 }}>{lang.name}</Text>
+                {locale === lang.code && <Ionicons name="checkmark-circle" size={20} color="#2196F3" />}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 

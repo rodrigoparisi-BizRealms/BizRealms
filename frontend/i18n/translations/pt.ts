@@ -349,6 +349,7 @@ export default {
     permissionNeeded: 'Permissão Necessária',
     permissionGallery: 'Precisamos de permissão para acessar sua galeria',
     paypalHint: 'Configure sua conta PayPal para receber premiações em dinheiro real dos rankings mensais.',
+    languageAutoHint: 'Idioma detectado automaticamente pelo seu dispositivo. Selecione para alterar:',
     requiredFields: 'Campos obrigatórios',
     fillAllFields: 'Preencha todos os campos',
     paypalRequiresData: 'Dados Pessoais Obrigatórios',

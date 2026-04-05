@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import i18n, { LANGUAGES } from '../i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocales } from 'expo-localization';
 
 const CURRENCY_CONFIG: Record<string, { symbol: string; code: string; locale: string; separator: string; decimal: string }> = {
   pt: { symbol: 'R$', code: 'BRL', locale: 'pt-BR', separator: '.', decimal: ',' },
@@ -42,12 +43,34 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Load saved language on mount
+  const SUPPORTED_LOCALES = ['pt', 'en', 'es', 'de', 'fr', 'it'];
+
+  // Detect device locale
+  const getDeviceLocale = (): string => {
+    try {
+      const locales = getLocales();
+      if (locales && locales.length > 0) {
+        const deviceLang = locales[0].languageCode || '';
+        if (SUPPORTED_LOCALES.includes(deviceLang)) return deviceLang;
+      }
+    } catch (e) {
+      console.log('Could not detect device locale:', e);
+    }
+    return 'en'; // default fallback
+  };
+
+  // Load saved language on mount, or auto-detect from device
   React.useEffect(() => {
     AsyncStorage.getItem('@app_language').then(saved => {
-      if (saved && ['pt', 'en', 'es', 'de', 'fr', 'it'].includes(saved)) {
+      if (saved && SUPPORTED_LOCALES.includes(saved)) {
         i18n.locale = saved;
         setLocaleState(saved);
+      } else {
+        // First time: auto-detect from device
+        const detected = getDeviceLocale();
+        i18n.locale = detected;
+        setLocaleState(detected);
+        AsyncStorage.setItem('@app_language', detected);
       }
     }).catch(() => {});
   }, []);

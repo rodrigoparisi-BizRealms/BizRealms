@@ -80,10 +80,17 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const [musicEnabled, _setMusicEnabled] = useState(true);
   const autoAdvanceTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load music enabled preference
+  // Load music enabled preference and auto-start
   useEffect(() => {
     AsyncStorage.getItem(MUSIC_ENABLED_KEY).then(val => {
-      if (val !== null) _setMusicEnabled(val === 'true');
+      const enabled = val === null ? true : val === 'true';
+      _setMusicEnabled(enabled);
+      // Auto-start music if enabled
+      if (enabled && !activeTrack) {
+        const randomIndex = Math.floor(Math.random() * JAZZ_BLUES_TRACKS.length);
+        setActiveTrack(JAZZ_BLUES_TRACKS[randomIndex]);
+        setIsPlaying(true);
+      }
     });
   }, []);
 

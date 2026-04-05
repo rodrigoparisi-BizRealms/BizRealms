@@ -69,8 +69,13 @@ export default function Companies() {
   };
   const handleSellCompany = (company: any) => {
     const sellPrice = Math.round(company.purchase_price * 0.8);
+    const totalReturn = (company.total_collected || 0) + sellPrice;
+    const profit = totalReturn - (company.purchase_price || 0);
+    const roiText = profit >= 0 
+      ? `\n\n✅ Retorno: +${formatMoney(profit)} (investimento recuperado!)`
+      : `\n\n⚠️ Prejuízo: ${formatMoney(profit)} (investimento não recuperado)`;
     const franchiseWarning = !company.is_franchise ? '\n\nATENÇÃO: Todas as franquias desta empresa também serão vendidas!' : '';
-    confirmAction('Vender Empresa', `Deseja vender "${company.name}" por R$ ${sellPrice.toLocaleString('pt-BR')}?${franchiseWarning}`, async () => {
+    confirmAction(t('companies.sell') || 'Vender Empresa', `${t('companies.sellConfirm') || 'Deseja vender'} "${company.name}" ${t('companies.sellFor') || 'por'} ${formatMoney(sellPrice)}?${roiText}${franchiseWarning}`, async () => {
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/sell`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
         showAlert('Empresa Vendida!', r.data.message);
@@ -141,7 +146,8 @@ export default function Companies() {
   };
 
   const handleBuy = (company: any) => {
-    confirmAction('Comprar Empresa', `Deseja comprar ${company.name} por R$ ${company.price.toLocaleString('pt-BR')}?\n\nReceita mensal: R$ ${company.monthly_revenue.toLocaleString('pt-BR')}`, async () => {
+    const roiMonths = company.monthly_revenue > 0 ? (company.price / company.monthly_revenue).toFixed(1) : '?';
+    confirmAction(t('companies.buy') || 'Comprar Empresa', `${t('companies.buyConfirm') || 'Deseja comprar'} ${company.name} ${t('companies.buyFor') || 'por'} ${formatMoney(company.price)}?\n\n💵 ${t('companies.monthlyRevenue') || 'Receita mensal'}: ${formatMoney(company.monthly_revenue)}\n📊 ${t('companies.roiEstimate') || 'Retorno estimado'}: ${roiMonths} ${t('general.months') || 'meses'}`, async () => {
       setBuying(company.id);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/buy`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
@@ -274,6 +280,16 @@ export default function Companies() {
               <View style={s.companyMeta}>
                 <Text style={s.metaText}>👥 {c.employees} emp.</Text>
                 <Text style={s.metaText}>💰 Total: {formatMoney(c.total_collected || 0)}</Text>
+                <Text style={s.metaText}>📊 ROI: {c.roi_months || '?'}m</Text>
+              </View>
+              {/* ROI Progress */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
+                <View style={{ flex: 1, height: 6, backgroundColor: '#333', borderRadius: 3, overflow: 'hidden' }}>
+                  <View style={{ width: `${Math.min(c.roi_progress || 0, 100)}%`, height: '100%', backgroundColor: (c.roi_recovered) ? '#4CAF50' : '#FF9800', borderRadius: 3 }} />
+                </View>
+                <Text style={{ color: (c.roi_recovered) ? '#4CAF50' : '#FF9800', fontSize: 11, fontWeight: 'bold', minWidth: 40 }}>
+                  {c.roi_recovered ? '✅' : `${Math.round(c.roi_progress || 0)}%`}
+                </Text>
               </View>
               {c.is_franchise && (
                 <View style={s.franchiseBadge}><Ionicons name="git-branch" size={14} color="#9C27B0" /><Text style={s.franchiseBadgeText}>Franquia de {c.parent_company_name}</Text></View>
@@ -417,6 +433,7 @@ export default function Companies() {
               <View style={s.buyMeta}>
                 <Text style={s.metaText}>💵 {formatMoney(c.monthly_revenue)}/{t('general.month')}</Text>
                 <Text style={s.metaText}>👥 {c.employees} emp.</Text>
+                <Text style={s.metaText}>📊 ROI: {c.monthly_revenue > 0 ? (c.price / c.monthly_revenue).toFixed(1) : '?'}m</Text>
                 <Text style={s.metaText}>📊 {t('profile.levelLabel')} {c.level_required}</Text>
               </View>
               {c.already_owned ? (
