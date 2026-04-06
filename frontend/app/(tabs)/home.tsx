@@ -70,8 +70,8 @@ export default function Home() {
   const GAME_TIPS = [
     { icon: 'briefcase', color: '#4CAF50', tip: 'Invista em cursos para desbloquear vagas com salários maiores!' },
     { icon: 'trending-up', color: '#2196F3', tip: 'Diversifique investimentos: ações, cripto e fundos imobiliários.' },
-    { icon: 'business', color: '#FF9800', tip: 'Empresas geram renda passiva. Colete a receita diariamente!' },
-    { icon: 'diamond', color: '#9C27B0', tip: 'Imóveis valorizam com o tempo. Compre cedo para lucrar mais.' },
+    { icon: 'business', color: '#FF9800', tip: t('companies.helpTip') || 'Companies generate passive income. Collect revenue daily!' },
+    { icon: 'diamond', color: '#9C27B0', tip: t('assets.buyHint') || 'Real estate appreciates over time. Buy early to profit more.' },
     { icon: 'wallet', color: '#E91E63', tip: 'Mantenha uma reserva no banco para emergências e oportunidades.' },
     { icon: 'trophy', color: '#FFD700', tip: 'Suba no ranking mensal para ganhar prêmios em dinheiro real!' },
     { icon: 'school', color: '#00BCD4', tip: 'Certificações de Harvard aumentam suas habilidades rapidamente.' },
@@ -558,7 +558,7 @@ export default function Home() {
             <Text style={styles.eventCardDesc} numberOfLines={2}>{activeEvent.description}</Text>
             <View style={styles.eventCardAction}>
               <Text style={[styles.eventCardActionText, { color: activeEvent.color }]}>
-                Toque para decidir
+                {t('events.tapToDecide') || 'Tap to decide'}
               </Text>
               <Ionicons name="chevron-forward" size={16} color={activeEvent.color} />
             </View>
@@ -692,7 +692,7 @@ export default function Home() {
             <View style={styles.prestigeHeader}>
               <Text style={{ fontSize: 24 }}>{prestigeData.tier.emoji}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.prestigeLabel}>Prestígio</Text>
+                <Text style={styles.prestigeLabel}>{t('prestige.title')}</Text>
                 <Text style={[styles.prestigeName, { color: prestigeData.tier.color }]}>
                   {prestigeData.tier.name}
                 </Text>
@@ -925,7 +925,7 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
                 <Ionicons name="business" size={20} color="#4CAF50" />
               </View>
-              <Text style={styles.panelTitle}>Empresas</Text>
+              <Text style={styles.panelTitle}>{t('nav.companies')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
@@ -958,8 +958,8 @@ export default function Home() {
             </>
           ) : (
             <View style={styles.panelEmpty}>
-              <Text style={styles.panelEmptyText}>Nenhuma empresa</Text>
-              <Text style={styles.panelEmptyHint}>Compre ou crie empresas para gerar renda passiva</Text>
+              <Text style={styles.panelEmptyText}>{t('companies.noCompanies') || 'No companies'}</Text>
+              <Text style={styles.panelEmptyHint}>{t('companies.helpTip') || 'Buy or create companies to generate passive income'}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -975,7 +975,7 @@ export default function Home() {
               <View style={[styles.panelIconBg, { backgroundColor: 'rgba(156,39,176,0.15)' }]}>
                 <Ionicons name="diamond" size={20} color="#9C27B0" />
               </View>
-              <Text style={styles.panelTitle}>Bens e Imóveis</Text>
+              <Text style={styles.panelTitle}>{t('assets.title')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555" />
           </View>
@@ -1021,7 +1021,7 @@ export default function Home() {
           ) : (
             <View style={styles.panelEmpty}>
               <Text style={styles.panelEmptyText}>Nenhum bem adquirido</Text>
-              <Text style={styles.panelEmptyHint}>Compre veículos, imóveis e itens de luxo</Text>
+              <Text style={styles.panelEmptyHint}>{t('assets.buyHint')}</Text>
             </View>
           )}
         </TouchableOpacity>

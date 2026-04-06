@@ -110,6 +110,7 @@ export default {
     paypalRequiresData: '需要个人信息', paypalRequiresDataMsg: '注册PayPal前请先完善个人信息（全名和身份证件）。',
     languageAutoHint: '自动检测设备语言。选择以更改：',
     selectLanguage: '选择语言',
+    publicProfile: '公开资料', playerNotFound: '未找到玩家', comparison: '对比', you: '你', player: '玩家',
   },
   coaching: {
     title: 'AI教练', subtitle: '你的虚拟商业导师', welcome: '你好',

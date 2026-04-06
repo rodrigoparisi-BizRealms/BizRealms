@@ -211,7 +211,7 @@ export default function Rankings() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.myRankName}>{t('rankings.you')}</Text>
-              <Text style={s.myRankLevel}>Nível {currentUser.level}</Text>
+              <Text style={s.myRankLevel}>{t('profile.levelLabel')} {currentUser.level}</Text>
             </View>
           </View>
           <View style={s.myRankRight}>

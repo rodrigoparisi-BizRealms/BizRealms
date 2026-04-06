@@ -697,6 +697,54 @@ async def respond_to_offer(request: dict, current_user: dict = Depends(get_curre
     }
 
 
+@router.post("/companies/offers/improve")
+async def improve_offer_via_ad(request: dict, current_user: dict = Depends(get_current_user)):
+    """Improve an offer amount after watching an ad (15-25% increase)"""
+    offer_id = request.get('offer_id')
+    if not offer_id:
+        raise HTTPException(status_code=400, detail="offer_id required")
+
+    offer = await db.company_offers.find_one({
+        "id": offer_id,
+        "user_id": current_user['id'],
+        "status": "pending"
+    })
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found or already expired")
+
+    # Check if already improved
+    if offer.get('ad_improved'):
+        raise HTTPException(status_code=400, detail="This offer was already improved")
+
+    # Calculate improvement (15-25%)
+    improvement_factor = 1 + _random.uniform(0.15, 0.25)
+    old_amount = offer.get('offer_amount', 0)
+    if old_amount <= 0:
+        # Fallback: recalculate from company purchase price
+        company = await db.user_companies.find_one({"id": offer.get('company_id'), "user_id": current_user['id']})
+        old_amount = int(company.get('purchase_price', 10000) * offer.get('multiplier', 1.0)) if company else 10000
+    new_amount = int(round(old_amount * improvement_factor))
+
+    await db.company_offers.update_one(
+        {"id": offer_id},
+        {"$set": {"offer_amount": new_amount, "ad_improved": True}}
+    )
+
+    company = await db.user_companies.find_one({"id": offer['company_id'], "user_id": current_user['id']})
+    purchase_price = company.get('purchase_price', old_amount) if company else old_amount
+
+    return {
+        "success": True,
+        "offer_id": offer_id,
+        "old_amount": old_amount,
+        "new_amount": new_amount,
+        "multiplier": round(new_amount / purchase_price, 2) if purchase_price > 0 else 1.0,
+        "improvement_pct": round((improvement_factor - 1) * 100, 1),
+        "message": f"Offer improved by {round((improvement_factor - 1) * 100)}%! New value: $ {new_amount:,.0f}"
+    }
+
+
+
 
 
 # ==================== FRANCHISE SYSTEM (FRANQUIAS) ====================

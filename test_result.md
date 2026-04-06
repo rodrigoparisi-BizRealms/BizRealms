@@ -1038,3 +1038,25 @@ agent_communication:
     message: "🎉 LIFE PHASES & CRISES SYSTEM TESTING COMPLETE! ✅ Comprehensive testing of the new Life Phases & Crises System completed successfully. ALL 7 ENDPOINTS WORKING PERFECTLY: ✅ GET /api/phases/current (returns current phase 'Crescimento' with net worth R$ 53,851.03, progress 0.86%, complete phase structure with bonuses, unlocks, tips) ✅ GET /api/phases/all (returns all 4 phases: survival, growth, empire, influence with proper is_current and is_unlocked flags, user has 2/4 phases unlocked) ✅ GET /api/crises/active (returns active crises list with count, initially empty as expected) ✅ POST /api/crises/check (successfully generates crisis 'Queda do Mercado' with medium severity, 2 resolution options with proper cost/XP/risk structure) ✅ POST /api/crises/resolve (resolves crisis successfully, cost R$ 904.45, +50 XP gained, risk system working correctly) ✅ GET /api/crises/history (returns resolved crises history with proper structure including chosen options and applied consequences) ✅ Error handling (invalid crisis_id returns 404 as expected). Complete test flow verified: login → get current phase → get all phases → check active crises (empty) → generate crisis → resolve crisis → check history → error handling. Phase progression system working: user in Growth phase (R$ 50k-500k range), net worth calculation includes cash, investments, companies, and assets. Crisis generation based on phase severity and company count with proper cooldown system. Authentication required and working correctly. Life Phases & Crises System is production-ready with complete functionality."
   - agent: "testing"
     message: "🎉 PRESTIGE & COMPETITIONS SYSTEMS TESTING COMPLETE! ✅ Comprehensive testing of NEW Prestige System and Weekly Competitions System completed successfully. ALL 7 ENDPOINTS WORKING PERFECTLY: PRESTIGE SYSTEM: ✅ GET /api/prestige/status (tier progression working: user advanced to Bronze 🥉 tier with 109 points from R$ 52,946.58 net worth) ✅ GET /api/prestige/perks (12 perks across 6 categories with proper availability logic) ✅ POST /api/prestige/buy-perk (proper validation for insufficient points/requirements) ✅ POST /api/prestige/reset (SUCCESSFULLY EXECUTED: reset all game data, user now at level 1 with R$ 1,000, earned 109 prestige points) COMPETITIONS SYSTEM: ✅ GET /api/competitions/active (auto-generated 2 competitions: 'Magnata das Empresas' 🏢 and 'Crescimento Explosivo' 🚀, 6.3 days remaining) ✅ GET /api/competitions/leaderboard/{id} (full leaderboard with participant details) ✅ GET /api/competitions/history (empty as expected for new system) ✅ 6 competition templates with different metrics and rewards ✅ Auto-participation and real-time scoring working ✅ Authentication and error handling working correctly. Both systems are production-ready with complete functionality. NOTE: Prestige reset was executed during testing - user's game progress was reset as intended by the system design."
+
+  - task: "Companies Offers Improve via Ad Endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "NEW ENDPOINT: POST /api/companies/offers/improve - Improves offer amount by 15-25% after watching an ad. Requires offer_id in body. Validates offer exists, belongs to user, is pending, and hasn't been already improved. Returns new_amount, old_amount, multiplier, improvement_pct."
+
+  - agent: "main"
+    message: "BUG FIXES IMPLEMENTED: 1) Fixed companies ad offer improvement - created backend endpoint POST /api/companies/offers/improve to persist improved offer amounts in DB instead of client-side only modification. Frontend updated to call this endpoint. 2) Fixed patrimonio.tsx - complete rewrite with useLanguage/useTheme for proper i18n and theming. 3) Fixed player-profile.tsx - complete rewrite with proper i18n, removed hardcoded 'Você', 'Jogador', 'Level'. 4) Fixed 50+ hardcoded Portuguese strings across prestige.tsx, home.tsx, profile.tsx, companies.tsx, rankings.tsx. 5) Added 40+ translation keys to en.ts, pt.ts and 5 other language files. Please test: POST /api/companies/offers/improve endpoint with valid offer_id."
+
+test_plan:
+  current_focus: "Test new companies/offers/improve endpoint"
+  priority_tasks:
+    - "Companies Offers Improve via Ad Endpoint"
+  testing_order:
+    - "POST /api/companies/offers/improve with valid offer_id"

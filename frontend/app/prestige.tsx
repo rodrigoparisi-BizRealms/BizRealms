@@ -24,7 +24,7 @@ const EXPO_PUBLIC_BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND
 
 export default function PrestigeScreen() {
   const { token, refreshUser } = useAuth();
-  const { formatMoney } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const { colors } = useTheme();
   const router = useRouter();
 
@@ -70,20 +70,20 @@ export default function PrestigeScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data?.success) {
-        const msg = res.data.message || 'Perk ativado!';
+        const msg = res.data.message || t('general.success');
         if (Platform.OS === 'web') {
           window.alert(msg);
         } else {
-          Alert.alert('Sucesso', msg);
+          Alert.alert(t('general.success'), msg);
         }
         await loadData();
       }
     } catch (e: any) {
-      const errMsg = e?.response?.data?.detail || 'Erro ao comprar perk';
+      const errMsg = e?.response?.data?.detail || t('prestige.errorBuyPerk');
       if (Platform.OS === 'web') {
         window.alert(errMsg);
       } else {
-        Alert.alert('Erro', errMsg);
+        Alert.alert(t('general.error'), errMsg);
       }
     } finally {
       setBuying(null);
@@ -93,10 +93,9 @@ export default function PrestigeScreen() {
   const handlePrestigeReset = async () => {
     if (!token || !status) return;
 
-    const confirmMsg = `Deseja resetar o jogo?\n\n` +
-      `Patrimônio atual: ${formatMoney(status.current_net_worth)}\n` +
-      `Pontos que ganhará: +${status.potential_points}\n\n` +
-      `Todos os dados serão zerados, mas seus perks permanecerão.`;
+    const confirmMsg = `${t('prestige.resetConfirm')}\n\n` +
+      `${t('prestige.currentNetWorth')}: ${formatMoney(status.current_net_worth)}\n` +
+      `${t('prestige.points')}: +${status.potential_points}`;
 
     const doReset = async () => {
       setResetting(true);
@@ -105,21 +104,21 @@ export default function PrestigeScreen() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data?.success) {
-          const msg = res.data.message || 'Prestígio concluído!';
+          const msg = res.data.message || t('prestige.complete');
           if (Platform.OS === 'web') {
             window.alert(msg);
           } else {
-            Alert.alert('Prestígio!', msg);
+            Alert.alert(t('prestige.title'), msg);
           }
           await refreshUser();
           await loadData();
         }
       } catch (e: any) {
-        const errMsg = e?.response?.data?.detail || 'Erro no reset';
+        const errMsg = e?.response?.data?.detail || t('prestige.errorReset');
         if (Platform.OS === 'web') {
           window.alert(errMsg);
         } else {
-          Alert.alert('Erro', errMsg);
+          Alert.alert(t('general.error'), errMsg);
         }
       } finally {
         setResetting(false);
@@ -131,9 +130,9 @@ export default function PrestigeScreen() {
         doReset();
       }
     } else {
-      Alert.alert('Prestígio Reset', confirmMsg, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Resetar', style: 'destructive', onPress: doReset },
+      Alert.alert(t('prestige.reset'), confirmMsg, [
+        { text: t('general.cancel'), style: 'cancel' },
+        { text: t('prestige.reset'), style: 'destructive', onPress: doReset },
       ]);
     }
   };
@@ -158,13 +157,13 @@ export default function PrestigeScreen() {
   });
 
   const catLabels: Record<string, { icon: string; label: string }> = {
-    money: { icon: 'cash', label: 'Capital' },
-    xp: { icon: 'flash', label: 'Experiência' },
-    companies: { icon: 'business', label: 'Empresas' },
-    defense: { icon: 'shield', label: 'Defesa' },
-    events: { icon: 'sparkles', label: 'Eventos' },
-    investments: { icon: 'trending-up', label: 'Investimentos' },
-    jobs: { icon: 'briefcase', label: 'Empregos' },
+    money: { icon: 'cash', label: t('prestige.perkCategories.money') },
+    xp: { icon: 'flash', label: t('prestige.perkCategories.xp') },
+    companies: { icon: 'business', label: t('prestige.perkCategories.companies') },
+    defense: { icon: 'shield', label: t('general.skills') || 'Defense' },
+    events: { icon: 'sparkles', label: t('home.events') || 'Events' },
+    investments: { icon: 'trending-up', label: t('prestige.perkCategories.investments') },
+    jobs: { icon: 'briefcase', label: t('nav.jobs') },
     status: { icon: 'diamond', label: 'Status' },
   };
 
@@ -178,7 +177,7 @@ export default function PrestigeScreen() {
         {/* Back button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-          <Text style={[styles.backText, { color: colors.text }]}>Prestígio</Text>
+          <Text style={[styles.backText, { color: colors.text }]}>{t('prestige.title')}</Text>
         </TouchableOpacity>
 
         {/* Tier Card */}
@@ -188,12 +187,12 @@ export default function PrestigeScreen() {
           <View style={styles.tierStats}>
             <View style={styles.tierStat}>
               <Text style={styles.tierStatValue}>{status?.total_points_earned || 0}</Text>
-              <Text style={styles.tierStatLabel}>Total ganho</Text>
+              <Text style={styles.tierStatLabel}>{t('prestige.points')}</Text>
             </View>
             <View style={[styles.tierStatDivider, { backgroundColor: tier.color + '30' }]} />
             <View style={styles.tierStat}>
               <Text style={[styles.tierStatValue, { color: '#FFD700' }]}>{status?.available_points || 0}</Text>
-              <Text style={styles.tierStatLabel}>Disponível</Text>
+              <Text style={styles.tierStatLabel}>{t('general.amount') || 'Available'}</Text>
             </View>
             <View style={[styles.tierStatDivider, { backgroundColor: tier.color + '30' }]} />
             <View style={styles.tierStat}>
@@ -222,12 +221,12 @@ export default function PrestigeScreen() {
               <Ionicons name="refresh-circle" size={22} color="#000" />
               <View>
                 <Text style={styles.resetBtnText}>
-                  Resetar com Prestígio
+                  {t('prestige.reset')}
                 </Text>
                 <Text style={styles.resetBtnSub}>
                   {(status?.potential_points || 0) > 0
-                    ? `+${status.potential_points} pontos (NW: ${formatMoney(status.current_net_worth)})`
-                    : 'Patrimônio mínimo: $ 10.000'}
+                    ? `+${status.potential_points} pts (NW: ${formatMoney(status.current_net_worth)})`
+                    : t('prestige.minNetWorth')}
                 </Text>
               </View>
             </>

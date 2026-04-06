@@ -108,6 +108,7 @@ export default {
     security: 'Seguridad', biometric: 'Autenticación Biométrica', biometricUnavailable: 'Biometría no disponible', biometricEnabled: 'Login biométrico activado', biometricDisabled: 'Login biométrico desactivado',
     resetAccount: 'Reiniciar Cuenta', resetAccountDesc: 'Borrar todo el progreso y empezar de cero', resetConfirmTitle: '¿Reiniciar Cuenta?', resetConfirmMsg: '¡Esta acción es irreversible!', resetConfirm: 'Sí, Reiniciar', resetCancel: 'Cancelar',
     accountResetSuccess: '¡Tu cuenta ha sido reiniciada!', biometricHint: 'Protege el acceso al juego',
+    publicProfile: 'Perfil Público', playerNotFound: 'Jugador no encontrado', comparison: 'Comparación', you: 'Tú', player: 'Jugador',
   },
   coaching: {
     title: 'Coach IA', subtitle: 'Tu mentor virtual de negocios', welcome: 'Hola',

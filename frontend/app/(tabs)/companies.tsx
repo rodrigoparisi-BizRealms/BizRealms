@@ -69,7 +69,7 @@ export default function Companies() {
       else Alert.alert('Franquia Criada!', r.data.message);
       await loadData(); await refreshUser();
     } catch (e: any) {
-      const msg = e.response?.data?.detail || 'Erro';
+      const msg = e.response?.data?.detail || t('general.error');
       if (Platform.OS === 'web') window.alert(msg);
       else Alert.alert('Erro', msg);
     } finally { setFranchising(null); }
@@ -101,7 +101,7 @@ export default function Companies() {
     if (action === 'accept') {
       confirmAction(
         'Aceitar Oferta',
-        `Vender "${companyName}" para ${buyerName} por $ ${(amount || 0).toLocaleString('en-US')}?\n\nEsta ação não pode ser desfeita!`,
+        `${t('companies2.sellForTo')} "${companyName}" ${buyerName} $ ${(amount || 0).toLocaleString('en-US')}?\n\n${t('companies2.sellIrreversible')}`,
         async () => {
           setRespondingOffer(offerId);
           try {
@@ -463,18 +463,29 @@ export default function Companies() {
                     </View>
 
                     {/* Better Offer via Ad */}
+                    {!offer.ad_improved && (
                     <TouchableOpacity
                       style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#9C27B010', borderRadius: 8, paddingVertical: 8, marginBottom: 8, borderWidth: 1, borderColor: '#9C27B030' }}
-                      onPress={() => showAd(() => {
-                        // Improve offer by 15-25%
-                        const improvedOffer = { ...offer, offer_amount: Math.round(offer.offer_amount * (1 + Math.random() * 0.1 + 0.15)) };
-                        setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, offer_amount: improvedOffer.offer_amount, multiplier: improvedOffer.offer_amount / o.purchase_price } : o));
+                      onPress={() => showAd(async () => {
+                        try {
+                          const res = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/offers/improve`, { offer_id: offer.id }, { headers: { Authorization: `Bearer ${token}` } });
+                          if (res.data?.success) {
+                            setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, offer_amount: res.data.new_amount, multiplier: res.data.multiplier, ad_improved: true } : o));
+                            if (Platform.OS === 'web') window.alert(res.data.message);
+                            else Alert.alert(t('general.success') || 'Success', res.data.message);
+                          }
+                        } catch (e: any) {
+                          const msg = e.response?.data?.detail || t('general.error') || 'Error';
+                          if (Platform.OS === 'web') window.alert(msg);
+                          else Alert.alert(t('general.error') || 'Error', msg);
+                        }
                       }, 'better_offer')}
                     >
                       <Ionicons name="trending-up" size={16} color="#9C27B0" />
-                      <Text style={{ color: '#9C27B0', fontSize: 12, fontWeight: '600' }}>{t('companies.betterOfferAd') || 'Melhor Oferta'}</Text>
+                      <Text style={{ color: '#9C27B0', fontSize: 12, fontWeight: '600' }}>{t('companies.betterOfferAd') || 'Better Offer'}</Text>
                       <Ionicons name="play-circle" size={14} color="#9C27B060" />
                     </TouchableOpacity>
+                    )}
 
                     {/* Actions */}
                     <View style={s.offerActions}>
@@ -556,7 +567,7 @@ export default function Companies() {
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity style={s.createBtn} onPress={handleCreate}><Text style={s.createText}>Criar Empresa</Text></TouchableOpacity>
+          <TouchableOpacity style={s.createBtn} onPress={handleCreate}><Text style={s.createText}>{t('companies2.createCompanyBtn')}</Text></TouchableOpacity>
         </View></View>
       </Modal>
 
@@ -564,14 +575,14 @@ export default function Companies() {
       <Modal visible={showMerge} animationType="slide" transparent onRequestClose={() => setShowMerge(false)}>
         <View style={s.modalOverlay}><View style={s.modal}>
           <View style={s.modalHeader}><Text style={s.modalTitle}>{t('companies.merge')}</Text><TouchableOpacity onPress={() => setShowMerge(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
-          <Text style={s.modalCost}>Fusão gera +30% de receita! Empresas devem ser do mesmo segmento.</Text>
+          <Text style={s.modalCost}>{t('companies2.mergeHint')}</Text>
           <Text style={s.label}>{t('companies.title')}</Text>
           {owned.filter(c => !c.is_franchise).map(c => (
             <TouchableOpacity key={`m1-${c.id}`} style={[s.mergeOption, mergeFrom === c.id && s.mergeSelected]} onPress={() => setMergeFrom(c.id)}>
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>
             </TouchableOpacity>
           ))}
-          <Text style={[s.label, { marginTop: 16 }]}>Empresa para Fundir (mesmo segmento)</Text>
+          <Text style={[s.label, { marginTop: 16 }]}>{t('companies2.mergeTarget')}</Text>
           {owned.filter(c => !c.is_franchise && c.id !== mergeFrom && (!mergeFrom || c.segment === owned.find(o => o.id === mergeFrom)?.segment)).map(c => (
             <TouchableOpacity key={`m2-${c.id}`} style={[s.mergeOption, mergeTo === c.id && s.mergeSelected]} onPress={() => setMergeTo(c.id)}>
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>

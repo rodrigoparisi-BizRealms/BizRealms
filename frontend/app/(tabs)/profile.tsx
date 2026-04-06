@@ -114,11 +114,11 @@ export default function Profile() {
         personalData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      showAlert('Sucesso!', 'Dados pessoais atualizados com sucesso');
+      showAlert(t('general.success'), t('profile.dataSaved') || 'Personal data saved successfully');
       await refreshUser();
       setShowPersonalModal(false);
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar dados');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setSavingPersonal(false); }
   };
 
@@ -128,8 +128,8 @@ export default function Profile() {
   };
 
   const handleSavePaypal = async () => {
-    if (!paypalEmail.trim()) { showAlert('Erro', t('profile.paypalEmpty') || 'Informe seu e-mail PayPal'); return; }
-    if (!paypalEmail.includes('@') || !paypalEmail.includes('.')) { showAlert('Erro', t('profile.paypalInvalid') || 'E-mail inválido'); return; }
+    if (!paypalEmail.trim()) { showAlert(t('general.error'), t('profile.paypalEmpty') || 'Enter your PayPal email'); return; }
+    if (!paypalEmail.includes('@') || !paypalEmail.includes('.')) { showAlert(t('general.error'), t('profile.paypalInvalid') || 'Invalid email'); return; }
     // Require personal data (name + identity document) before PayPal
     const userName = (user as any)?.full_name || '';
     const userDoc = (user as any)?.identity_document || '';
@@ -147,11 +147,11 @@ export default function Profile() {
         { paypal_email: paypalEmail },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      showAlert('Sucesso!', t('profile.paypalSaved') || 'Conta PayPal salva com sucesso!');
+      showAlert(t('general.success'), t('profile.paypalSaved') || 'PayPal account saved!');
       await refreshUser();
       setShowPaypalModal(false);
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao salvar PayPal');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setSavingPaypal(false); }
   };
 
@@ -162,10 +162,10 @@ export default function Profile() {
           `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/delete-paypal`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        showAlert('Sucesso', t('profile.paypalRemoved') || 'Conta PayPal removida com sucesso');
+        showAlert(t('general.success'), t('profile.paypalRemoved') || 'PayPal account removed');
         await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao remover PayPal');
+        showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       }
     };
     if (Platform.OS === 'web') {
@@ -174,7 +174,7 @@ export default function Profile() {
       }
     } else {
       Alert.alert(t('profile.removePaypal') || 'Remover PayPal', t('profile.paypalRemoveConfirm') || 'Tem certeza que deseja remover sua conta PayPal?', [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('general.cancel'), style: 'cancel' },
         { text: 'Remover', style: 'destructive', onPress: doDelete },
       ]);
     }
@@ -209,7 +209,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Erro', 'Não foi possível selecionar a imagem');
+      Alert.alert(t('general.error'), t('general.error'));
     }
   };
 
@@ -224,12 +224,12 @@ export default function Profile() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert('Sucesso!', 'Foto atualizada com sucesso!');
+      Alert.alert(t('general.success'), t('general.success'));
       await refreshUser();
       setShowPhotoModal(false);
       setNewPhoto(null);
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao atualizar foto');
+      Alert.alert(t('general.error'), error.response?.data?.detail || t('general.error'));
     } finally {
       setSavingPhoto(false);
     }
@@ -244,11 +244,11 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (Platform.OS === 'web') window.alert('Foto removida!');
-        else Alert.alert('Sucesso!', 'Foto removida');
+        else Alert.alert(t('general.success'), t('general.success'));
         await refreshUser();
       } catch (error: any) {
-        if (Platform.OS === 'web') window.alert('Erro ao remover foto');
-        else Alert.alert('Erro', 'Erro ao remover foto');
+        if (Platform.OS === 'web') window.alert(t('general.error'));
+        else Alert.alert(t('general.error'), t('general.error'));
       }
     };
 
@@ -260,7 +260,7 @@ export default function Profile() {
         'Remover Foto?',
         'Deseja voltar ao avatar padrão?',
         [
-          { text: 'Cancelar', style: 'cancel' },
+          { text: t('general.cancel'), style: 'cancel' },
           { text: 'Remover', style: 'destructive', onPress: doRemove },
         ]
       );
@@ -275,12 +275,12 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (Platform.OS === 'web') window.alert('Educação removida!');
-        else Alert.alert('Sucesso!', 'Educação removida');
+        else Alert.alert(t('general.success'), t('general.success'));
         await refreshUser();
       } catch (error: any) {
         const msg = error.response?.data?.detail || 'Erro ao remover educação';
         if (Platform.OS === 'web') window.alert(`Erro: ${msg}`);
-        else Alert.alert('Erro', msg);
+        else Alert.alert(t('general.error'), msg);
       }
     };
 
@@ -289,7 +289,7 @@ export default function Profile() {
       if (ok) doDelete();
     } else {
       Alert.alert('Remover Educação?', `Deseja remover "${eduName}" do seu perfil?`, [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('general.cancel'), style: 'cancel' },
         { text: 'Remover', style: 'destructive', onPress: doDelete },
       ]);
     }
@@ -303,12 +303,12 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (Platform.OS === 'web') window.alert('Certificação removida!');
-        else Alert.alert('Sucesso!', 'Certificação removida');
+        else Alert.alert(t('general.success'), t('general.success'));
         await refreshUser();
       } catch (error: any) {
         const msg = error.response?.data?.detail || 'Erro ao remover certificação';
         if (Platform.OS === 'web') window.alert(`Erro: ${msg}`);
-        else Alert.alert('Erro', msg);
+        else Alert.alert(t('general.error'), msg);
       }
     };
 
@@ -317,7 +317,7 @@ export default function Profile() {
       if (ok) doDelete();
     } else {
       Alert.alert('Remover Certificação?', `Deseja remover "${certNameStr}" do seu perfil?`, [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('general.cancel'), style: 'cancel' },
         { text: 'Remover', style: 'destructive', onPress: doDelete },
       ]);
     }
@@ -325,7 +325,7 @@ export default function Profile() {
 
   const handleAddEducation = async () => {
     if (!eduDegree || !eduField || !eduInstitution || !eduYear) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      Alert.alert(t('general.error'), t('general.error'));
       return;
     }
 
@@ -357,13 +357,13 @@ export default function Profile() {
       setEduYear('');
       setEduLevel('2');
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao adicionar educação');
+      Alert.alert(t('general.error'), error.response?.data?.detail || t('general.error'));
     }
   };
 
   const handleAddCertification = async () => {
     if (!certName || !certIssuer) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      Alert.alert(t('general.error'), t('general.error'));
       return;
     }
 
@@ -391,7 +391,7 @@ export default function Profile() {
       setCertIssuer('');
       setCertBoost('5');
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao adicionar certificação');
+      Alert.alert(t('general.error'), error.response?.data?.detail || t('general.error'));
     }
   };
 
@@ -411,7 +411,7 @@ export default function Profile() {
         showAlert('Conta Zerada', t('profile.accountResetSuccess') || 'Sua conta foi zerada com sucesso. Todos os dados do jogo foram reiniciados.');
         await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao zerar conta');
+        showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       }
     };
     if (Platform.OS === 'web') {
@@ -423,7 +423,7 @@ export default function Profile() {
         t('profile.resetAccount') || 'Zerar Conta',
         t('profile.resetConfirmMsg') || 'TEM CERTEZA que deseja ZERAR sua conta? Todos os seus dados do jogo serão apagados permanentemente. Esta ação NÃO pode ser desfeita!',
         [
-          { text: 'Cancelar', style: 'cancel' },
+          { text: t('general.cancel'), style: 'cancel' },
           { text: 'ZERAR TUDO', style: 'destructive', onPress: doReset },
         ]
       );

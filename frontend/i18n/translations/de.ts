@@ -108,6 +108,7 @@ export default {
     security: 'Sicherheit', biometric: 'Biometrische Authentifizierung', biometricUnavailable: 'Biometrie nicht verfügbar', biometricEnabled: 'Biometrisches Login aktiviert', biometricDisabled: 'Biometrisches Login deaktiviert',
     resetAccount: 'Konto zurücksetzen', resetAccountDesc: 'Gesamten Spielfortschritt löschen', resetConfirmTitle: 'Konto zurücksetzen?', resetConfirmMsg: 'Diese Aktion ist unwiderruflich!', resetConfirm: 'Ja, zurücksetzen', resetCancel: 'Abbrechen',
     accountResetSuccess: 'Ihr Konto wurde zurückgesetzt!', biometricHint: 'Zugang zum Spiel schützen',
+    publicProfile: 'Öffentliches Profil', playerNotFound: 'Spieler nicht gefunden', comparison: 'Vergleich', you: 'Du', player: 'Spieler',
   },
   coaching: {
     title: 'KI-Coach', subtitle: 'Dein virtueller Business-Mentor', welcome: 'Hallo',
