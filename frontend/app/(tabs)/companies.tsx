@@ -219,6 +219,45 @@ export default function Companies() {
 
   const hasBoostActive = owned.some(c => c.ad_boost_active);
 
+  // Group franchises under their parent companies
+  const groupedCompanies = React.useMemo(() => {
+    const parents: any[] = [];
+    const franchiseMap: Record<string, any[]> = {};
+
+    // Separate parents and franchises
+    owned.forEach(c => {
+      if (c.is_franchise && c.parent_company_id) {
+        if (!franchiseMap[c.parent_company_id]) franchiseMap[c.parent_company_id] = [];
+        franchiseMap[c.parent_company_id].push(c);
+      } else {
+        parents.push(c);
+      }
+    });
+
+    // Merge franchise data into parent cards
+    return parents.map(p => {
+      const franchises = franchiseMap[p.id] || [];
+      const franchiseCount = franchises.length;
+      const franchiseRevenue = franchises.reduce((sum: number, f: any) => sum + (f.effective_revenue || f.monthly_revenue || 0), 0);
+      const franchiseEmployees = franchises.reduce((sum: number, f: any) => sum + (f.employees || 0), 0);
+      const franchiseCollected = franchises.reduce((sum: number, f: any) => sum + (f.total_collected || 0), 0);
+      const franchiseInvestment = franchises.reduce((sum: number, f: any) => sum + (f.purchase_price || 0), 0);
+
+      return {
+        ...p,
+        _franchiseCount: franchiseCount,
+        _totalRevenue: (p.effective_revenue || 0) + franchiseRevenue,
+        _totalEmployees: (p.employees || 0) + franchiseEmployees,
+        _totalCollected: (p.total_collected || 0) + franchiseCollected,
+        _totalInvestment: (p.purchase_price || 0) + franchiseInvestment,
+      };
+    });
+  }, [owned]);
+
+  // Count for display (parents only, since franchises are grouped)
+  const parentCount = groupedCompanies.length;
+  const totalUnits = owned.length;
+
   if (loading) return (<SafeAreaView style={[s.container, { backgroundColor: colors.background }]}><SkeletonList count={4} style={{ padding: 16 }} /></SafeAreaView>);
 
   return (
@@ -230,7 +269,7 @@ export default function Companies() {
           <TouchableOpacity key={m} style={[s.toggleBtn, viewMode === m && s.toggleActive]} onPress={() => m === 'create' ? setShowCreate(true) : setViewMode(m)}>
             <Ionicons name={m === 'owned' ? 'business' : m === 'offers' ? 'mail' : m === 'buy' ? 'cart' : 'add-circle'} size={16} color={viewMode === m ? '#fff' : '#888'} />
             <Text style={[s.toggleText, viewMode === m && s.toggleTextActive]}>
-              {m === 'owned' ? `${t('companies.mine')} (${owned.length})` : m === 'offers' ? `${t('companies.offers')}${offers.length > 0 ? ` (${offers.length})` : ''}` : m === 'buy' ? t('companies.buy') : t('companies.create')}
+              {m === 'owned' ? `${t('companies.mine')} (${parentCount}${totalUnits > parentCount ? `+${totalUnits - parentCount}` : ''})` : m === 'offers' ? `${t('companies.offers')}${offers.length > 0 ? ` (${offers.length})` : ''}` : m === 'buy' ? t('companies.buy') : t('companies.create')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -272,21 +311,34 @@ export default function Companies() {
           {owned.length === 0 ? (
             <View style={s.empty}><Ionicons name="business-outline" size={64} color="#555" /><Text style={s.emptyTitle}>{t('companies.noCompanies')}</Text><Text style={s.emptySub}>{t('companies.buyFirst')}</Text>
               <TouchableOpacity style={s.goBtn} onPress={() => setViewMode('buy')}><Text style={s.goBtnText}>{t('companies.buy')}</Text></TouchableOpacity></View>
-          ) : owned.map(c => (
+          ) : groupedCompanies.map(c => (
             <View key={c.id} style={[s.companyCard, { borderLeftColor: c.color, borderLeftWidth: 4 }]}>
               <View style={s.companyHeader}>
-                <View style={[s.companyIcon, { backgroundColor: c.color }]}><Ionicons name={c.icon as any} size={20} color="#fff" /></View>
-                <View style={s.companyInfo}><Text style={s.companyName}>{c.name}</Text><Text style={s.companySegment}>{SEGMENT_LABELS[c.segment] || c.segment} • {t('profile.levelLabel')} {c.level || 1}</Text></View>
+                <View style={[s.companyIcon, { backgroundColor: c.color }]}>
+                  <Ionicons name={c.icon as any} size={20} color="#fff" />
+                  {c._franchiseCount > 0 && (
+                    <View style={s.franchiseCountBadge}>
+                      <Text style={s.franchiseCountText}>{1 + c._franchiseCount}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={s.companyInfo}>
+                  <Text style={s.companyName}>{c.name}</Text>
+                  <Text style={s.companySegment}>
+                    {SEGMENT_LABELS[c.segment] || c.segment} • {t('profile.levelLabel')} {c.level || 1}
+                    {c._franchiseCount > 0 ? ` • ${c._franchiseCount} ${c._franchiseCount === 1 ? (t('companies.franchiseSingular') || 'franquia') : (t('companies.franchisePlural') || 'franquias')}` : ''}
+                  </Text>
+                </View>
                 <View style={s.companyRevenue}>
-                  <Text style={s.revText}>{formatMoney(c.effective_revenue || 0)}</Text>
+                  <Text style={s.revText}>{formatMoney(c._totalRevenue)}</Text>
                   <Text style={s.revLabel}>/mês</Text>
                   {c.ad_boost_active && <Text style={s.boostMini}>2x!</Text>}
                 </View>
               </View>
               <Text style={s.companyDesc}>{c.description}</Text>
               <View style={s.companyMeta}>
-                <Text style={s.metaText}>👥 {c.employees} emp.</Text>
-                <Text style={s.metaText}>💰 Total: {formatMoney(c.total_collected || 0)}</Text>
+                <Text style={s.metaText}>👥 {c._totalEmployees} emp.</Text>
+                <Text style={s.metaText}>💰 Total: {formatMoney(c._totalCollected)}</Text>
                 <Text style={s.metaText}>📊 ROI: {c.roi_months || '?'}m</Text>
               </View>
               {/* ROI Progress */}
@@ -298,8 +350,14 @@ export default function Companies() {
                   {c.roi_recovered ? '✅' : `${Math.round(c.roi_progress || 0)}%`}
                 </Text>
               </View>
-              {c.is_franchise && (
-                <View style={s.franchiseBadge}><Ionicons name="git-branch" size={14} color="#9C27B0" /><Text style={s.franchiseBadgeText}>Franquia de {c.parent_company_name}</Text></View>
+              {/* Franchise summary */}
+              {c._franchiseCount > 0 && (
+                <View style={s.franchiseSummary}>
+                  <Ionicons name="git-branch" size={14} color="#9C27B0" />
+                  <Text style={s.franchiseSummaryText}>
+                    {c._franchiseCount} {c._franchiseCount === 1 ? (t('companies.franchiseSingular') || 'franquia') : (t('companies.franchisePlural') || 'franquias')} • {t('companies.invested') || 'Investido'}: {formatMoney(c._totalInvestment)}
+                  </Text>
+                </View>
               )}
               {!c.is_franchise && FRANCHISE_SEGMENTS.includes(c.segment) && (
                 <TouchableOpacity style={[s.franchiseBtn, franchising === c.id && s.disabled]} onPress={() => handleCreateFranchise(c)} disabled={franchising === c.id}>
@@ -508,13 +566,13 @@ export default function Companies() {
           <View style={s.modalHeader}><Text style={s.modalTitle}>{t('companies.merge')}</Text><TouchableOpacity onPress={() => setShowMerge(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
           <Text style={s.modalCost}>Fusão gera +30% de receita! Empresas devem ser do mesmo segmento.</Text>
           <Text style={s.label}>{t('companies.title')}</Text>
-          {owned.map(c => (
+          {owned.filter(c => !c.is_franchise).map(c => (
             <TouchableOpacity key={`m1-${c.id}`} style={[s.mergeOption, mergeFrom === c.id && s.mergeSelected]} onPress={() => setMergeFrom(c.id)}>
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>
             </TouchableOpacity>
           ))}
           <Text style={[s.label, { marginTop: 16 }]}>Empresa para Fundir (mesmo segmento)</Text>
-          {owned.filter(c => c.id !== mergeFrom && (!mergeFrom || c.segment === owned.find(o => o.id === mergeFrom)?.segment)).map(c => (
+          {owned.filter(c => !c.is_franchise && c.id !== mergeFrom && (!mergeFrom || c.segment === owned.find(o => o.id === mergeFrom)?.segment)).map(c => (
             <TouchableOpacity key={`m2-${c.id}`} style={[s.mergeOption, mergeTo === c.id && s.mergeSelected]} onPress={() => setMergeTo(c.id)}>
               <Text style={s.mergeOptionText}>{c.name} ({SEGMENT_LABELS[c.segment]})</Text>
             </TouchableOpacity>
@@ -615,6 +673,10 @@ const s = StyleSheet.create({
   mergeOptionText: { color: '#fff', fontSize: 14 },
   franchiseBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#9C27B015', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   franchiseBadgeText: { color: '#9C27B0', fontSize: 12, fontWeight: '600' },
+  franchiseCountBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#9C27B0', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: '#2a2a2a' },
+  franchiseCountText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  franchiseSummary: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#9C27B012', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#9C27B030' },
+  franchiseSummaryText: { color: '#9C27B0', fontSize: 12, fontWeight: '600' },
   franchiseBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#9C27B0', backgroundColor: '#9C27B010' },
   franchiseBtnText: { color: '#9C27B0', fontSize: 12, fontWeight: 'bold' },
   sellBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F44336', backgroundColor: '#F4433610' },

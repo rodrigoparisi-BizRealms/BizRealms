@@ -40,7 +40,7 @@ export default {
     checkOffers: 'Angebote prüfen', activeOffers: 'aktive(s) Angebot(e)', goodOffer: 'Gutes Angebot', lowOffer: 'Niedriges Angebot',
     neutralOffer: 'Neutrales Angebot', youPaid: 'Du zahltest', offer: 'Angebot', decline: 'Ablehnen', acceptOffer: 'Angebot annehmen',
     merge: 'Firmenfusion', mergeSameSegment: 'gleiches Segment', collect: 'Einnahmen einziehen', revenue: 'Einnahmen',
-    franchises: 'Franchises', companySold: 'Firma verkauft!', sellWarning: 'ACHTUNG: Alle Franchises werden auch verkauft!',
+    franchises: 'Franchises', franchiseSingular: 'Franchise', franchisePlural: 'Franchises', invested: 'Investiert', companySold: 'Firma verkauft!', sellWarning: 'ACHTUNG: Alle Franchises werden auch verkauft!',
     sellConfirm: 'Möchtest du verkaufen', createCompany: 'Firma gründen', companyName: 'Firmenname', segment: 'Segment',
     segments: { restaurante: 'Restaurant', loja: 'Einzelhandel', tecnologia: 'Technologie', fabrica: 'Fabrik', saude: 'Gesundheit', educacao: 'Bildung', entretenimento: 'Unterhaltung', imobiliaria: 'Immobilien', logistica: 'Logistik', agronegocio: 'Agrarwirtschaft' },
     boostAd: 'Werbe-Boost', watchAd: 'Werbung ansehen', price: 'Preis', monthlyRev: 'Monatl. Einnahmen',

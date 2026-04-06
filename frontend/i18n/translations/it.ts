@@ -40,7 +40,7 @@ export default {
     checkOffers: 'Vedi Offerte', activeOffers: 'offerta/e attiva/e', goodOffer: 'Buona Offerta', lowOffer: 'Offerta Bassa',
     neutralOffer: 'Offerta Neutra', youPaid: 'Hai pagato', offer: 'Offerta', decline: 'Rifiuta', acceptOffer: 'Accetta Offerta',
     merge: 'Fusione Aziende', mergeSameSegment: 'stesso segmento', collect: 'Raccogli Entrate', revenue: 'Entrate',
-    franchises: 'Franchising', companySold: 'Azienda Venduta!', sellWarning: 'ATTENZIONE: Tutti i franchising saranno anche venduti!',
+    franchises: 'Franchising', franchiseSingular: 'franchising', franchisePlural: 'franchising', invested: 'Investito', companySold: 'Azienda Venduta!', sellWarning: 'ATTENZIONE: Tutti i franchising saranno anche venduti!',
     sellConfirm: 'Vuoi vendere', createCompany: 'Crea Azienda', companyName: 'Nome', segment: 'Segmento',
     segments: { restaurante: 'Ristorante', loja: 'Negozio', tecnologia: 'Tecnologia', fabrica: 'Fabbrica', saude: 'Sanità', educacao: 'Istruzione', entretenimento: 'Intrattenimento', imobiliaria: 'Immobiliare', logistica: 'Logistica', agronegocio: 'Agroalimentare' },
     boostAd: 'Boost Pubblicità', watchAd: 'Guarda Pubblicità', price: 'Prezzo', monthlyRev: 'Entrate Mensili',
