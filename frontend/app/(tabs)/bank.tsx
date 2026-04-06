@@ -12,6 +12,7 @@ import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -34,6 +35,7 @@ const TRIP_ICONS: Record<string, string> = {
 
 export default function Bank() {
   const { token, user, refreshUser } = useAuth();
+  const { colors } = useTheme();
   const router = useRouter();
   const { play } = useSounds();
   const { trigger: haptic } = useHaptics();
@@ -188,7 +190,7 @@ export default function Bank() {
 
   if (loading) {
     return (
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
         <SkeletonList count={4} style={{ padding: 16 }} />
       </SafeAreaView>
     );
@@ -202,7 +204,7 @@ export default function Bank() {
   const loanLimits = bankData?.loan_limits || {};
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>

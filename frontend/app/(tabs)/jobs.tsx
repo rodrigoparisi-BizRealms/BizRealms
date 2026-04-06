@@ -14,10 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+  const { colors } = useTheme();
 import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 

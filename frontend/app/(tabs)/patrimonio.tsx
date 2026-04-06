@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -18,6 +19,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: stri
 
 export default function Patrimonio() {
   const { token, user, refreshUser } = useAuth();
+  const { colors } = useTheme();
   const [store, setStore] = useState<any[]>([]);
   const [owned, setOwned] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
@@ -123,10 +125,10 @@ export default function Patrimonio() {
 
   const filtered = filterCat === 'all' ? (viewMode === 'store' ? store : owned) : (viewMode === 'store' ? store : owned).filter(a => a.category === filterCat);
 
-  if (loading) return (<SafeAreaView style={s.container}><View style={s.center}><ActivityIndicator size="large" color="#9C27B0" /><Text style={s.loadText}>Carregando patrimônio...</Text></View></SafeAreaView>);
+  if (loading) return (<SafeAreaView style={[s.container, { backgroundColor: colors.background }]}><View style={s.center}><ActivityIndicator size="large" color="#9C27B0" /><Text style={s.loadText}>Carregando patrimônio...</Text></View></SafeAreaView>);
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       <View style={s.header}><Text style={s.title}>Patrimônio</Text><Ionicons name="diamond" size={28} color="#9C27B0" /></View>
 
       {/* Mode Toggle */}

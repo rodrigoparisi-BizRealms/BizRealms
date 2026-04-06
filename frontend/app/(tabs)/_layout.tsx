@@ -5,25 +5,27 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useMusic } from '../../context/MusicContext';
+import { useTheme } from '../../context/ThemeContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 function MiniPlayer() {
   const { activeTrack, isPlaying, stopMusic } = useMusic();
+  const { colors } = useTheme();
 
   if (!activeTrack || !isPlaying) return null;
 
   return (
-    <View style={mp.bar}>
+    <View style={[mp.bar, { backgroundColor: colors.surface, borderTopColor: colors.divider }]}>
       <View style={[mp.dot, { backgroundColor: activeTrack.color }]} />
       <Ionicons name="musical-notes" size={16} color={activeTrack.color} />
-      <Text style={mp.text} numberOfLines={1}>{activeTrack.name}</Text>
+      <Text style={[mp.text, { color: colors.textSecondary }]} numberOfLines={1}>{activeTrack.name}</Text>
       <View style={mp.eq}>
         <View style={[mp.eqBar, { height: 8, backgroundColor: activeTrack.color }]} />
         <View style={[mp.eqBar, { height: 14, backgroundColor: activeTrack.color }]} />
         <View style={[mp.eqBar, { height: 6, backgroundColor: activeTrack.color }]} />
       </View>
-      <TouchableOpacity onPress={stopMusic} style={mp.closeBtn}>
-        <Ionicons name="close" size={16} color="#888" />
+      <TouchableOpacity onPress={stopMusic} style={[mp.closeBtn, { backgroundColor: colors.inputBg }]}>
+        <Ionicons name="close" size={16} color={colors.textMuted} />
       </TouchableOpacity>
     </View>
   );
@@ -50,25 +52,26 @@ const mp = StyleSheet.create({
 export default function TabsLayout() {
   const { t } = useLanguage();
   const { token } = useAuth();
+  const { colors, isDark } = useTheme();
   
   // Register for push notifications when user is authenticated
   usePushNotifications(token);
   
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1 }}>
         <Tabs
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: '#2a2a2a',
-              borderTopColor: '#3a3a3a',
+              backgroundColor: colors.tabBar,
+              borderTopColor: colors.tabBarBorder,
               height: 58,
               paddingBottom: 6,
               paddingTop: 4,
             },
-            tabBarActiveTintColor: '#4CAF50',
-            tabBarInactiveTintColor: '#666',
+            tabBarActiveTintColor: colors.accent,
+            tabBarInactiveTintColor: colors.textMuted,
             tabBarLabelStyle: {
               fontSize: 9,
               fontWeight: '600',

@@ -11,6 +11,7 @@ import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -23,6 +24,7 @@ const SEGMENT_LABELS: Record<string, string> = {
 
 export default function Companies() {
   const { token, user, refreshUser } = useAuth();
+  const { colors } = useTheme();
   const [available, setAvailable] = useState<any[]>([]);
   const [owned, setOwned] = useState<any[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -212,10 +214,10 @@ export default function Companies() {
 
   const hasBoostActive = owned.some(c => c.ad_boost_active);
 
-  if (loading) return (<SafeAreaView style={s.container}><SkeletonList count={4} style={{ padding: 16 }} /></SafeAreaView>);
+  if (loading) return (<SafeAreaView style={[s.container, { backgroundColor: colors.background }]}><SkeletonList count={4} style={{ padding: 16 }} /></SafeAreaView>);
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       <View style={s.header}><Text style={s.title}>{t('companies.title')}</Text><Ionicons name="business" size={28} color="#4CAF50" /></View>
       {/* Mode Toggle */}
       <View style={s.toggle}>

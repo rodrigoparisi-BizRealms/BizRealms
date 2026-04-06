@@ -21,6 +21,7 @@ import { SkeletonStats, SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
 import { CacheService } from '../../services/CacheService';
 import { useNetwork } from '../../context/NetworkContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -42,6 +43,7 @@ export default function Home() {
   const { play } = useSounds();
   const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
+  const { colors } = useTheme();
   const fm = (v: number) => formatMoney(v, true);
   const [stats, setStats] = useState<any>(null);
   const [portfolio, setPortfolio] = useState<any>(null);
@@ -148,7 +150,7 @@ export default function Home() {
   const assetsProfit = assets?.summary?.total_profit || 0;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={

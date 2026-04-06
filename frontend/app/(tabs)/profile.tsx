@@ -23,10 +23,13 @@ import * as ImagePicker from 'expo-image-picker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+import { useTheme } from '../../context/ThemeContext';
+
 export default function Profile() {
   const { user, token, logout, refreshUser } = useAuth();
   const { locale, setLocale, languages, t, formatMoney } = useLanguage();
   const { activeTrack, isPlaying, playTrack, togglePlay, stopMusic, musicEnabled, setMusicEnabled, nextTrack } = useMusic();
+  const { isDark, colors, toggleTheme } = useTheme();
   const router = useRouter();
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -403,10 +406,10 @@ export default function Profile() {
   const avatarPhoto = (user as any).avatar_photo;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header with Avatar */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.card }]}>
           <TouchableOpacity style={styles.avatarWrapper} onPress={handleChangePhoto}>
             {avatarPhoto ? (
               <Image source={{ uri: avatarPhoto }} style={styles.avatarImage} />
@@ -668,6 +671,32 @@ export default function Profile() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Theme Toggle Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name={isDark ? 'moon' : 'sunny'} size={22} color={isDark ? '#9C27B0' : '#FF9800'} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.theme') || 'Tema'}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? '#2a2a4a' : '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={isDark ? 'moon' : 'sunny'} size={22} color={isDark ? '#BB86FC' : '#FF9800'} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{isDark ? (t('profile.darkMode') || 'Modo Escuro') : (t('profile.lightMode') || 'Modo Claro')}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{t('profile.tapToSwitch') || 'Toque para alternar'}</Text>
+              </View>
+            </View>
+            <View style={{ width: 52, height: 30, borderRadius: 15, backgroundColor: isDark ? '#BB86FC' : '#FF9800', justifyContent: 'center', paddingHorizontal: 3 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignSelf: isDark ? 'flex-end' : 'flex-start' }} />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* PayPal Account Section */}

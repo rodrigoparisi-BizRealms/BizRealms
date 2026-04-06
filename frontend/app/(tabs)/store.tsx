@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -22,6 +23,7 @@ const CATEGORY_CFG: Record<string, { label: string; icon: string; color: string 
 
 export default function Store() {
   const { token, user, refreshUser } = useAuth();
+  const { colors } = useTheme();
   const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const [items, setItems] = useState<any[]>([]);
@@ -172,13 +174,13 @@ export default function Store() {
   };
 
   if (loading) return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       <SkeletonList count={4} style={{ padding: 16 }} />
     </SafeAreaView>
   );
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={s.header}>
         <View>

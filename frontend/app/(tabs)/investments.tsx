@@ -19,9 +19,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polyline } from 'react-native-svg';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+  const { colors } = useTheme();
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

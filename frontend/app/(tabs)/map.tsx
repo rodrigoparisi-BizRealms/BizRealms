@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+  const { colors } = useTheme();
+import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
