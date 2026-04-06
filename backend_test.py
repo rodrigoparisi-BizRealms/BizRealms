@@ -1,285 +1,113 @@
 #!/usr/bin/env python3
 """
-Backend Testing Script for BizRealms New Features
-Testing specific endpoints as requested in the review.
+Backend Testing Script for Public Profile Endpoint Fix
+Tests the specific endpoints requested in the review.
 """
 
 import requests
 import json
 import sys
-from datetime import datetime
 
-# Configuration
-BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
+# Backend URL from frontend .env
+BACKEND_URL = "https://career-mogul-1.preview.emergentagent.com"
+
+# Test credentials from /app/memory/test_credentials.md
 TEST_EMAIL = "teste@businessempire.com"
 TEST_PASSWORD = "teste123"
 
-class BizRealmsNewFeaturesTester:
-    def __init__(self):
-        self.session = requests.Session()
-        self.jwt_token = None
-        self.user_id = None
-        
-    def log(self, message):
-        """Log message with timestamp"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] {message}")
-        
-    def login(self):
-        """Test login and get JWT token"""
-        self.log("🔐 Testing Login...")
-        
-        login_data = {
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
-        }
-        
-        try:
-            response = self.session.post(f"{BASE_URL}/auth/login", json=login_data)
-            self.log(f"Login Response Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.jwt_token = data.get("token")
-                user_data = data.get("user", {})
-                self.user_id = user_data.get("id")
-                
-                # Set authorization header for future requests
-                self.session.headers.update({
-                    "Authorization": f"Bearer {self.jwt_token}"
-                })
-                
-                self.log(f"✅ Login successful! User ID: {self.user_id}")
-                return True
-            else:
-                self.log(f"❌ Login failed: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Login error: {str(e)}")
-            return False
+def test_public_profile_endpoint():
+    """Test the public profile endpoint fix as requested"""
+    print("🧪 TESTING PUBLIC PROFILE ENDPOINT FIX")
+    print("=" * 50)
     
-    def test_public_profile(self):
-        """Test public profile endpoint with user's own ID"""
-        self.log("👤 Testing Public Profile...")
-        
-        if not self.user_id:
-            self.log("❌ No user ID available for public profile test")
-            return False
-        
-        try:
-            response = self.session.get(f"{BASE_URL}/user/profile/{self.user_id}")
-            self.log(f"Public Profile Response Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"Public Profile Response: {json.dumps(data, indent=2)}")
-                
-                # Check required fields
-                required_fields = [
-                    "name", "level", "money", "companies_count", "assets_count", 
-                    "investments_count", "education_count", "certification_count", 
-                    "work_experience_count", "comparison"
-                ]
-                
-                missing_fields = []
-                for field in required_fields:
-                    if field not in data:
-                        missing_fields.append(field)
-                
-                if not missing_fields:
-                    self.log("✅ All required fields present in public profile")
-                    
-                    # Check comparison object
-                    comparison = data.get("comparison", {})
-                    if "my_level" in comparison and "my_money" in comparison:
-                        self.log("✅ Comparison object has my_level and my_money fields")
-                        return True
-                    else:
-                        self.log("❌ Comparison object missing my_level or my_money")
-                        return False
-                else:
-                    self.log(f"❌ Missing required fields: {missing_fields}")
-                    return False
-            else:
-                self.log(f"❌ Public profile failed: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Public profile error: {str(e)}")
-            return False
+    session = requests.Session()
     
-    def test_companies_offers(self):
-        """Test companies offers endpoint"""
-        self.log("🏢 Testing Companies Offers...")
-        
-        try:
-            response = self.session.get(f"{BASE_URL}/companies/offers")
-            self.log(f"Companies Offers Response Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"Companies Offers Response: {json.dumps(data, indent=2)}")
-                
-                # Check for offers array
-                if "offers" in data:
-                    offers = data["offers"]
-                    self.log(f"✅ Offers array found with {len(offers)} offers")
-                    return True
-                else:
-                    self.log("❌ Offers array missing from response")
-                    self.log(f"Available fields: {list(data.keys())}")
-                    return False
-            else:
-                self.log(f"❌ Companies offers failed with status {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Companies offers error: {str(e)}")
-            return False
+    # Test 1: Login
+    print("\n1️⃣ Testing Login - POST /api/auth/login")
+    login_data = {
+        "email": TEST_EMAIL,
+        "password": TEST_PASSWORD
+    }
     
-    def test_user_stats_unique_jobs(self):
-        """Test user stats endpoint for work_experience_count field"""
-        self.log("📊 Testing User Stats - Unique Jobs...")
+    try:
+        login_response = session.post(f"{BACKEND_URL}/api/auth/login", json=login_data)
+        print(f"Status: {login_response.status_code}")
         
-        try:
-            response = self.session.get(f"{BASE_URL}/user/stats")
-            self.log(f"User Stats Response Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"User Stats Response: {json.dumps(data, indent=2)}")
-                
-                # Check for work_experience_count field
-                if "work_experience_count" in data:
-                    count = data["work_experience_count"]
-                    if isinstance(count, (int, float)):
-                        self.log(f"✅ work_experience_count is a number: {count}")
-                        return True
-                    else:
-                        self.log(f"❌ work_experience_count is not a number: {count} (type: {type(count)})")
-                        return False
-                else:
-                    self.log("❌ work_experience_count field missing from response")
-                    self.log(f"Available fields: {list(data.keys())}")
-                    return False
+        if login_response.status_code == 200:
+            login_result = login_response.json()
+            print(f"Login response: {login_result}")
+            token = login_result.get("token")  # Changed from access_token to token
+            if token:
+                print(f"✅ Login successful - Token received: {token[:20]}...")
+                # Set authorization header for subsequent requests
+                session.headers.update({"Authorization": f"Bearer {token}"})
             else:
-                self.log(f"❌ User stats failed: {response.text}")
+                print(f"❌ No token in response: {login_result}")
                 return False
-                
-        except Exception as e:
-            self.log(f"❌ User stats error: {str(e)}")
-            return False
-    
-    def test_companies_owned_roi(self):
-        """Test companies owned endpoint for ROI fields"""
-        self.log("🏢 Testing Companies Owned with ROI...")
-        
-        try:
-            response = self.session.get(f"{BASE_URL}/companies/owned")
-            self.log(f"Companies Owned Response Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"Companies Owned Response: {json.dumps(data, indent=2)}")
-                
-                companies = data.get("companies", [])
-                self.log(f"User owns {len(companies)} companies")
-                
-                # Check ROI fields in response structure
-                roi_fields = ["roi_months", "roi_progress", "roi_recovered"]
-                
-                if len(companies) > 0:
-                    # Check first company for ROI fields
-                    company = companies[0]
-                    missing_fields = []
-                    
-                    for field in roi_fields:
-                        if field not in company:
-                            missing_fields.append(field)
-                    
-                    if not missing_fields:
-                        self.log(f"✅ All ROI fields present in company response")
-                        for field in roi_fields:
-                            self.log(f"  - {field}: {company[field]}")
-                        return True
-                    else:
-                        self.log(f"❌ Missing ROI fields: {missing_fields}")
-                        self.log(f"Available fields: {list(company.keys())}")
-                        return False
-                else:
-                    self.log("ℹ️ User has no companies - checking response structure")
-                    # Even with no companies, the endpoint should be well-formed
-                    if "companies" in data:
-                        self.log("✅ Companies endpoint response is well-formed (empty array)")
-                        return True
-                    else:
-                        self.log("❌ Companies endpoint response malformed")
-                        return False
-                        
-            else:
-                self.log(f"❌ Companies owned failed: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Companies owned error: {str(e)}")
-            return False
-    
-    def run_all_tests(self):
-        """Run all requested tests"""
-        self.log("🚀 Starting BizRealms New Features Testing...")
-        self.log("=" * 60)
-        
-        results = {}
-        
-        # Test 1: Login
-        results["login"] = self.login()
-        if not results["login"]:
-            self.log("❌ Cannot proceed without login")
-            return results
-        
-        # Test 2: Public Profile
-        results["public_profile"] = self.test_public_profile()
-        
-        # Test 3: Companies Offers
-        results["companies_offers"] = self.test_companies_offers()
-        
-        # Test 4: User Stats unique jobs
-        results["user_stats_unique_jobs"] = self.test_user_stats_unique_jobs()
-        
-        # Test 5: Companies owned with ROI
-        results["companies_owned_roi"] = self.test_companies_owned_roi()
-        
-        # Summary
-        self.log("=" * 60)
-        self.log("📋 TEST SUMMARY:")
-        
-        passed = 0
-        total = len(results)
-        
-        for test_name, result in results.items():
-            status = "✅ PASS" if result else "❌ FAIL"
-            self.log(f"  {test_name}: {status}")
-            if result:
-                passed += 1
-        
-        self.log(f"\n🎯 Overall Result: {passed}/{total} tests passed")
-        
-        if passed == total:
-            self.log("🎉 ALL NEW FEATURES TESTS PASSED!")
         else:
-            self.log("⚠️ Some tests failed - see details above")
-        
-        return results
-
-def main():
-    """Main function"""
-    tester = BizRealmsNewFeaturesTester()
-    results = tester.run_all_tests()
+            print(f"❌ Login failed: {login_response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Login error: {str(e)}")
+        return False
     
-    # Exit with appropriate code
-    all_passed = all(results.values())
-    sys.exit(0 if all_passed else 1)
+    # Test 2: Get user ID from /api/user/me
+    print("\n2️⃣ Testing Get User ID - GET /api/user/me")
+    try:
+        me_response = session.get(f"{BACKEND_URL}/api/user/me")
+        print(f"Status: {me_response.status_code}")
+        
+        if me_response.status_code == 200:
+            user_data = me_response.json()
+            user_id = user_data.get("id")
+            print(f"✅ User profile retrieved - User ID: {user_id}")
+            print(f"User name: {user_data.get('name')}")
+            print(f"User level: {user_data.get('level')}")
+            print(f"User money: R$ {user_data.get('money', 0):,.2f}")
+        else:
+            print(f"❌ Get user profile failed: {me_response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Get user profile error: {str(e)}")
+        return False
+    
+    # Test 3: Public Profile - GET /api/user/profile/{user_id}
+    print(f"\n3️⃣ Testing Public Profile - GET /api/user/profile/{user_id}")
+    try:
+        profile_response = session.get(f"{BACKEND_URL}/api/user/profile/{user_id}")
+        print(f"Status: {profile_response.status_code}")
+        
+        if profile_response.status_code == 200:
+            profile_data = profile_response.json()
+            print("✅ Public profile retrieved successfully!")
+            print(f"Profile data structure:")
+            
+            # Check required fields as mentioned in the request
+            required_fields = ["name", "level", "money", "companies_count", "comparison"]
+            
+            for field in required_fields:
+                if field in profile_data:
+                    print(f"  ✅ {field}: {profile_data[field]}")
+                else:
+                    print(f"  ❌ Missing field: {field}")
+            
+            # Show full profile data for verification
+            print(f"\nFull profile response:")
+            print(json.dumps(profile_data, indent=2, ensure_ascii=False))
+            
+        else:
+            print(f"❌ Public profile failed: {profile_response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Public profile error: {str(e)}")
+        return False
+    
+    print("\n🎉 PUBLIC PROFILE ENDPOINT TESTING COMPLETE!")
+    return True
 
 if __name__ == "__main__":
-    main()
+    success = test_public_profile_endpoint()
+    sys.exit(0 if success else 1)

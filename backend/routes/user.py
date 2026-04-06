@@ -184,7 +184,7 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
 async def get_public_profile(user_id: str, current_user: dict = Depends(get_current_user)):
     """Get a public player profile for comparison"""
     try:
-        target_user = await db.users.find_one({"_id": ObjectId(user_id)})
+        target_user = await db.users.find_one({"id": user_id})
     except Exception:
         raise HTTPException(status_code=404, detail="Jogador não encontrado")
     
@@ -192,15 +192,16 @@ async def get_public_profile(user_id: str, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=404, detail="Jogador não encontrado")
     
     # Count companies
-    companies = await db.companies.count_documents({"user_id": str(target_user["_id"])})
+    uid = target_user.get("id", str(target_user.get("_id", "")))
+    companies = await db.user_companies.count_documents({"user_id": uid})
     # Count assets
-    assets = await db.assets.count_documents({"user_id": str(target_user["_id"])})
+    assets = await db.user_assets.count_documents({"user_id": uid})
     # Count investments
-    investments = await db.investments.count_documents({"user_id": str(target_user["_id"])})
+    investments = await db.user_investments.count_documents({"user_id": uid})
     
     # Build public profile (no sensitive data)
     return {
-        "id": str(target_user["_id"]),
+        "id": uid,
         "name": target_user.get("name", "Jogador"),
         "avatar_color": target_user.get("avatar_color", "#4CAF50"),
         "level": target_user.get("level", 1),
