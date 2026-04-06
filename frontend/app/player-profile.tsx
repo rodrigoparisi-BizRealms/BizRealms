@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -13,6 +14,7 @@ export default function PlayerProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
   const { t, formatMoney } = useLanguage();
+  const { colors } = useTheme();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function PlayerProfile() {
 
   if (loading) {
     return (
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
         <View style={s.header}>
           <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -70,7 +72,7 @@ export default function PlayerProfile() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
         <View style={s.header}>
           <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -84,7 +86,7 @@ export default function PlayerProfile() {
   }
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -154,7 +156,7 @@ export default function PlayerProfile() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },

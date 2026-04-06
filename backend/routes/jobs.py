@@ -395,7 +395,7 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
             {'_id': current_job['_id']},
             {'$set': {'salary': new_salary}}
         )
-        promotion_message = f"Promoção! Seu salário aumentou para R$ {new_salary:.2f}/mês!"
+        promotion_message = f"Promoção! Seu salário aumentou para $ {new_salary:.2f}/mês!"
     
     return {
         "message": f"Você coletou seus ganhos de {days_elapsed:.1f} dias de trabalho!",

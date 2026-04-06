@@ -386,7 +386,7 @@ async def claim_competition_rewards(data: dict, current_user: dict = Depends(get
         "user_id": uid,
         "type": "competition_reward",
         "title": f"🏆 {comp.get('title', 'Competição')}: {reward['label']}!",
-        "message": f"Você ganhou R$ {reward.get('money', 0)} + {reward.get('xp', 0)} XP!",
+        "message": f"Você ganhou $ {reward.get('money', 0)} + {reward.get('xp', 0)} XP!",
         "read": False,
         "created_at": datetime.utcnow(),
     })
@@ -395,7 +395,7 @@ async def claim_competition_rewards(data: dict, current_user: dict = Depends(get
         "success": True,
         "position": my_position,
         "reward": reward,
-        "message": f"Parabéns! {reward['label']} - R$ {reward.get('money', 0)} + {reward.get('xp', 0)} XP!",
+        "message": f"Parabéns! {reward['label']} - $ {reward.get('money', 0)} + {reward.get('xp', 0)} XP!",
     }
 
 

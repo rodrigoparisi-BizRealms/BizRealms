@@ -169,7 +169,7 @@ export default function PrestigeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
@@ -177,12 +177,12 @@ export default function PrestigeScreen() {
       >
         {/* Back button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-          <Text style={styles.backText}>Prestígio</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Text style={[styles.backText, { color: colors.text }]}>Prestígio</Text>
         </TouchableOpacity>
 
         {/* Tier Card */}
-        <View style={[styles.tierCard, { borderColor: tier.color + '50' }]}>
+        <View style={[styles.tierCard, { borderColor: tier.color + '50', backgroundColor: colors.card }]}>
           <Text style={styles.tierEmoji}>{tier.emoji}</Text>
           <Text style={[styles.tierName, { color: tier.color }]}>{tier.name}</Text>
           <View style={styles.tierStats}>
@@ -227,7 +227,7 @@ export default function PrestigeScreen() {
                 <Text style={styles.resetBtnSub}>
                   {(status?.potential_points || 0) > 0
                     ? `+${status.potential_points} pontos (NW: ${formatMoney(status.current_net_worth)})`
-                    : 'Patrimônio mínimo: R$ 10.000'}
+                    : 'Patrimônio mínimo: $ 10.000'}
                 </Text>
               </View>
             </>
@@ -240,25 +240,26 @@ export default function PrestigeScreen() {
           return (
             <View key={cat} style={styles.perkCategory}>
               <View style={styles.perkCatHeader}>
-                <Ionicons name={info.icon as any} size={16} color="#aaa" />
-                <Text style={styles.perkCatTitle}>{info.label}</Text>
+                <Ionicons name={info.icon as any} size={16} color={colors.textSecondary} />
+                <Text style={[styles.perkCatTitle, { color: colors.textSecondary }]}>{info.label}</Text>
               </View>
               {catPerks.map(perk => {
                 const isBuying = buying === perk.id;
                 return (
                   <View key={perk.id} style={[
                     styles.perkCard,
+                    { backgroundColor: colors.card, borderColor: colors.border },
                     perk.owned && styles.perkCardOwned,
                     !perk.available && !perk.owned && styles.perkCardLocked,
                   ]}>
                     <View style={styles.perkHeader}>
                       <Text style={{ fontSize: 20 }}>{perk.emoji}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.perkName, perk.owned && { color: '#4CAF50' }]}>
+                        <Text style={[styles.perkName, { color: colors.text }, perk.owned && { color: '#4CAF50' }]}>
                           {perk.name}
                           {perk.owned ? ' ✓' : ''}
                         </Text>
-                        <Text style={styles.perkDesc}>{perk.description}</Text>
+                        <Text style={[styles.perkDesc, { color: colors.textSecondary }]}>{perk.description}</Text>
                       </View>
                       {perk.owned ? (
                         <View style={styles.perkOwnedBadge}>
@@ -278,8 +279,8 @@ export default function PrestigeScreen() {
                           )}
                         </TouchableOpacity>
                       ) : (
-                        <View style={styles.perkLockedBadge}>
-                          <Text style={styles.perkLockedText}>{perk.cost} pts</Text>
+                        <View style={[styles.perkLockedBadge, { backgroundColor: colors.border }]}>
+                          <Text style={[styles.perkLockedText, { color: colors.textSecondary }]}>{perk.cost} pts</Text>
                         </View>
                       )}
                     </View>
@@ -301,12 +302,11 @@ export default function PrestigeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  backText: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  backText: { fontSize: 20, fontWeight: 'bold' },
   tierCard: {
-    backgroundColor: '#1e1e1e',
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
@@ -317,10 +317,10 @@ const styles = StyleSheet.create({
   tierName: { fontSize: 24, fontWeight: 'bold', marginTop: 4 },
   tierStats: { flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 16 },
   tierStat: { alignItems: 'center' },
-  tierStatValue: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  tierStatLabel: { fontSize: 11, color: '#888', marginTop: 2 },
+  tierStatValue: { fontSize: 20, fontWeight: 'bold' },
+  tierStatLabel: { fontSize: 11, marginTop: 2 },
   tierStatDivider: { width: 1, height: 30 },
-  nextTierText: { fontSize: 12, color: '#888', marginTop: 12 },
+  nextTierText: { fontSize: 12, marginTop: 12 },
   resetBtn: {
     backgroundColor: '#FFD700',
     borderRadius: 14,
@@ -334,25 +334,23 @@ const styles = StyleSheet.create({
   resetBtnSub: { fontSize: 12, color: '#333', marginTop: 1 },
   perkCategory: { marginBottom: 16 },
   perkCatHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  perkCatTitle: { fontSize: 14, fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 },
+  perkCatTitle: { fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   perkCard: {
-    backgroundColor: '#2a2a2a',
     borderRadius: 14,
     padding: 14,
     marginBottom: 6,
     borderWidth: 1,
-    borderColor: '#3a3a3a',
   },
   perkCardOwned: { borderColor: '#4CAF5050' },
   perkCardLocked: { opacity: 0.5 },
   perkHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  perkName: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  perkDesc: { fontSize: 12, color: '#888', marginTop: 2 },
+  perkName: { fontSize: 15, fontWeight: '600' },
+  perkDesc: { fontSize: 12, marginTop: 2 },
   perkOwnedBadge: { backgroundColor: 'rgba(76,175,80,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   perkOwnedText: { fontSize: 11, color: '#4CAF50', fontWeight: '700' },
   perkBuyBtn: { backgroundColor: '#FFD700', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, minWidth: 60, alignItems: 'center' },
   perkBuyText: { fontSize: 12, fontWeight: '700', color: '#000' },
-  perkLockedBadge: { backgroundColor: '#3a3a3a', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  perkLockedText: { fontSize: 11, color: '#666', fontWeight: '600' },
+  perkLockedBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  perkLockedText: { fontSize: 11, fontWeight: '600' },
   perkReq: { fontSize: 10, color: '#F44336', marginTop: 4, marginLeft: 30 },
 });

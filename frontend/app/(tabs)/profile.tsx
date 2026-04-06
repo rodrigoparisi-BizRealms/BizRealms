@@ -611,14 +611,14 @@ export default function Profile() {
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                             <Ionicons name="cash" size={14} color="#FFD700" />
                             <Text style={{ color: '#aaa', fontSize: 12 }}>
-                              R$ {totalSalary.toLocaleString('pt-BR')}/mês total
+                              $ {totalSalary.toLocaleString('en-US')}/mês total
                             </Text>
                           </View>
                           {totalXp > 0 && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                               <Ionicons name="star" size={14} color="#FF9800" />
                               <Text style={{ color: '#aaa', fontSize: 12 }}>
-                                {totalXp.toLocaleString('pt-BR')} XP
+                                {totalXp.toLocaleString('en-US')} XP
                               </Text>
                             </View>
                           )}

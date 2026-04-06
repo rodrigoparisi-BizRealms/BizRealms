@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -64,6 +65,7 @@ const SEVERITY_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function CrisisModal({ visible, crisis, onResolve, onClose }: CrisisModalProps) {
   const { formatMoney } = useLanguage();
+  const { colors } = useTheme();
   const [resolving, setResolving] = useState<string | null>(null);
   const [result, setResult] = useState<CrisisResult | null>(null);
 
@@ -93,7 +95,7 @@ export default function CrisisModal({ visible, crisis, onResolve, onClose }: Cri
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
       <View style={styles.overlay}>
-        <View style={[styles.container, { borderColor: crisis.color + '80' }]}>
+        <View style={[styles.container, { borderColor: crisis.color + '80', backgroundColor: colors.card }]}>
           {/* Danger Header */}
           <View style={[styles.header, { backgroundColor: crisis.color + '20' }]}>
             <View style={styles.headerTop}>

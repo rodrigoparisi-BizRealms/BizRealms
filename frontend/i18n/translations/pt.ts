@@ -82,7 +82,7 @@ export default {
     payBill: 'Pagar Fatura',
     loan: 'Empréstimo',
     milesProgram: 'Programa de Milhas',
-    milesHint: 'Ganhe 1 milha a cada R$ 1 gasto no cartão',
+    milesHint: 'Ganhe 1 milha a cada $ 1 gasto no cartão',
     redeem: 'Resgatar',
     insufficient: 'Insuficiente',
     creditLimits: 'Limites de Crédito',
@@ -606,7 +606,7 @@ export default {
   },
   // Currency
   currency: {
-    symbol: 'R$',
+    symbol: '$',
     code: 'BRL',
   },
 };

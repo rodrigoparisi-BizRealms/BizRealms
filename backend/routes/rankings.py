@@ -193,7 +193,7 @@ async def get_rankings(
         "prizes": [
             {"position": 1, "icon": "star", "color": "#FFD700", "description": "+50.000 XP", "type": "xp"},
             {"position": 2, "icon": "flash", "color": "#C0C0C0", "description": "Boost 5x por 24h", "type": "boost"},
-            {"position": 3, "icon": "cash", "color": "#CD7F32", "description": "+R$ 25.000", "type": "money"},
+            {"position": 3, "icon": "cash", "color": "#CD7F32", "description": "+$ 25.000", "type": "money"},
         ],
     }
 
@@ -201,7 +201,7 @@ async def get_rankings(
 WEEKLY_PRIZES = {
     1: {"type": "xp", "value": 50000, "description": "+50.000 XP de experiência"},
     2: {"type": "boost", "multiplier": 5.0, "duration_hours": 24, "description": "Boost 5x nos ganhos por 24 horas"},
-    3: {"type": "money", "value": 25000, "description": "+R$ 25.000 em dinheiro do jogo"},
+    3: {"type": "money", "value": 25000, "description": "+$ 25.000 em dinheiro do jogo"},
 }
 
 
@@ -313,7 +313,7 @@ async def claim_ranking_reward(current_user: dict = Depends(get_current_user)):
         money_amount = prize_data.get('value', 25000)
         new_money = user.get('money', 0) + money_amount
         update_ops['money'] = new_money
-        messages.append(f"+R$ {money_amount:,.0f} adicionados à sua conta!")
+        messages.append(f"+$ {money_amount:,.0f} adicionados à sua conta!")
 
     elif prize_type == 'boost':
         multiplier = prize_data.get('multiplier', 5.0)
@@ -370,7 +370,7 @@ async def get_prize_pool(current_user: dict = Depends(get_current_user)):
     current_month = now.strftime("%Y-%m")
     
     # Simulated ad revenue (in production, this comes from real ad network)
-    # Base: R$ 5000/month simulated ad revenue, 5% goes to prize pool
+    # Base: $ 5000/month simulated ad revenue, 5% goes to prize pool
     total_players = await db.users.count_documents({})
     base_revenue = 5000 + (total_players * 50)  # More players = more ad revenue
     prize_pool_total = round(base_revenue * 0.05, 2)  # 5% of ad revenue
@@ -530,7 +530,7 @@ async def distribute_monthly_rewards(current_user: dict = Depends(get_current_us
         }
         await db.real_money_rewards.insert_one(reward)
     
-    return {"success": True, "message": f"Premiação de {current_month} distribuída! Pool: R$ {prize_pool_total:.2f}"}
+    return {"success": True, "message": f"Premiação de {current_month} distribuída! Pool: $ {prize_pool_total:.2f}"}
 
 
 @router.post("/rewards/claim-real")
@@ -563,7 +563,7 @@ async def claim_real_money_reward(request: dict, current_user: dict = Depends(ge
     
     return {
         "success": True,
-        "message": f"Resgate de R$ {reward['amount']:.2f} solicitado!\n\nPagamento será enviado para seu PayPal: {user.get('paypal_email', '')}\n\nPrazo: até 5 dias úteis.",
+        "message": f"Resgate de $ {reward['amount']:.2f} solicitado!\n\nPagamento será enviado para seu PayPal: {user.get('paypal_email', '')}\n\nPrazo: até 5 dias úteis.",
         "amount": reward['amount'],
         "position": reward['position'],
     }

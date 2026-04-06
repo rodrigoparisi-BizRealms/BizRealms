@@ -144,8 +144,8 @@ function PriceChart({ data, width, height }: { data: AssetHistory[]; width: numb
         />
       </Svg>
       <View style={chartStyles.labels}>
-        <Text style={chartStyles.labelText}>R$ {min.toFixed(2)}</Text>
-        <Text style={chartStyles.labelText}>R$ {max.toFixed(2)}</Text>
+        <Text style={chartStyles.labelText}>$ {min.toFixed(2)}</Text>
+        <Text style={chartStyles.labelText}>$ {max.toFixed(2)}</Text>
       </View>
     </View>
   );

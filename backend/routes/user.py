@@ -230,7 +230,7 @@ async def get_backgrounds():
             "id": "ex-militar",
             "name": "Ex-Militar",
             "description": "Disciplina e liderança forjadas no campo de batalha",
-            "money_bonus": -200,  # Começa com R$ 800
+            "money_bonus": -200,  # Começa com $ 800
             "skill_bonuses": {"liderança": 2, "negociação": 1},
             "xp_multiplier": 1.0
         },
@@ -238,7 +238,7 @@ async def get_backgrounds():
             "id": "universitario",
             "name": "Universitário",
             "description": "Conhecimento técnico e acadêmico",
-            "money_bonus": -500,  # Começa com R$ 500
+            "money_bonus": -500,  # Começa com $ 500
             "skill_bonuses": {"técnico": 2, "comunicação": 1},
             "xp_multiplier": 1.0
         },
@@ -246,7 +246,7 @@ async def get_backgrounds():
             "id": "herdeiro",
             "name": "Herdeiro",
             "description": "Nascido em berço de ouro, mas com muito a provar",
-            "money_bonus": 4000,  # Começa com R$ 5.000
+            "money_bonus": 4000,  # Começa com $ 5.000
             "skill_bonuses": {"financeiro": 1},
             "xp_multiplier": 0.8  # Ganha menos XP de trabalho
         },
@@ -254,7 +254,7 @@ async def get_backgrounds():
             "id": "empreendedor",
             "name": "Empreendedor",
             "description": "Visão de negócios e networking",
-            "money_bonus": 1000,  # Começa com R$ 2.000
+            "money_bonus": 1000,  # Começa com $ 2.000
             "skill_bonuses": {"negociação": 2, "liderança": 1},
             "xp_multiplier": 1.0
         },
@@ -262,7 +262,7 @@ async def get_backgrounds():
             "id": "autodidata",
             "name": "Autodidata",
             "description": "Aprendeu tudo sozinho, aprende rápido",
-            "money_bonus": -400,  # Começa com R$ 600
+            "money_bonus": -400,  # Começa com $ 600
             "skill_bonuses": {"técnico": 1},
             "xp_multiplier": 1.5  # Ganha 50% mais XP
         },
@@ -270,7 +270,7 @@ async def get_backgrounds():
             "id": "trabalhador",
             "name": "Trabalhador",
             "description": "Experiência prática e determinação",
-            "money_bonus": 0,  # Começa com R$ 1.000
+            "money_bonus": 0,  # Começa com $ 1.000
             "skill_bonuses": {"liderança": 1, "comunicação": 1},
             "xp_multiplier": 1.2  # Ganha 20% mais XP
         }

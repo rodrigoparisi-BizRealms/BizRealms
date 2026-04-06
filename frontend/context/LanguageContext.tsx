@@ -4,13 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 
 const CURRENCY_CONFIG: Record<string, { symbol: string; code: string; locale: string; separator: string; decimal: string }> = {
-  pt: { symbol: 'R$', code: 'BRL', locale: 'pt-BR', separator: '.', decimal: ',' },
+  pt: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
   en: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
-  es: { symbol: '€', code: 'EUR', locale: 'es-ES', separator: '.', decimal: ',' },
-  de: { symbol: '€', code: 'EUR', locale: 'de-DE', separator: '.', decimal: ',' },
-  fr: { symbol: '€', code: 'EUR', locale: 'fr-FR', separator: ' ', decimal: ',' },
-  it: { symbol: '€', code: 'EUR', locale: 'it-IT', separator: '.', decimal: ',' },
-  zh: { symbol: '¥', code: 'CNY', locale: 'zh-CN', separator: ',', decimal: '.' },
+  es: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
+  de: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
+  fr: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
+  it: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
+  zh: { symbol: '$', code: 'USD', locale: 'en-US', separator: ',', decimal: '.' },
 };
 
 interface LanguageContextType {
@@ -27,8 +27,8 @@ const LanguageContext = createContext<LanguageContextType>({
   setLocale: () => {},
   t: (scope: string) => scope,
   languages: LANGUAGES,
-  formatMoney: (v: number) => `R$ ${v}`,
-  currencySymbol: 'R$',
+  formatMoney: (v: number) => `$ ${v}`,
+  currencySymbol: '$',
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {

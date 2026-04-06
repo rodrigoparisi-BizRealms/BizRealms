@@ -94,7 +94,7 @@ export default function EventModal({ visible, event, onChoose, onClose, loading 
       onRequestClose={handleDismiss}
     >
       <View style={styles.overlay}>
-        <View style={[styles.container, { borderColor: event.color + '60' }]}>
+        <View style={[styles.container, { borderColor: event.color + '60', backgroundColor: colors.card }]}>
           {/* Header with type badge */}
           <View style={[styles.header, { backgroundColor: event.color + '20' }]}>
             <View style={[styles.iconCircle, { backgroundColor: event.color + '30' }]}>

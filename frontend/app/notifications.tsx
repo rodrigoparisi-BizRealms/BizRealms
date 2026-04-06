@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { SkeletonList } from '../components/SkeletonLoader';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -14,6 +15,7 @@ export default function Notifications() {
   const router = useRouter();
   const { token } = useAuth();
   const { t } = useLanguage();
+  const { colors } = useTheme();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -72,10 +74,10 @@ export default function Notifications() {
     return `${days}d`;
   };
 
-  if (loading) return <SafeAreaView style={s.container}><SkeletonList count={5} style={{ padding: 16, paddingTop: 60 }} /></SafeAreaView>;
+  if (loading) return <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}><SkeletonList count={5} style={{ padding: 16, paddingTop: 60 }} /></SafeAreaView>;
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.back}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -119,7 +121,7 @@ export default function Notifications() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
   back: { padding: 4 },
   title: { flex: 1, fontSize: 22, fontWeight: 'bold', color: '#fff' },

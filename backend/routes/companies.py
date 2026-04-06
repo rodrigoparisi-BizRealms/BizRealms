@@ -29,33 +29,33 @@ router = APIRouter()
 
 MAP_COMPANY_SEEDS = [
     # São Paulo - Centro
-    {"name": "TechNova Solutions", "category": "tecnologia", "lat": -23.5505, "lng": -46.6333, "description": "Startup de IA e Machine Learning", "employees": 120, "revenue": "R$ 15M/ano", "rating": 4.5, "city": "São Paulo"},
-    {"name": "Banco Digital Plus", "category": "financeiro", "lat": -23.5475, "lng": -46.6361, "description": "Fintech de pagamentos digitais", "employees": 450, "revenue": "R$ 200M/ano", "rating": 4.2, "city": "São Paulo"},
-    {"name": "Café Paulistano", "category": "alimentacao", "lat": -23.5565, "lng": -46.6297, "description": "Rede de cafeterias premium", "employees": 85, "revenue": "R$ 8M/ano", "rating": 4.7, "city": "São Paulo"},
-    {"name": "Construtora Horizonte", "category": "construcao", "lat": -23.5615, "lng": -46.6555, "description": "Construtora de edifícios residenciais", "employees": 800, "revenue": "R$ 500M/ano", "rating": 3.9, "city": "São Paulo"},
+    {"name": "TechNova Solutions", "category": "tecnologia", "lat": -23.5505, "lng": -46.6333, "description": "Startup de IA e Machine Learning", "employees": 120, "revenue": "$ 15M/ano", "rating": 4.5, "city": "São Paulo"},
+    {"name": "Banco Digital Plus", "category": "financeiro", "lat": -23.5475, "lng": -46.6361, "description": "Fintech de pagamentos digitais", "employees": 450, "revenue": "$ 200M/ano", "rating": 4.2, "city": "São Paulo"},
+    {"name": "Café Paulistano", "category": "alimentacao", "lat": -23.5565, "lng": -46.6297, "description": "Rede de cafeterias premium", "employees": 85, "revenue": "$ 8M/ano", "rating": 4.7, "city": "São Paulo"},
+    {"name": "Construtora Horizonte", "category": "construcao", "lat": -23.5615, "lng": -46.6555, "description": "Construtora de edifícios residenciais", "employees": 800, "revenue": "$ 500M/ano", "rating": 3.9, "city": "São Paulo"},
     # São Paulo - Faria Lima
-    {"name": "Venture Capital BR", "category": "financeiro", "lat": -23.5735, "lng": -46.6895, "description": "Fundo de investimento em startups", "employees": 35, "revenue": "R$ 2B AUM", "rating": 4.8, "city": "São Paulo"},
-    {"name": "E-Commerce Master", "category": "varejo", "lat": -23.5750, "lng": -46.6850, "description": "Marketplace líder em eletrônicos", "employees": 2000, "revenue": "R$ 1.2B/ano", "rating": 4.0, "city": "São Paulo"},
-    {"name": "GreenEnergy Ltda", "category": "energia", "lat": -23.5685, "lng": -46.6920, "description": "Energia solar e sustentável", "employees": 200, "revenue": "R$ 45M/ano", "rating": 4.3, "city": "São Paulo"},
+    {"name": "Venture Capital BR", "category": "financeiro", "lat": -23.5735, "lng": -46.6895, "description": "Fundo de investimento em startups", "employees": 35, "revenue": "$ 2B AUM", "rating": 4.8, "city": "São Paulo"},
+    {"name": "E-Commerce Master", "category": "varejo", "lat": -23.5750, "lng": -46.6850, "description": "Marketplace líder em eletrônicos", "employees": 2000, "revenue": "$ 1.2B/ano", "rating": 4.0, "city": "São Paulo"},
+    {"name": "GreenEnergy Ltda", "category": "energia", "lat": -23.5685, "lng": -46.6920, "description": "Energia solar e sustentável", "employees": 200, "revenue": "$ 45M/ano", "rating": 4.3, "city": "São Paulo"},
     # São Paulo - Vila Olímpia
-    {"name": "AppFactory Studio", "category": "tecnologia", "lat": -23.5950, "lng": -46.6800, "description": "Desenvolvimento de aplicativos mobile", "employees": 60, "revenue": "R$ 12M/ano", "rating": 4.6, "city": "São Paulo"},
-    {"name": "FitLife Academias", "category": "saude", "lat": -23.5920, "lng": -46.6755, "description": "Rede de academias premium", "employees": 350, "revenue": "R$ 30M/ano", "rating": 4.1, "city": "São Paulo"},
+    {"name": "AppFactory Studio", "category": "tecnologia", "lat": -23.5950, "lng": -46.6800, "description": "Desenvolvimento de aplicativos mobile", "employees": 60, "revenue": "$ 12M/ano", "rating": 4.6, "city": "São Paulo"},
+    {"name": "FitLife Academias", "category": "saude", "lat": -23.5920, "lng": -46.6755, "description": "Rede de academias premium", "employees": 350, "revenue": "$ 30M/ano", "rating": 4.1, "city": "São Paulo"},
     # São Paulo - Pinheiros
-    {"name": "Agência Criativa 360", "category": "marketing", "lat": -23.5620, "lng": -46.6910, "description": "Marketing digital e branding", "employees": 40, "revenue": "R$ 6M/ano", "rating": 4.4, "city": "São Paulo"},
-    {"name": "Restaurante Sabores", "category": "alimentacao", "lat": -23.5630, "lng": -46.6935, "description": "Gastronomia contemporânea brasileira", "employees": 25, "revenue": "R$ 3M/ano", "rating": 4.9, "city": "São Paulo"},
+    {"name": "Agência Criativa 360", "category": "marketing", "lat": -23.5620, "lng": -46.6910, "description": "Marketing digital e branding", "employees": 40, "revenue": "$ 6M/ano", "rating": 4.4, "city": "São Paulo"},
+    {"name": "Restaurante Sabores", "category": "alimentacao", "lat": -23.5630, "lng": -46.6935, "description": "Gastronomia contemporânea brasileira", "employees": 25, "revenue": "$ 3M/ano", "rating": 4.9, "city": "São Paulo"},
     # Rio de Janeiro
-    {"name": "Petro Energy RJ", "category": "energia", "lat": -22.9068, "lng": -43.1729, "description": "Exploração de petróleo offshore", "employees": 5000, "revenue": "R$ 10B/ano", "rating": 3.8, "city": "Rio de Janeiro"},
-    {"name": "TurismoRio Ltda", "category": "turismo", "lat": -22.9519, "lng": -43.2105, "description": "Turismo e hotelaria", "employees": 150, "revenue": "R$ 20M/ano", "rating": 4.0, "city": "Rio de Janeiro"},
-    {"name": "GameStudio Carioca", "category": "tecnologia", "lat": -22.9137, "lng": -43.1764, "description": "Estúdio de jogos indie", "employees": 30, "revenue": "R$ 4M/ano", "rating": 4.7, "city": "Rio de Janeiro"},
+    {"name": "Petro Energy RJ", "category": "energia", "lat": -22.9068, "lng": -43.1729, "description": "Exploração de petróleo offshore", "employees": 5000, "revenue": "$ 10B/ano", "rating": 3.8, "city": "Rio de Janeiro"},
+    {"name": "TurismoRio Ltda", "category": "turismo", "lat": -22.9519, "lng": -43.2105, "description": "Turismo e hotelaria", "employees": 150, "revenue": "$ 20M/ano", "rating": 4.0, "city": "Rio de Janeiro"},
+    {"name": "GameStudio Carioca", "category": "tecnologia", "lat": -22.9137, "lng": -43.1764, "description": "Estúdio de jogos indie", "employees": 30, "revenue": "$ 4M/ano", "rating": 4.7, "city": "Rio de Janeiro"},
     # Belo Horizonte
-    {"name": "MineralTech", "category": "mineracao", "lat": -19.9167, "lng": -43.9345, "description": "Tecnologia para mineração sustentável", "employees": 280, "revenue": "R$ 80M/ano", "rating": 4.1, "city": "Belo Horizonte"},
-    {"name": "Padaria Mineira Real", "category": "alimentacao", "lat": -19.9200, "lng": -43.9380, "description": "Padaria artesanal mineira", "employees": 15, "revenue": "R$ 1.5M/ano", "rating": 4.8, "city": "Belo Horizonte"},
+    {"name": "MineralTech", "category": "mineracao", "lat": -19.9167, "lng": -43.9345, "description": "Tecnologia para mineração sustentável", "employees": 280, "revenue": "$ 80M/ano", "rating": 4.1, "city": "Belo Horizonte"},
+    {"name": "Padaria Mineira Real", "category": "alimentacao", "lat": -19.9200, "lng": -43.9380, "description": "Padaria artesanal mineira", "employees": 15, "revenue": "$ 1.5M/ano", "rating": 4.8, "city": "Belo Horizonte"},
     # Curitiba
-    {"name": "LogiTech Transportes", "category": "logistica", "lat": -25.4284, "lng": -49.2733, "description": "Logística e transporte rodoviário", "employees": 600, "revenue": "R$ 150M/ano", "rating": 3.7, "city": "Curitiba"},
-    {"name": "BioFarm Labs", "category": "saude", "lat": -25.4320, "lng": -49.2700, "description": "Pesquisa farmacêutica e biotecnologia", "employees": 90, "revenue": "R$ 25M/ano", "rating": 4.5, "city": "Curitiba"},
+    {"name": "LogiTech Transportes", "category": "logistica", "lat": -25.4284, "lng": -49.2733, "description": "Logística e transporte rodoviário", "employees": 600, "revenue": "$ 150M/ano", "rating": 3.7, "city": "Curitiba"},
+    {"name": "BioFarm Labs", "category": "saude", "lat": -25.4320, "lng": -49.2700, "description": "Pesquisa farmacêutica e biotecnologia", "employees": 90, "revenue": "$ 25M/ano", "rating": 4.5, "city": "Curitiba"},
     # Porto Alegre
-    {"name": "AgroSul Grãos", "category": "agronegocio", "lat": -30.0346, "lng": -51.2177, "description": "Produção e exportação de grãos", "employees": 400, "revenue": "R$ 300M/ano", "rating": 4.0, "city": "Porto Alegre"},
-    {"name": "DesignGaúcho Studio", "category": "marketing", "lat": -30.0300, "lng": -51.2200, "description": "Design e UX para produtos digitais", "employees": 20, "revenue": "R$ 2M/ano", "rating": 4.6, "city": "Porto Alegre"},
+    {"name": "AgroSul Grãos", "category": "agronegocio", "lat": -30.0346, "lng": -51.2177, "description": "Produção e exportação de grãos", "employees": 400, "revenue": "$ 300M/ano", "rating": 4.0, "city": "Porto Alegre"},
+    {"name": "DesignGaúcho Studio", "category": "marketing", "lat": -30.0300, "lng": -51.2200, "description": "Design e UX para produtos digitais", "employees": 20, "revenue": "$ 2M/ano", "rating": 4.6, "city": "Porto Alegre"},
 ]
 
 CATEGORY_INFO = {
@@ -140,39 +140,39 @@ COMPANY_SEGMENTS = {
 
 COMPANIES_FOR_SALE = [
     # Restaurantes
-    {"name": "Lanchonete do Zé", "segment": "restaurante", "price": 15000, "monthly_revenue": 3000, "employees": 5, "description": "Lanchonete de bairro com clientela fiel", "level_required": 1},
-    {"name": "Pizzaria Bella Napoli", "segment": "restaurante", "price": 80000, "monthly_revenue": 12000, "employees": 15, "description": "Pizzaria italiana com forno a lenha", "level_required": 3},
-    {"name": "Rede Burger Premium", "segment": "restaurante", "price": 500000, "monthly_revenue": 65000, "employees": 80, "description": "Rede de hamburguerias com 5 unidades", "level_required": 8},
+    {"name": "Lanchonete do Zé", "segment": "restaurante", "price": 15000, "daily_revenue": 100, "employees": 5, "description": "Lanchonete de bairro com clientela fiel", "level_required": 1},
+    {"name": "Pizzaria Bella Napoli", "segment": "restaurante", "price": 80000, "daily_revenue": 400, "employees": 15, "description": "Pizzaria italiana com forno a lenha", "level_required": 3},
+    {"name": "Rede Burger Premium", "segment": "restaurante", "price": 500000, "daily_revenue": 2167, "employees": 80, "description": "Rede de hamburguerias com 5 unidades", "level_required": 8},
     # Lojas
-    {"name": "Bazar Popular", "segment": "loja", "price": 10000, "monthly_revenue": 2000, "employees": 3, "description": "Loja de variedades no centro", "level_required": 1},
-    {"name": "Boutique Fashion", "segment": "loja", "price": 120000, "monthly_revenue": 18000, "employees": 8, "description": "Loja de roupas de grife", "level_required": 4},
-    {"name": "Mega Store Eletrônicos", "segment": "loja", "price": 800000, "monthly_revenue": 90000, "employees": 50, "description": "Loja de eletrônicos e tecnologia", "level_required": 10},
+    {"name": "Bazar Popular", "segment": "loja", "price": 10000, "daily_revenue": 67, "employees": 3, "description": "Loja de variedades no centro", "level_required": 1},
+    {"name": "Boutique Fashion", "segment": "loja", "price": 120000, "daily_revenue": 600, "employees": 8, "description": "Loja de roupas de grife", "level_required": 4},
+    {"name": "Mega Store Eletrônicos", "segment": "loja", "price": 800000, "daily_revenue": 3000, "employees": 50, "description": "Loja de eletrônicos e tecnologia", "level_required": 10},
     # Tecnologia
-    {"name": "Dev Studio Indie", "segment": "tecnologia", "price": 50000, "monthly_revenue": 8000, "employees": 4, "description": "Estúdio de desenvolvimento de apps", "level_required": 2},
-    {"name": "SaaS Analytics Pro", "segment": "tecnologia", "price": 300000, "monthly_revenue": 45000, "employees": 20, "description": "Plataforma SaaS de analytics", "level_required": 6},
-    {"name": "CyberTech Security", "segment": "tecnologia", "price": 1500000, "monthly_revenue": 180000, "employees": 100, "description": "Empresa de cibersegurança corporativa", "level_required": 12},
+    {"name": "Dev Studio Indie", "segment": "tecnologia", "price": 50000, "daily_revenue": 267, "employees": 4, "description": "Estúdio de desenvolvimento de apps", "level_required": 2},
+    {"name": "SaaS Analytics Pro", "segment": "tecnologia", "price": 300000, "daily_revenue": 1500, "employees": 20, "description": "Plataforma SaaS de analytics", "level_required": 6},
+    {"name": "CyberTech Security", "segment": "tecnologia", "price": 1500000, "daily_revenue": 6000, "employees": 100, "description": "Empresa de cibersegurança corporativa", "level_required": 12},
     # Fábricas
-    {"name": "Confecção Básica", "segment": "fabrica", "price": 60000, "monthly_revenue": 10000, "employees": 20, "description": "Fábrica de camisetas e uniformes", "level_required": 3},
-    {"name": "Fábrica de Móveis Artesanais", "segment": "fabrica", "price": 250000, "monthly_revenue": 35000, "employees": 40, "description": "Produção de móveis sob medida", "level_required": 5},
-    {"name": "Indústria Metalúrgica", "segment": "fabrica", "price": 2000000, "monthly_revenue": 250000, "employees": 200, "description": "Produção de peças industriais", "level_required": 15},
+    {"name": "Confecção Básica", "segment": "fabrica", "price": 60000, "daily_revenue": 333, "employees": 20, "description": "Fábrica de camisetas e uniformes", "level_required": 3},
+    {"name": "Fábrica de Móveis Artesanais", "segment": "fabrica", "price": 250000, "daily_revenue": 1167, "employees": 40, "description": "Produção de móveis sob medida", "level_required": 5},
+    {"name": "Indústria Metalúrgica", "segment": "fabrica", "price": 2000000, "daily_revenue": 8333, "employees": 200, "description": "Produção de peças industriais", "level_required": 15},
     # Saúde
-    {"name": "Farmácia Comunitária", "segment": "saude", "price": 40000, "monthly_revenue": 7000, "employees": 6, "description": "Farmácia de bairro com manipulação", "level_required": 2},
-    {"name": "Clínica Odontológica", "segment": "saude", "price": 200000, "monthly_revenue": 30000, "employees": 12, "description": "Clínica odontológica especializada", "level_required": 5},
+    {"name": "Farmácia Comunitária", "segment": "saude", "price": 40000, "daily_revenue": 233, "employees": 6, "description": "Farmácia de bairro com manipulação", "level_required": 2},
+    {"name": "Clínica Odontológica", "segment": "saude", "price": 200000, "daily_revenue": 1000, "employees": 12, "description": "Clínica odontológica especializada", "level_required": 5},
     # Educação
-    {"name": "Escola de Idiomas", "segment": "educacao", "price": 35000, "monthly_revenue": 6000, "employees": 8, "description": "Escola de inglês e espanhol", "level_required": 2},
-    {"name": "Faculdade TechEdu", "segment": "educacao", "price": 1000000, "monthly_revenue": 120000, "employees": 60, "description": "Faculdade de tecnologia EAD", "level_required": 10},
+    {"name": "Escola de Idiomas", "segment": "educacao", "price": 35000, "daily_revenue": 200, "employees": 8, "description": "Escola de inglês e espanhol", "level_required": 2},
+    {"name": "Faculdade TechEdu", "segment": "educacao", "price": 1000000, "daily_revenue": 4000, "employees": 60, "description": "Faculdade de tecnologia EAD", "level_required": 10},
     # Entretenimento
-    {"name": "Lan House Gamer", "segment": "entretenimento", "price": 25000, "monthly_revenue": 4500, "employees": 3, "description": "Espaço gamer com PCs de alta performance", "level_required": 1},
-    {"name": "Parque Aquático Splash", "segment": "entretenimento", "price": 3000000, "monthly_revenue": 350000, "employees": 150, "description": "Parque aquático com atrações radicais", "level_required": 15},
+    {"name": "Lan House Gamer", "segment": "entretenimento", "price": 25000, "daily_revenue": 150, "employees": 3, "description": "Espaço gamer com PCs de alta performance", "level_required": 1},
+    {"name": "Parque Aquático Splash", "segment": "entretenimento", "price": 3000000, "daily_revenue": 11667, "employees": 150, "description": "Parque aquático com atrações radicais", "level_required": 15},
     # Imobiliária
-    {"name": "Imobiliária Local", "segment": "imobiliaria", "price": 70000, "monthly_revenue": 11000, "employees": 5, "description": "Imobiliária focada em aluguéis", "level_required": 3},
-    {"name": "Construtora Horizonte", "segment": "imobiliaria", "price": 5000000, "monthly_revenue": 500000, "employees": 300, "description": "Construtora de prédios residenciais", "level_required": 18},
+    {"name": "Imobiliária Local", "segment": "imobiliaria", "price": 70000, "daily_revenue": 367, "employees": 5, "description": "Imobiliária focada em aluguéis", "level_required": 3},
+    {"name": "Construtora Horizonte", "segment": "imobiliaria", "price": 5000000, "daily_revenue": 16667, "employees": 300, "description": "Construtora de prédios residenciais", "level_required": 18},
     # Logística
-    {"name": "Motoboy Express", "segment": "logistica", "price": 20000, "monthly_revenue": 3500, "employees": 10, "description": "Serviço de entregas rápidas", "level_required": 1},
-    {"name": "TransBR Cargas", "segment": "logistica", "price": 600000, "monthly_revenue": 75000, "employees": 45, "description": "Transportadora rodoviária nacional", "level_required": 8},
+    {"name": "Motoboy Express", "segment": "logistica", "price": 20000, "daily_revenue": 117, "employees": 10, "description": "Serviço de entregas rápidas", "level_required": 1},
+    {"name": "TransBR Cargas", "segment": "logistica", "price": 600000, "daily_revenue": 2500, "employees": 45, "description": "Transportadora rodoviária nacional", "level_required": 8},
     # Agronegócio
-    {"name": "Horta Orgânica", "segment": "agronegocio", "price": 18000, "monthly_revenue": 3200, "employees": 4, "description": "Produção de hortaliças orgânicas", "level_required": 1},
-    {"name": "Fazenda Boi Gordo", "segment": "agronegocio", "price": 2500000, "monthly_revenue": 280000, "employees": 50, "description": "Fazenda de gado de corte premium", "level_required": 12},
+    {"name": "Horta Orgânica", "segment": "agronegocio", "price": 18000, "daily_revenue": 107, "employees": 4, "description": "Produção de hortaliças orgânicas", "level_required": 1},
+    {"name": "Fazenda Boi Gordo", "segment": "agronegocio", "price": 2500000, "daily_revenue": 9333, "employees": 50, "description": "Fazenda de gado de corte premium", "level_required": 12},
 ]
 
 class CreateCompanyRequest(BaseModel):
@@ -235,7 +235,7 @@ async def buy_company(request: dict, current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=404, detail="Empresa não encontrada")
     user = await db.users.find_one({"id": current_user['id']})
     if user['money'] < company['price']:
-        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Necessário: R$ {company['price']:,.2f}")
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Necessário: $ {company['price']:,.2f}")
     if (user.get('level', 1)) < company.get('level_required', 1):
         raise HTTPException(status_code=400, detail=f"Nível insuficiente. Requer nível {company['level_required']}")
     already = await db.user_companies.find_one({"user_id": current_user['id'], "source_company_id": company_id})
@@ -251,7 +251,7 @@ async def buy_company(request: dict, current_user: dict = Depends(get_current_us
         "segment": company['segment'],
         "icon": company.get('icon', 'business'),
         "color": company.get('color', '#888'),
-        "monthly_revenue": company['monthly_revenue'],
+        "daily_revenue": company['monthly_revenue'],
         "employees": company['employees'],
         "description": company['description'],
         "purchase_price": company['price'],
@@ -267,7 +267,7 @@ async def buy_company(request: dict, current_user: dict = Depends(get_current_us
         "message": f"Parabéns! Você comprou {company['name']}!",
         "company_name": company['name'],
         "price": company['price'],
-        "monthly_revenue": company['monthly_revenue'],
+        "daily_revenue": company['monthly_revenue'],
         "roi_months": round(company['price'] / company['monthly_revenue'], 1) if company['monthly_revenue'] > 0 else 0,
         "new_balance": round(new_money, 2),
     }
@@ -279,7 +279,7 @@ async def create_company(request: CreateCompanyRequest, current_user: dict = Dep
     user = await db.users.find_one({"id": current_user['id']})
     creation_cost = 5000
     if user['money'] < creation_cost:
-        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Custo de criação: R$ {creation_cost:,.2f}")
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Custo de criação: $ {creation_cost:,.2f}")
     new_money = user['money'] - creation_cost
     await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
     seg = COMPANY_SEGMENTS[request.segment]
@@ -292,7 +292,7 @@ async def create_company(request: CreateCompanyRequest, current_user: dict = Dep
         "segment": request.segment,
         "icon": seg['icon'],
         "color": seg['color'],
-        "monthly_revenue": base_revenue,
+        "daily_revenue": base_revenue,
         "employees": _random.randint(1, 5),
         "description": f"Empresa criada pelo jogador no segmento {seg['label']}",
         "purchase_price": creation_cost,
@@ -307,7 +307,7 @@ async def create_company(request: CreateCompanyRequest, current_user: dict = Dep
     await db.user_companies.insert_one(user_company)
     return {
         "message": f"{request.name} criada com sucesso!",
-        "company": {"name": request.name, "segment": request.segment, "monthly_revenue": base_revenue},
+        "company": {"name": request.name, "segment": request.segment, "daily_revenue": base_revenue},
         "new_balance": round(new_money, 2),
     }
 
@@ -343,7 +343,7 @@ async def get_owned_companies(current_user: dict = Depends(get_current_user)):
         c['roi_progress'] = round((total_collected / purchase_price) * 100, 1) if purchase_price > 0 else 0
         c['roi_recovered'] = total_collected >= purchase_price
         total_monthly += c['effective_revenue']
-    return {"companies": companies, "total_monthly_revenue": total_monthly, "count": len(companies)}
+    return {"companies": companies, "total_daily_revenue": total_monthly, "count": len(companies)}
 
 @router.post("/companies/collect-revenue")
 async def collect_company_revenue(current_user: dict = Depends(get_current_user)):
@@ -360,7 +360,7 @@ async def collect_company_revenue(current_user: dict = Depends(get_current_user)
         days = (now - last).total_seconds() / 86400
         if days < 0.001:
             continue
-        daily_rev = c['monthly_revenue'] / 30
+        daily_rev = c['daily_revenue']
         boost_active = c.get('ad_boost_expires') and c['ad_boost_expires'] > now
         mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
         rev = daily_rev * days * mult
@@ -381,7 +381,7 @@ async def collect_company_revenue(current_user: dict = Depends(get_current_user)
             {"$set": {"money": new_money, "experience_points": new_xp, "level": new_level}}
         )
         return {
-            "message": f"Receitas coletadas: R$ {total_revenue:,.2f}",
+            "message": f"Receitas coletadas: $ {total_revenue:,.2f}",
             "total_revenue": round(total_revenue, 2),
             "xp_gained": xp_gain,
             "details": details,
@@ -420,7 +420,7 @@ async def merge_companies(request: MergeCompaniesRequest, current_user: dict = D
         {"id": c1['id']},
         {"$set": {
             "name": merged_name,
-            "monthly_revenue": merged_revenue,
+            "daily_revenue": merged_revenue,
             "employees": merged_employees,
             "level": new_level,
             "revenue_multiplier": c1.get('revenue_multiplier', 1.0) + 0.2,
@@ -430,7 +430,7 @@ async def merge_companies(request: MergeCompaniesRequest, current_user: dict = D
     await db.user_companies.delete_one({"id": c2['id']})
     return {
         "message": f"Fusão concluída! {merged_name} criada com +30% de receita!",
-        "new_company": {"name": merged_name, "monthly_revenue": merged_revenue, "level": new_level},
+        "new_company": {"name": merged_name, "daily_revenue": merged_revenue, "level": new_level},
     }
 
 
@@ -468,11 +468,11 @@ async def sell_company(request: dict, current_user: dict = Depends(get_current_u
     new_money = user['money'] + sell_price
     await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
     
-    roi_text = f"Lucro: +R$ {profit:,.0f}" if roi_positive else f"Prejuízo: -R$ {abs(profit):,.0f}"
+    roi_text = f"Lucro: +$ {profit:,.0f}" if roi_positive else f"Prejuízo: -$ {abs(profit):,.0f}"
     
     return {
         "success": True,
-        "message": f"Empresa '{company.get('name')}' vendida por R$ {sell_price:,.0f}!",
+        "message": f"Empresa '{company.get('name')}' vendida por $ {sell_price:,.0f}!",
         "sell_price": sell_price,
         "new_balance": round(new_money, 2),
         "roi": {
@@ -681,11 +681,11 @@ async def respond_to_offer(request: dict, current_user: dict = Depends(get_curre
     )
 
     profit = offer_amount - offer.get('purchase_price', 0)
-    profit_text = f"Lucro: R$ {profit:,.0f}" if profit >= 0 else f"Prejuízo: R$ {abs(profit):,.0f}"
+    profit_text = f"Lucro: $ {profit:,.0f}" if profit >= 0 else f"Prejuízo: $ {abs(profit):,.0f}"
 
     return {
         "success": True,
-        "message": f"Empresa '{company.get('name')}' vendida para {offer.get('buyer_name')} por R$ {offer_amount:,.0f}!\n\n{profit_text}\nXP Bônus: +{xp_bonus:,}",
+        "message": f"Empresa '{company.get('name')}' vendida para {offer.get('buyer_name')} por $ {offer_amount:,.0f}!\n\n{profit_text}\nXP Bônus: +{xp_bonus:,}",
         "offer_amount": offer_amount,
         "profit": profit,
         "xp_bonus": xp_bonus,
@@ -722,7 +722,7 @@ async def create_franchise(request: dict, current_user: dict = Depends(get_curre
     franchise_cost = parent.get('purchase_price', 0) * 0.6
     user = await db.users.find_one({"id": current_user['id']})
     if user['money'] < franchise_cost:
-        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Custo da franquia: R$ {franchise_cost:,.0f}")
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Custo da franquia: $ {franchise_cost:,.0f}")
     
     # Count existing franchises for this parent
     existing_franchises = await db.user_companies.count_documents({
@@ -748,7 +748,7 @@ async def create_franchise(request: dict, current_user: dict = Depends(get_curre
         "name": fname,
         "segment": segment,
         "purchase_price": franchise_cost,
-        "monthly_revenue": franchise_revenue,
+        "daily_revenue": franchise_revenue,
         "employees": max(1, parent.get('employees', 1) // 2),
         "description": f"Franquia de {parent.get('name', '')} - {franchise_location}",
         "is_franchise": True,
@@ -766,7 +766,7 @@ async def create_franchise(request: dict, current_user: dict = Depends(get_curre
         "message": f"Franquia '{fname}' criada com sucesso!",
         "franchise": {k: v for k, v in franchise.items() if k != '_id'},
         "cost": franchise_cost,
-        "monthly_revenue": franchise_revenue,
+        "daily_revenue": franchise_revenue,
         "new_balance": round(new_money, 2),
     }
 

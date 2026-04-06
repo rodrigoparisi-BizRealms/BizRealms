@@ -175,8 +175,8 @@ export default function Store() {
 
   const formatReward = (item: any) => {
     const r = item.game_reward;
-    if (r.money) return `+R$ ${r.money.toLocaleString('pt-BR')}`;
-    if (r.xp) return `+${r.xp.toLocaleString('pt-BR')} XP`;
+    if (r.money) return `+$ ${r.money.toLocaleString('en-US')}`;
+    if (r.xp) return `+${r.xp.toLocaleString('en-US')} XP`;
     if (r.earnings_multiplier) return `${r.earnings_multiplier}x por ${r.duration_hours}h`;
     return '';
   };
@@ -204,7 +204,7 @@ export default function Store() {
       <View style={s.balanceBar}>
         <View style={s.balanceItem}>
           <Ionicons name="wallet" size={16} color="#4CAF50" />
-          <Text style={s.balanceText}>R$ {(user?.money || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+          <Text style={s.balanceText}>$ {(user?.money || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
         </View>
         <View style={s.balanceItem}>
           <Ionicons name="star" size={16} color="#FF9800" />
@@ -244,7 +244,7 @@ export default function Store() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.dailyTitle}>{t('store.dailyReward')}</Text>
-                <Text style={s.dailyDesc}>{t('store.watchAdForReward') || 'Assista uma propaganda e ganhe'} R$ {dailyStatus.reward_amount?.toLocaleString('pt-BR')}</Text>
+                <Text style={s.dailyDesc}>{t('store.watchAdForReward') || 'Assista uma propaganda e ganhe'} $ {dailyStatus.reward_amount?.toLocaleString('en-US')}</Text>
               </View>
             </View>
             {claimingDaily ? (
@@ -353,7 +353,7 @@ export default function Store() {
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <>
-                    <Text style={s.buyPrice}>R$ {item.price_brl.toFixed(2).replace('.', ',')}</Text>
+                    <Text style={s.buyPrice}>$ {item.price_brl.toFixed(2).replace('.', ',')}</Text>
                     <Ionicons name="cart" size={18} color="#fff" />
                   </>
                 )}
@@ -383,7 +383,7 @@ export default function Store() {
                   </View>
                   <Text style={s.sumName}>{selectedItem.name}</Text>
                   <Text style={s.sumReward}>{formatReward(selectedItem)}</Text>
-                  <Text style={s.sumPrice}>R$ {selectedItem.price_brl.toFixed(2).replace('.', ',')}</Text>
+                  <Text style={s.sumPrice}>$ {selectedItem.price_brl.toFixed(2).replace('.', ',')}</Text>
                 </View>
 
                 {/* Stripe Pay Button */}
@@ -450,7 +450,7 @@ export default function Store() {
                       {' • '}{p.payment_method === 'pix' ? 'PIX' : 'Cartão'}
                     </Text>
                   </View>
-                  <Text style={s.histPrice}>R$ {p.price_brl?.toFixed(2).replace('.', ',')}</Text>
+                  <Text style={s.histPrice}>$ {p.price_brl?.toFixed(2).replace('.', ',')}</Text>
                 </View>
               ))}
             </ScrollView>

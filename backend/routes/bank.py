@@ -91,9 +91,9 @@ async def credit_card_purchase(request: dict, current_user: dict = Depends(get_c
     
     available = card['limit'] - card.get('balance_used', 0)
     if amount > available:
-        raise HTTPException(status_code=400, detail=f"Limite insuficiente. Disponível: R$ {available:,.2f}")
+        raise HTTPException(status_code=400, detail=f"Limite insuficiente. Disponível: $ {available:,.2f}")
     
-    # 1 mile per R$ 1 spent
+    # 1 mile per $ 1 spent
     miles_earned = int(amount)
     
     await db.credit_cards.update_one(
@@ -112,7 +112,7 @@ async def credit_card_purchase(request: dict, current_user: dict = Depends(get_c
 
     return {
         "success": True,
-        "message": f"Compra de R$ {amount:,.2f} realizada! +{miles_earned} milhas",
+        "message": f"Compra de $ {amount:,.2f} realizada! +{miles_earned} milhas",
         "miles_earned": miles_earned,
         "total_miles": card.get('miles_points', 0) + miles_earned,
         "balance_used": card.get('balance_used', 0) + amount,
@@ -141,7 +141,7 @@ async def pay_credit_card_bill(request: dict, current_user: dict = Depends(get_c
     
     return {
         "success": True,
-        "message": f"Fatura de R$ {amount:,.2f} paga com sucesso!",
+        "message": f"Fatura de $ {amount:,.2f} paga com sucesso!",
         "new_balance": round(user['money'] - amount, 2),
         "remaining_bill": round(balance_used - amount, 2),
     }
@@ -204,7 +204,7 @@ async def apply_for_loan(request: dict, current_user: dict = Depends(get_current
     if loan_type == 'small':
         max_amount = min(50000, 5000 + user_level * 2000)
         if amount > max_amount:
-            raise HTTPException(status_code=400, detail=f"Valor máximo sem garantia: R$ {max_amount:,.0f}")
+            raise HTTPException(status_code=400, detail=f"Valor máximo sem garantia: $ {max_amount:,.0f}")
         interest_rate = 0.035  # 3.5% monthly
         months = min(months, 24)
     else:
@@ -216,7 +216,7 @@ async def apply_for_loan(request: dict, current_user: dict = Depends(get_current
             raise HTTPException(status_code=400, detail="Bem de garantia não encontrado")
         max_amount = min(500000, asset.get('purchase_price', 0) * 0.8)
         if amount > max_amount:
-            raise HTTPException(status_code=400, detail=f"Valor máximo com esta garantia: R$ {max_amount:,.0f}")
+            raise HTTPException(status_code=400, detail=f"Valor máximo com esta garantia: $ {max_amount:,.0f}")
         interest_rate = 0.02  # 2% monthly (lower with guarantee)
         months = min(months, 60)
     
@@ -252,7 +252,7 @@ async def apply_for_loan(request: dict, current_user: dict = Depends(get_current
     
     return {
         "success": True,
-        "message": f"Empréstimo de R$ {amount:,.0f} aprovado! Parcela: R$ {monthly_payment:,.2f}/mês",
+        "message": f"Empréstimo de $ {amount:,.0f} aprovado! Parcela: $ {monthly_payment:,.2f}/mês",
         "loan_id": loan['id'],
         "monthly_payment": monthly_payment,
         "total_with_interest": round(total_with_interest, 2),
@@ -273,7 +273,7 @@ async def pay_loan_installment(request: dict, current_user: dict = Depends(get_c
     payment = loan['monthly_payment']
     user = await db.users.find_one({"id": current_user['id']})
     if user['money'] < payment:
-        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Parcela: R$ {payment:,.2f}")
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Parcela: $ {payment:,.2f}")
     
     new_remaining = max(0, loan['remaining_balance'] - payment)
     new_payments = loan['payments_made'] + 1
@@ -287,7 +287,7 @@ async def pay_loan_installment(request: dict, current_user: dict = Depends(get_c
     }})
     await db.users.update_one({"id": current_user['id']}, {"$inc": {"money": -payment}})
     
-    msg = f"Parcela {new_payments}/{loan['months']} paga! R$ {payment:,.2f}"
+    msg = f"Parcela {new_payments}/{loan['months']} paga! $ {payment:,.2f}"
     if status == "paid_off":
         msg = "Empréstimo quitado! Parabéns!"
     
@@ -317,7 +317,7 @@ async def payoff_loan(request: dict, current_user: dict = Depends(get_current_us
     
     user = await db.users.find_one({"id": current_user['id']})
     if user['money'] < payoff_amount:
-        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Valor de quitação: R$ {payoff_amount:,.2f}")
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Valor de quitação: $ {payoff_amount:,.2f}")
     
     await db.loans.update_one({"_id": loan['_id']}, {"$set": {
         "remaining_balance": 0,
@@ -327,7 +327,7 @@ async def payoff_loan(request: dict, current_user: dict = Depends(get_current_us
     
     return {
         "success": True,
-        "message": f"Empréstimo quitado com desconto! Economia: R$ {savings:,.2f}",
+        "message": f"Empréstimo quitado com desconto! Economia: $ {savings:,.2f}",
         "payoff_amount": round(payoff_amount, 2),
         "savings": round(savings, 2),
         "new_balance": round(user['money'] - payoff_amount, 2),

@@ -67,7 +67,7 @@ export default function BackgroundSelection() {
 
   const formatMoney = (bonus: number) => {
     const total = 1000 + bonus;
-    return `R$ ${total.toLocaleString('pt-BR')}`;
+    return `$ ${total.toLocaleString('en-US')}`;
   };
 
   const formatSkills = (skills: Record<string, number>) => {

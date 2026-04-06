@@ -139,7 +139,24 @@ export default function Home() {
         setActiveEvent(res.data.event);
       } else {
         setActiveEvent(null);
-        setEventCooldown(res.data?.cooldown_remaining || 0);
+        // Auto-generate event if no cooldown
+        const cooldown = res.data?.cooldown_remaining || 0;
+        setEventCooldown(cooldown);
+        if (cooldown <= 0) {
+          // Auto-generate
+          try {
+            const genRes = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/events/generate`, {}, {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 30000,
+            });
+            if (genRes.data?.event) {
+              setActiveEvent(genRes.data.event);
+              setEventModalVisible(true);
+            }
+          } catch (ge) {
+            console.log('Auto event gen error:', ge);
+          }
+        }
       }
     } catch (e) {
       console.log('Event check error:', e);
@@ -507,7 +524,7 @@ export default function Home() {
         </View>
 
         {/* AI Dynamic Events Card */}
-        {activeEvent ? (
+        {activeEvent && (
           <TouchableOpacity
             style={[styles.eventCard, { borderColor: activeEvent.color + '60' }]}
             onPress={() => { haptic('medium'); setEventModalVisible(true); }}
@@ -544,34 +561,6 @@ export default function Home() {
                 Toque para decidir
               </Text>
               <Ionicons name="chevron-forward" size={16} color={activeEvent.color} />
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.eventCardGenerate, eventLoading && { opacity: 0.6 }]}
-            onPress={generateEvent}
-            disabled={eventLoading || eventCooldown > 0}
-            activeOpacity={0.7}
-          >
-            <View style={styles.eventCardHeader}>
-              <View style={[styles.eventIconBg, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
-                <Ionicons name="flash" size={22} color="#FFD700" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.eventGenerateTitle}>Evento Dinâmico</Text>
-                <Text style={styles.eventGenerateHint}>
-                  {eventCooldown > 0
-                    ? `Disponível em ${Math.ceil(eventCooldown / 60)} min`
-                    : 'Gere um evento surpresa com IA'}
-                </Text>
-              </View>
-              {eventLoading ? (
-                <ActivityIndicator size="small" color="#FFD700" />
-              ) : (
-                <View style={styles.eventGenerateBtn}>
-                  <Ionicons name="sparkles" size={16} color="#000" />
-                </View>
-              )}
             </View>
           </TouchableOpacity>
         )}
@@ -683,7 +672,7 @@ export default function Home() {
                   {(comp.rewards || []).map((r: any, idx: number) => (
                     <View key={idx} style={[styles.compRewardPill, { backgroundColor: comp.color + '15' }]}>
                       <Text style={{ fontSize: 10, color: comp.color, fontWeight: '700' }}>
-                        {r.label}: R${r.money}
+                        {r.label}: ${r.money}
                       </Text>
                     </View>
                   ))}
@@ -962,7 +951,7 @@ export default function Home() {
                     <Text style={styles.miniTicker} numberOfLines={1}>{c.name}</Text>
                   </View>
                   <Text style={[styles.miniProfit, { color: '#4CAF50' }]}>
-                    R$ {(c.effective_revenue || c.monthly_revenue || 0).toLocaleString('pt-BR')}/mês
+                    $ {(c.effective_revenue || c.monthly_revenue || 0).toLocaleString('en-US')}/mês
                   </Text>
                 </View>
               ))}

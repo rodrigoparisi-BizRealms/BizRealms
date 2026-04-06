@@ -287,11 +287,11 @@ async def generate_event(current_user: dict = Depends(get_current_user)):
             player_context = f"""
 DADOS DO JOGADOR:
 - Nível: {level} | Dificuldade: {difficulty}
-- Dinheiro em caixa: R$ {money:,.2f}
-- Patrimônio líquido: R$ {net_worth:,.2f}
-- Empresas: {len(companies)} (receita mensal: R$ {comp_revenue:,.2f})
-- Investimentos: {len(investments)} (valor: R$ {inv_value:,.2f})
-- Imóveis/Bens: {len(assets)} (valor: R$ {asset_value:,.2f})
+- Dinheiro em caixa: $ {money:,.2f}
+- Patrimônio líquido: $ {net_worth:,.2f}
+- Empresas: {len(companies)} (receita mensal: $ {comp_revenue:,.2f})
+- Investimentos: {len(investments)} (valor: $ {inv_value:,.2f})
+- Imóveis/Bens: {len(assets)} (valor: $ {asset_value:,.2f})
 - Educação: {len(user.get('education', []))} formações
 - Certificações: {len(user.get('certifications', []))}
 
@@ -436,7 +436,7 @@ async def choose_event_option(request: dict, current_user: dict = Depends(get_cu
         "success": True,
         "choice": chosen['text'],
         "consequences": {"money": money_change, "xp": xp_change},
-        "message": f"{'Ganhou' if money_change > 0 else 'Perdeu'} R$ {abs(money_change):,} | {'+' if xp_change >= 0 else ''}{xp_change} XP",
+        "message": f"{'Ganhou' if money_change > 0 else 'Perdeu'} $ {abs(money_change):,} | {'+' if xp_change >= 0 else ''}{xp_change} XP",
     }
 
 

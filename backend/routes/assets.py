@@ -89,7 +89,7 @@ async def buy_asset_item(request: dict, current_user: dict = Depends(get_current
         raise HTTPException(status_code=404, detail="Item não encontrado")
     user = await db.users.find_one({"id": current_user['id']})
     if user['money'] < asset['price']:
-        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Necessário: R$ {asset['price']:,.2f}")
+        raise HTTPException(status_code=400, detail=f"Saldo insuficiente. Necessário: $ {asset['price']:,.2f}")
     if user.get('level', 1) < asset.get('level_required', 1):
         raise HTTPException(status_code=400, detail=f"Nível insuficiente. Requer nível {asset['level_required']}")
     already = await db.user_assets.find_one({"user_id": current_user['id'], "asset_store_id": asset_id})
@@ -169,7 +169,7 @@ async def sell_asset_item(request: dict, current_user: dict = Depends(get_curren
     await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
     await db.user_assets.delete_one({"id": asset_id, "user_id": current_user['id']})
     return {
-        "message": f"{asset['name']} vendido por R$ {sell_value:,.2f}!",
+        "message": f"{asset['name']} vendido por $ {sell_value:,.2f}!",
         "sell_value": sell_value,
         "profit": round(profit, 2),
         "new_balance": round(new_money, 2),
@@ -456,11 +456,11 @@ async def respond_to_asset_offer(request: dict, current_user: dict = Depends(get
 
     purchase_price = offer.get('purchase_price', 0)
     profit = offer_amount - purchase_price
-    profit_text = f"Lucro: R$ {profit:,.0f}" if profit >= 0 else f"Prejuízo: R$ {abs(profit):,.0f}"
+    profit_text = f"Lucro: $ {profit:,.0f}" if profit >= 0 else f"Prejuízo: $ {abs(profit):,.0f}"
 
     return {
         "success": True,
-        "message": f"'{asset.get('name')}' vendido para {offer.get('buyer_name')} por R$ {offer_amount:,.0f}!\n\n{profit_text}\nXP Bônus: +{xp_bonus:,}",
+        "message": f"'{asset.get('name')}' vendido para {offer.get('buyer_name')} por $ {offer_amount:,.0f}!\n\n{profit_text}\nXP Bônus: +{xp_bonus:,}",
         "offer_amount": offer_amount,
         "profit": profit,
         "xp_bonus": xp_bonus,

@@ -107,7 +107,7 @@ export default function PersonalitySelection() {
       // Show success
       Alert.alert(
         'Personagem Criado! 🎉',
-        `Bem-vindo ao BizRealms!\n\nDinheiro inicial: R$ ${response.data.money.toLocaleString('pt-BR')}`,
+        `Bem-vindo ao BizRealms!\n\nDinheiro inicial: $ ${response.data.money.toLocaleString('en-US')}`,
         [
           {
             text: 'Começar!',

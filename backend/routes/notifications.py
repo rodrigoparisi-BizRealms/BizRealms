@@ -549,13 +549,13 @@ async def get_coaching_advice(request: dict, current_user: dict = Depends(get_cu
 DADOS DO JOGADOR:
 - Nome: {user.get('username', 'Jogador')}
 - Nível: {user.get('level', 1)} | XP: {user.get('experience', 0)}
-- Dinheiro: R$ {user.get('money', 0):,.2f}
-- Empresas: {len(companies)} (receita mensal: R$ {comp_revenue:,.2f}, valor total: R$ {comp_value:,.2f})
-- Investimentos: {len(investments)} (valor: R$ {inv_value:,.2f})
-- Imóveis/Bens: {len(assets)} (valor: R$ {asset_value:,.2f})
+- Dinheiro: $ {user.get('money', 0):,.2f}
+- Empresas: {len(companies)} (receita mensal: $ {comp_revenue:,.2f}, valor total: $ {comp_value:,.2f})
+- Investimentos: {len(investments)} (valor: $ {inv_value:,.2f})
+- Imóveis/Bens: {len(assets)} (valor: $ {asset_value:,.2f})
 - Cursos feitos: {len(courses)}
-- Dívidas: R$ {total_debt:,.2f}
-- Patrimônio líquido: R$ {(user.get('money', 0) + inv_value + comp_value + asset_value - total_debt):,.2f}
+- Dívidas: $ {total_debt:,.2f}
+- Patrimônio líquido: $ {(user.get('money', 0) + inv_value + comp_value + asset_value - total_debt):,.2f}
 - Habilidades: {user.get('skills', {})}
 
 PERGUNTA DO JOGADOR: {user_question}

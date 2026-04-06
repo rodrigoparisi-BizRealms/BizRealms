@@ -59,8 +59,8 @@ export default function Companies() {
   const handleCreateFranchise = async (company: any) => {
     const cost = Math.round(company.purchase_price * 0.6);
     const doIt = Platform.OS === 'web'
-      ? window.confirm(`Criar franquia de "${company.name}"?\n\nCusto: R$ ${cost.toLocaleString('pt-BR')}\nReceita: 70% da original`)
-      : await new Promise<boolean>(resolve => Alert.alert('Criar Franquia', `Criar franquia de "${company.name}"?\n\nCusto: R$ ${cost.toLocaleString('pt-BR')}\nReceita: 70% da original`, [{ text: 'Cancelar', onPress: () => resolve(false) }, { text: 'Criar', onPress: () => resolve(true) }]));
+      ? window.confirm(`Criar franquia de "${company.name}"?\n\nCusto: $ ${cost.toLocaleString('en-US')}\nReceita: 70% da original`)
+      : await new Promise<boolean>(resolve => Alert.alert('Criar Franquia', `Criar franquia de "${company.name}"?\n\nCusto: $ ${cost.toLocaleString('en-US')}\nReceita: 70% da original`, [{ text: 'Cancelar', onPress: () => resolve(false) }, { text: 'Criar', onPress: () => resolve(true) }]));
     if (!doIt) return;
     setFranchising(company.id);
     try {
@@ -101,7 +101,7 @@ export default function Companies() {
     if (action === 'accept') {
       confirmAction(
         'Aceitar Oferta',
-        `Vender "${companyName}" para ${buyerName} por R$ ${(amount || 0).toLocaleString('pt-BR')}?\n\nEsta ação não pode ser desfeita!`,
+        `Vender "${companyName}" para ${buyerName} por $ ${(amount || 0).toLocaleString('en-US')}?\n\nEsta ação não pode ser desfeita!`,
         async () => {
           setRespondingOffer(offerId);
           try {
@@ -134,7 +134,7 @@ export default function Companies() {
       ]);
       setAvailable(avRes.data);
       setOwned(ownRes.data.companies);
-      setTotalRevenue(ownRes.data.total_monthly_revenue);
+      setTotalRevenue(ownRes.data.total_daily_revenue);
       setOffers(offRes.data.offers || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -153,8 +153,8 @@ export default function Companies() {
   };
 
   const handleBuy = (company: any) => {
-    const roiMonths = company.monthly_revenue > 0 ? (company.price / company.monthly_revenue).toFixed(1) : '?';
-    confirmAction(t('companies.buy') || 'Comprar Empresa', `${t('companies.buyConfirm') || 'Deseja comprar'} ${company.name} ${t('companies.buyFor') || 'por'} ${formatMoney(company.price)}?\n\n💵 ${t('companies.monthlyRevenue') || 'Receita mensal'}: ${formatMoney(company.monthly_revenue)}\n📊 ${t('companies.roiEstimate') || 'Retorno estimado'}: ${roiMonths} ${t('general.months') || 'meses'}`, async () => {
+    const roiMonths = company.daily_revenue > 0 ? (company.price / company.daily_revenue).toFixed(1) : '?';
+    confirmAction(t('companies.buy') || 'Comprar Empresa', `${t('companies.buyConfirm') || 'Deseja comprar'} ${company.name} ${t('companies.buyFor') || 'por'} ${formatMoney(company.price)}?\n\n💵 ${t('companies.monthlyRevenue') || 'Receita diária'}: ${formatMoney(company.daily_revenue)}\n📊 ${t('companies.roiEstimate') || 'Retorno estimado'}: ${roiMonths} ${t('general.months') || 'meses'}`, async () => {
       setBuying(company.id);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/buy`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
@@ -170,8 +170,8 @@ export default function Companies() {
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/collect-revenue`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (r.data.total_revenue > 0) {
-        let msg = `Total: R$ ${r.data.total_revenue.toLocaleString('pt-BR')}\nXP: +${r.data.xp_gained}`;
-        r.data.details?.forEach((d: any) => { msg += `\n• ${d.name}: R$ ${d.revenue.toFixed(2)}`; });
+        let msg = `Total: $ ${r.data.total_revenue.toLocaleString('en-US')}\nXP: +${r.data.xp_gained}`;
+        r.data.details?.forEach((d: any) => { msg += `\n• ${d.name}: $ ${d.revenue.toFixed(2)}`; });
         showAlert('Receitas Coletadas!', msg);
       } else { showAlert('Aviso', r.data.message); }
       await loadData(); await refreshUser();
@@ -201,7 +201,7 @@ export default function Companies() {
     if (!newName.trim()) { showAlert('Erro', 'Digite o nome da empresa'); return; }
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/create`, { name: newName, segment: newSegment }, { headers: { Authorization: `Bearer ${token}` } });
-      showAlert('Empresa Criada!', `${r.data.message}\nReceita estimada: R$ ${r.data.company.monthly_revenue}/mês`);
+      showAlert('Empresa Criada!', `${r.data.message}\nReceita estimada: $ ${r.data.company.daily_revenue}/dia`);
       setShowCreate(false); setNewName('');
       await loadData(); await refreshUser();
     } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
@@ -238,7 +238,7 @@ export default function Companies() {
     return parents.map(p => {
       const franchises = franchiseMap[p.id] || [];
       const franchiseCount = franchises.length;
-      const franchiseRevenue = franchises.reduce((sum: number, f: any) => sum + (f.effective_revenue || f.monthly_revenue || 0), 0);
+      const franchiseRevenue = franchises.reduce((sum: number, f: any) => sum + (f.effective_revenue || f.daily_revenue || 0), 0);
       const franchiseEmployees = franchises.reduce((sum: number, f: any) => sum + (f.employees || 0), 0);
       const franchiseCollected = franchises.reduce((sum: number, f: any) => sum + (f.total_collected || 0), 0);
       const franchiseInvestment = franchises.reduce((sum: number, f: any) => sum + (f.purchase_price || 0), 0);
@@ -331,7 +331,7 @@ export default function Companies() {
                 </View>
                 <View style={s.companyRevenue}>
                   <Text style={s.revText}>{formatMoney(c._totalRevenue)}</Text>
-                  <Text style={s.revLabel}>/mês</Text>
+                  <Text style={s.revLabel}>/dia</Text>
                   {c.ad_boost_active && <Text style={s.boostMini}>2x!</Text>}
                 </View>
               </View>
@@ -441,7 +441,7 @@ export default function Companies() {
                     <View style={s.offerPriceBlock}>
                       <View style={s.offerPriceItem}>
                         <Text style={s.offerPriceLabel}>{t('companies.youPaid')}</Text>
-                        <Text style={s.offerPriceOld}>R$ {(offer.purchase_price || 0).toLocaleString('pt-BR')}</Text>
+                        <Text style={s.offerPriceOld}>$ {(offer.purchase_price || 0).toLocaleString('en-US')}</Text>
                       </View>
                       <View style={s.offerArrow}>
                         <Ionicons name="arrow-forward" size={20} color="#888" />
@@ -449,7 +449,7 @@ export default function Companies() {
                       <View style={s.offerPriceItem}>
                         <Text style={s.offerPriceLabel}>{t('companies.offer')}</Text>
                         <Text style={[s.offerPriceNew, { color: isGoodDeal ? '#4CAF50' : '#F44336' }]}>
-                          R$ {(offer.offer_amount || 0).toLocaleString('pt-BR')}
+                          $ {(offer.offer_amount || 0).toLocaleString('en-US')}
                         </Text>
                       </View>
                     </View>
@@ -458,7 +458,7 @@ export default function Companies() {
                     <View style={[s.offerProfitBadge, { backgroundColor: isGoodDeal ? '#4CAF5015' : '#F4433615' }]}>
                       <Ionicons name={isGoodDeal ? 'trending-up' : 'trending-down'} size={16} color={isGoodDeal ? '#4CAF50' : '#F44336'} />
                       <Text style={[s.offerProfitText, { color: isGoodDeal ? '#4CAF50' : '#F44336' }]}>
-                        {isGoodDeal ? '+' : ''}{profitPercent}% ({profitAmount >= 0 ? '+' : ''}R$ {profitAmount.toLocaleString('pt-BR')})
+                        {isGoodDeal ? '+' : ''}{profitPercent}% ({profitAmount >= 0 ? '+' : ''}$ {profitAmount.toLocaleString('en-US')})
                       </Text>
                     </View>
 
@@ -522,9 +522,9 @@ export default function Companies() {
               </View>
               <Text style={s.buyDesc}>{c.description}</Text>
               <View style={s.buyMeta}>
-                <Text style={s.metaText}>💵 {formatMoney(c.monthly_revenue)}/{t('general.month')}</Text>
+                <Text style={s.metaText}>💵 {formatMoney(c.daily_revenue)}/day</Text>
                 <Text style={s.metaText}>👥 {c.employees} emp.</Text>
-                <Text style={s.metaText}>📊 ROI: {c.monthly_revenue > 0 ? (c.price / c.monthly_revenue).toFixed(1) : '?'}m</Text>
+                <Text style={s.metaText}>📊 ROI: {c.daily_revenue > 0 ? (c.price / c.daily_revenue).toFixed(0) : '?'}d</Text>
                 <Text style={s.metaText}>📊 {t('profile.levelLabel')} {c.level_required}</Text>
               </View>
               {c.already_owned ? (
@@ -545,7 +545,7 @@ export default function Companies() {
       <Modal visible={showCreate} animationType="slide" transparent onRequestClose={() => setShowCreate(false)}>
         <View style={s.modalOverlay}><View style={s.modal}>
           <View style={s.modalHeader}><Text style={s.modalTitle}>{t('companies.createCompany')}</Text><TouchableOpacity onPress={() => setShowCreate(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity></View>
-          <Text style={s.modalCost}>Custo de criação: R$ 5.000</Text>
+          <Text style={s.modalCost}>Custo de criação: $ 5.000</Text>
           <Text style={s.label}>{t('companies.companyName')}</Text>
           <TextInput style={s.input} placeholder="Ex: Minha Startup Tech" placeholderTextColor="#555" value={newName} onChangeText={setNewName} />
           <Text style={s.label}>{t('companies.segment')}</Text>

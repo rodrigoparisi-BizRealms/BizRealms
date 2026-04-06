@@ -100,7 +100,7 @@ async def purchase_store_item(request: dict, current_user: dict = Depends(get_cu
     if 'money' in reward:
         new_money = user['money'] + reward['money']
         update_ops['money'] = new_money
-        messages.append(f"+R$ {reward['money']:,.0f} adicionados à sua conta!")
+        messages.append(f"+$ {reward['money']:,.0f} adicionados à sua conta!")
 
     if 'xp' in reward:
         new_xp = user.get('experience_points', 0) + reward['xp']
@@ -261,7 +261,7 @@ async def claim_daily_reward(current_user: dict = Depends(get_current_user)):
     
     return {
         "success": True,
-        "message": f"Propaganda assistida! Você ganhou R$ {reward_amount:,.0f}!",
+        "message": f"Propaganda assistida! Você ganhou $ {reward_amount:,.0f}!",
         "amount": reward_amount,
         "new_balance": round(new_money, 2),
         "level_bonus": user_level * 100,
@@ -316,7 +316,7 @@ async def double_daily_reward(current_user: dict = Depends(get_current_user)):
     
     return {
         "success": True,
-        "message": f"Recompensa dobrada! +R$ {original_amount:,.0f} extras!",
+        "message": f"Recompensa dobrada! +$ {original_amount:,.0f} extras!",
         "bonus_amount": original_amount,
         "new_balance": round(new_money, 2),
     }
@@ -510,7 +510,7 @@ async def check_session_status(data: dict, credentials: HTTPAuthorizationCredent
             if reward.get('money'):
                 update_ops['$inc'] = update_ops.get('$inc', {})
                 update_ops['$inc']['money'] = reward['money']
-                message_parts.append(f"+R$ {reward['money']:,.0f}")
+                message_parts.append(f"+$ {reward['money']:,.0f}")
             
             if reward.get('xp'):
                 update_ops['$inc'] = update_ops.get('$inc', {})

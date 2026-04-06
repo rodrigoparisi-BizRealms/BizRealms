@@ -66,7 +66,7 @@ export default function Patrimonio() {
   };
 
   const handleBuy = (asset: any) => {
-    confirmAction('Comprar', `Deseja comprar ${asset.name} por R$ ${asset.price.toLocaleString('pt-BR')}?\n\n${asset.description}\n\nValorização: ${asset.appreciation > 0 ? '+' : ''}${(asset.appreciation * 100).toFixed(0)}%/mês`, async () => {
+    confirmAction('Comprar', `Deseja comprar ${asset.name} por $ ${asset.price.toLocaleString('en-US')}?\n\n${asset.description}\n\nValorização: ${asset.appreciation > 0 ? '+' : ''}${(asset.appreciation * 100).toFixed(0)}%/mês`, async () => {
       setBuying(asset.id);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/buy`, { asset_id: asset.id }, { headers: { Authorization: `Bearer ${token}` } });
@@ -78,8 +78,8 @@ export default function Patrimonio() {
   };
 
   const handleSell = (asset: any) => {
-    const profit = asset.profit >= 0 ? `Lucro: R$ ${asset.profit.toFixed(2)}` : `Prejuízo: R$ ${Math.abs(asset.profit).toFixed(2)}`;
-    confirmAction('Vender', `Vender ${asset.name}?\n\nValor atual: R$ ${asset.current_value.toLocaleString('pt-BR')}\n${profit}`, async () => {
+    const profit = asset.profit >= 0 ? `Lucro: $ ${asset.profit.toFixed(2)}` : `Prejuízo: $ ${Math.abs(asset.profit).toFixed(2)}`;
+    confirmAction('Vender', `Vender ${asset.name}?\n\nValor atual: $ ${asset.current_value.toLocaleString('en-US')}\n${profit}`, async () => {
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/sell`, { asset_id: asset.id }, { headers: { Authorization: `Bearer ${token}` } });
         showAlert('Venda Realizada!', r.data.message);
@@ -90,7 +90,7 @@ export default function Patrimonio() {
 
   const handleOfferRespond = (offer: any, action: 'accept' | 'decline') => {
     const msg = action === 'accept'
-      ? `Aceitar oferta de ${offer.buyer_name} de R$ ${offer.offer_amount.toLocaleString('pt-BR')} por "${offer.asset_name}"?`
+      ? `Aceitar oferta de ${offer.buyer_name} de $ ${offer.offer_amount.toLocaleString('en-US')} por "${offer.asset_name}"?`
       : `Recusar oferta de ${offer.buyer_name}?`;
     confirmAction(action === 'accept' ? 'Aceitar Oferta' : 'Recusar Oferta', msg, async () => {
       setRespondingOffer(offer.id);
@@ -167,16 +167,16 @@ export default function Patrimonio() {
         {viewMode === 'owned' && summary && summary.count > 0 && (
           <View style={s.summaryCard}>
             <Text style={s.sumLabel}>Valor Total do Patrimônio</Text>
-            <Text style={s.sumValue}>R$ {summary.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+            <Text style={s.sumValue}>$ {summary.total_value.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
             <View style={s.sumRow}>
               <View style={s.sumItem}>
                 <Text style={s.sumItemLabel}>Investido</Text>
-                <Text style={s.sumItemVal}>R$ {summary.total_invested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+                <Text style={s.sumItemVal}>$ {summary.total_invested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
               </View>
               <View style={s.sumItem}>
                 <Text style={s.sumItemLabel}>Lucro/Prejuízo</Text>
                 <Text style={[s.sumItemVal, { color: summary.total_profit >= 0 ? '#4CAF50' : '#F44336' }]}>
-                  {summary.total_profit >= 0 ? '+' : ''}R$ {summary.total_profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {summary.total_profit >= 0 ? '+' : ''}$ {summary.total_profit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </Text>
               </View>
               <View style={s.sumItem}>
@@ -205,7 +205,7 @@ export default function Patrimonio() {
                   <Text style={s.aSub}>{a.subcategory}</Text>
                 </View>
                 <View style={s.aValues}>
-                  <Text style={s.aValue}>R$ {a.current_value.toLocaleString('pt-BR')}</Text>
+                  <Text style={s.aValue}>$ {a.current_value.toLocaleString('en-US')}</Text>
                   <Text style={[s.aProfit, { color: isProfit ? '#4CAF50' : '#F44336' }]}>
                     {isProfit ? '+' : ''}{a.profit_pct.toFixed(1)}%
                   </Text>
@@ -247,7 +247,7 @@ export default function Patrimonio() {
                   <Text style={s.aSub}>De: {offer.buyer_name}</Text>
                 </View>
                 <View style={s.aValues}>
-                  <Text style={[s.aValue, { color: '#FFD700' }]}>R$ {offer.offer_amount.toLocaleString('pt-BR')}</Text>
+                  <Text style={[s.aValue, { color: '#FFD700' }]}>$ {offer.offer_amount.toLocaleString('en-US')}</Text>
                   <Text style={[s.aProfit, { color: isProfit ? '#4CAF50' : '#F44336' }]}>
                     {isProfit ? '+' : ''}{profitPct}%
                   </Text>
@@ -255,7 +255,7 @@ export default function Patrimonio() {
               </View>
               <Text style={s.aDesc}>{offer.reason}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 8 }}>
-                <Text style={{ color: '#888', fontSize: 11 }}>Comprado por: R$ {offer.purchase_price.toLocaleString('pt-BR')}</Text>
+                <Text style={{ color: '#888', fontSize: 11 }}>Comprado por: $ {offer.purchase_price.toLocaleString('en-US')}</Text>
                 <Text style={{ color: '#FF9800', fontSize: 11, fontWeight: '600' }}>Expira em {hrs}h {mins}min</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -294,7 +294,7 @@ export default function Patrimonio() {
                   <Text style={s.aName}>{a.name}</Text>
                   <Text style={s.aSub}>{a.subcategory} • Nível {a.level_required}</Text>
                 </View>
-                <Text style={s.storePrice}>R$ {a.price.toLocaleString('pt-BR')}</Text>
+                <Text style={s.storePrice}>$ {a.price.toLocaleString('en-US')}</Text>
               </View>
               <Text style={s.aDesc}>{a.description}</Text>
               <TouchableOpacity style={s.photoBtn} onPress={() => openGallery(a)}>

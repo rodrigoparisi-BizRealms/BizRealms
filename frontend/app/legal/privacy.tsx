@@ -74,10 +74,10 @@ export default function Privacy() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#222' },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
   back: { marginRight: 12, padding: 4 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  title: { fontSize: 20, fontWeight: 'bold' },
   content: { flex: 1, padding: 20 },
   updated: { color: '#888', fontSize: 12, marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#4CAF50', marginTop: 20, marginBottom: 8 },

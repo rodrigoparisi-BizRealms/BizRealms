@@ -51,14 +51,14 @@ class SellRequest(BaseModel):
 # Seed Investment Assets
 INVESTMENT_SEEDS = [
     # Ações B3
-    {"ticker": "PETR4", "name": "Petrobras PN", "category": "acoes", "base_price": 38.50, "volatility": 2.5, "trend": 0.05, "description": "Petróleo Brasileiro S.A. - Ação preferencial", "sector": "Petróleo & Gás", "market_cap": "R$ 500B"},
-    {"ticker": "VALE3", "name": "Vale ON", "category": "acoes", "base_price": 62.00, "volatility": 2.8, "trend": 0.03, "description": "Vale S.A. - Mineração e metais", "sector": "Mineração", "market_cap": "R$ 280B"},
-    {"ticker": "ITUB4", "name": "Itaú Unibanco PN", "category": "acoes", "base_price": 32.00, "volatility": 1.8, "trend": 0.04, "description": "Itaú Unibanco - Maior banco privado do Brasil", "sector": "Financeiro", "market_cap": "R$ 300B"},
-    {"ticker": "BBDC4", "name": "Bradesco PN", "category": "acoes", "base_price": 14.50, "volatility": 2.2, "trend": -0.02, "description": "Banco Bradesco S.A.", "sector": "Financeiro", "market_cap": "R$ 150B"},
-    {"ticker": "WEGE3", "name": "WEG ON", "category": "acoes", "base_price": 44.00, "volatility": 2.0, "trend": 0.06, "description": "WEG S.A. - Motores e equipamentos elétricos", "sector": "Industrial", "market_cap": "R$ 185B"},
-    {"ticker": "MGLU3", "name": "Magazine Luiza ON", "category": "acoes", "base_price": 2.80, "volatility": 5.0, "trend": -0.08, "description": "Magazine Luiza - E-commerce e varejo", "sector": "Varejo", "market_cap": "R$ 18B"},
-    {"ticker": "ABEV3", "name": "Ambev ON", "category": "acoes", "base_price": 13.20, "volatility": 1.5, "trend": 0.02, "description": "Ambev S.A. - Maior cervejaria da América Latina", "sector": "Bebidas", "market_cap": "R$ 210B"},
-    {"ticker": "B3SA3", "name": "B3 ON", "category": "acoes", "base_price": 12.50, "volatility": 2.3, "trend": 0.01, "description": "B3 S.A. - Bolsa de Valores do Brasil", "sector": "Financeiro", "market_cap": "R$ 70B"},
+    {"ticker": "PETR4", "name": "Petrobras PN", "category": "acoes", "base_price": 38.50, "volatility": 2.5, "trend": 0.05, "description": "Petróleo Brasileiro S.A. - Ação preferencial", "sector": "Petróleo & Gás", "market_cap": "$ 500B"},
+    {"ticker": "VALE3", "name": "Vale ON", "category": "acoes", "base_price": 62.00, "volatility": 2.8, "trend": 0.03, "description": "Vale S.A. - Mineração e metais", "sector": "Mineração", "market_cap": "$ 280B"},
+    {"ticker": "ITUB4", "name": "Itaú Unibanco PN", "category": "acoes", "base_price": 32.00, "volatility": 1.8, "trend": 0.04, "description": "Itaú Unibanco - Maior banco privado do Brasil", "sector": "Financeiro", "market_cap": "$ 300B"},
+    {"ticker": "BBDC4", "name": "Bradesco PN", "category": "acoes", "base_price": 14.50, "volatility": 2.2, "trend": -0.02, "description": "Banco Bradesco S.A.", "sector": "Financeiro", "market_cap": "$ 150B"},
+    {"ticker": "WEGE3", "name": "WEG ON", "category": "acoes", "base_price": 44.00, "volatility": 2.0, "trend": 0.06, "description": "WEG S.A. - Motores e equipamentos elétricos", "sector": "Industrial", "market_cap": "$ 185B"},
+    {"ticker": "MGLU3", "name": "Magazine Luiza ON", "category": "acoes", "base_price": 2.80, "volatility": 5.0, "trend": -0.08, "description": "Magazine Luiza - E-commerce e varejo", "sector": "Varejo", "market_cap": "$ 18B"},
+    {"ticker": "ABEV3", "name": "Ambev ON", "category": "acoes", "base_price": 13.20, "volatility": 1.5, "trend": 0.02, "description": "Ambev S.A. - Maior cervejaria da América Latina", "sector": "Bebidas", "market_cap": "$ 210B"},
+    {"ticker": "B3SA3", "name": "B3 ON", "category": "acoes", "base_price": 12.50, "volatility": 2.3, "trend": 0.01, "description": "B3 S.A. - Bolsa de Valores do Brasil", "sector": "Financeiro", "market_cap": "$ 70B"},
     # Crypto
     {"ticker": "BTC", "name": "Bitcoin", "category": "crypto", "base_price": 350000.00, "volatility": 4.0, "trend": 0.08, "description": "A maior criptomoeda do mundo por capitalização", "currency": "BRL", "market_cap": "US$ 1.3T"},
     {"ticker": "ETH", "name": "Ethereum", "category": "crypto", "base_price": 18500.00, "volatility": 5.0, "trend": 0.06, "description": "Plataforma de contratos inteligentes", "currency": "BRL", "market_cap": "US$ 400B"},
@@ -218,7 +218,7 @@ async def buy_asset(request: BuyRequest, current_user: dict = Depends(get_curren
     if user['money'] < total_cost:
         raise HTTPException(
             status_code=400, 
-            detail=f"Saldo insuficiente. Necessário: R$ {total_cost:.2f}, Disponível: R$ {user['money']:.2f}"
+            detail=f"Saldo insuficiente. Necessário: $ {total_cost:.2f}, Disponível: $ {user['money']:.2f}"
         )
     
     # Deduct money
@@ -351,7 +351,7 @@ async def sell_asset(request: SellRequest, current_user: dict = Depends(get_curr
     }
     await db.investment_transactions.insert_one(transaction)
     
-    profit_msg = f"Lucro: R$ {profit:.2f}" if profit >= 0 else f"Prejuízo: R$ {abs(profit):.2f}"
+    profit_msg = f"Lucro: $ {profit:.2f}" if profit >= 0 else f"Prejuízo: $ {abs(profit):.2f}"
     
     return {
         "message": f"Venda de {request.quantity} {asset['ticker']} realizada!",

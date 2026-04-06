@@ -31,7 +31,7 @@ PRESTIGE_PERKS = [
     {
         "id": "starting_money_1",
         "name": "Capital Inicial I",
-        "description": "Comece com +R$ 500 (total R$ 1.500)",
+        "description": "Comece com +$ 500 (total $ 1.500)",
         "emoji": "💰",
         "cost": 50,
         "category": "money",
@@ -42,7 +42,7 @@ PRESTIGE_PERKS = [
     {
         "id": "starting_money_2",
         "name": "Capital Inicial II",
-        "description": "Comece com +R$ 2.000 (total R$ 3.000)",
+        "description": "Comece com +$ 2.000 (total $ 3.000)",
         "emoji": "💰",
         "cost": 200,
         "category": "money",
@@ -54,7 +54,7 @@ PRESTIGE_PERKS = [
     {
         "id": "starting_money_3",
         "name": "Capital Inicial III",
-        "description": "Comece com +R$ 5.000 (total R$ 6.000)",
+        "description": "Comece com +$ 5.000 (total $ 6.000)",
         "emoji": "💰",
         "cost": 800,
         "category": "money",
@@ -332,7 +332,7 @@ async def prestige_reset(current_user: dict = Depends(get_current_user)):
     if points_earned <= 0:
         raise HTTPException(
             status_code=400,
-            detail="Patrimônio insuficiente para ganhar pontos de prestígio. Mínimo: R$ 10.000"
+            detail="Patrimônio insuficiente para ganhar pontos de prestígio. Mínimo: $ 10.000"
         )
 
     # Get or create prestige record
@@ -415,7 +415,7 @@ async def prestige_reset(current_user: dict = Depends(get_current_user)):
         "user_id": uid,
         "type": "prestige",
         "title": f"🏆 Prestígio #{resets}!",
-        "message": f"Você ganhou {points_earned} pontos! Total: {new_total}. Patrimônio anterior: R$ {net_worth:,.2f}",
+        "message": f"Você ganhou {points_earned} pontos! Total: {new_total}. Patrimônio anterior: $ {net_worth:,.2f}",
         "read": False,
         "created_at": datetime.utcnow(),
     })

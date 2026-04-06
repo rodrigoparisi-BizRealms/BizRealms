@@ -285,7 +285,7 @@ export default function Bank() {
                     <View>
                       <Text style={s.cardLabel}>{t('bank.miles')}</Text>
                       <Text style={[s.cardVal, { color: '#FFD700' }]}>
-                        {(card.miles_points || 0).toLocaleString('pt-BR')}
+                        {(card.miles_points || 0).toLocaleString('en-US')}
                       </Text>
                     </View>
                   </View>
@@ -416,7 +416,7 @@ export default function Bank() {
                 <Text style={s.sectionTitle}>{t('bank.milesProgram')}</Text>
                 <View style={s.milesBadge}>
                   <Ionicons name="star" size={14} color="#FFD700" />
-                  <Text style={s.milesCount}>{(card?.miles_points || 0).toLocaleString('pt-BR')}</Text>
+                  <Text style={s.milesCount}>{(card?.miles_points || 0).toLocaleString('en-US')}</Text>
                 </View>
               </View>
               <Text style={s.milesHint}>{t('bank.milesHint')}</Text>
@@ -430,10 +430,10 @@ export default function Bank() {
                     <View style={{ flex: 1 }}>
                       <Text style={s.tripName}>{trip.name}</Text>
                       <Text style={s.tripDesc}>{trip.description}</Text>
-                      <Text style={s.tripMiles}>{trip.miles_cost.toLocaleString('pt-BR')} milhas</Text>
+                      <Text style={s.tripMiles}>{trip.miles_cost.toLocaleString('en-US')} milhas</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={s.tripXp}>+{trip.xp_reward.toLocaleString('pt-BR')} XP</Text>
+                      <Text style={s.tripXp}>+{trip.xp_reward.toLocaleString('en-US')} XP</Text>
                       <TouchableOpacity
                         style={[s.redeemBtn, !canRedeem && s.disabledBtn]}
                         onPress={() => handleRedeemMiles(trip.id, trip.name, trip.miles_cost)}
@@ -577,7 +577,7 @@ export default function Bank() {
             <Text style={s.modalInfo}>
               Disponível: {formatMoney((card?.limit || 0) - (card?.balance_used || 0))}
             </Text>
-            <Text style={s.inputLabel}>Valor (R$)</Text>
+            <Text style={s.inputLabel}>Valor ($)</Text>
             <TextInput
               style={s.input}
               placeholder="Ex: 5000"
@@ -683,7 +683,7 @@ export default function Bank() {
               Máximo: {formatMoney(loanType === 'small' ? (loanLimits.small_no_guarantee || 0) : (loanLimits.large_with_guarantee || 0))}
             </Text>
 
-            <Text style={s.inputLabel}>Valor (R$)</Text>
+            <Text style={s.inputLabel}>Valor ($)</Text>
             <TextInput
               style={s.input}
               placeholder="Ex: 20000"

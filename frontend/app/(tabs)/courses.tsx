@@ -93,17 +93,17 @@ export default function Courses() {
 
     if ((user?.money || 0) < course.cost) {
       if (Platform.OS === 'web') {
-        window.alert(`Dinheiro Insuficiente\n\nVocê precisa de R$ ${course.cost.toLocaleString('pt-BR')} para fazer este curso.\nSeu saldo: R$ ${(user?.money || 0).toLocaleString('pt-BR')}`);
+        window.alert(`Dinheiro Insuficiente\n\nVocê precisa de $ ${course.cost.toLocaleString('en-US')} para fazer este curso.\nSeu saldo: $ ${(user?.money || 0).toLocaleString('en-US')}`);
       } else {
         Alert.alert(
           'Dinheiro Insuficiente',
-          `Você precisa de R$ ${course.cost.toLocaleString('pt-BR')} para fazer este curso.\n\nSeu saldo: R$ ${(user?.money || 0).toLocaleString('pt-BR')}`
+          `Você precisa de $ ${course.cost.toLocaleString('en-US')} para fazer este curso.\n\nSeu saldo: $ ${(user?.money || 0).toLocaleString('en-US')}`
         );
       }
       return;
     }
 
-    const courseInfo = `Custo: R$ ${course.cost.toLocaleString('pt-BR')}\nBenefícios: +${(course.earnings_boost * 100).toFixed(0)}% ganhos permanentes`;
+    const courseInfo = `Custo: $ ${course.cost.toLocaleString('en-US')}\nBenefícios: +${(course.earnings_boost * 100).toFixed(0)}% ganhos permanentes`;
 
     if (Platform.OS === 'web') {
       const ok = window.confirm(`Fazer Curso: ${course.name}?\n\n${courseInfo}\n\nEste boost é PERMANENTE!`);
@@ -128,7 +128,7 @@ export default function Courses() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const successMsg = `${response.data.message}\n\nGasto: R$ ${response.data.cost.toLocaleString('pt-BR')}\nBoost: ${response.data.earnings_boost}\n\nSeus ganhos aumentaram PERMANENTEMENTE!`;
+      const successMsg = `${response.data.message}\n\nGasto: $ ${response.data.cost.toLocaleString('en-US')}\nBoost: ${response.data.earnings_boost}\n\nSeus ganhos aumentaram PERMANENTEMENTE!`;
       if (Platform.OS === 'web') {
         window.alert(`Curso Concluído!\n\n${successMsg}`);
       } else {
@@ -238,7 +238,7 @@ export default function Courses() {
                   <View style={styles.benefitItem}>
                     <Ionicons name="cash" size={14} color={!canAfford && !completed && !isLocked ? '#F44336' : isLocked ? '#555' : '#FFD700'} />
                     <Text style={[styles.benefitText, !canAfford && !completed && !isLocked && { color: '#F44336' }, isLocked && { color: '#555' }]}>
-                      R$ {course.cost.toLocaleString('pt-BR')}
+                      $ {course.cost.toLocaleString('en-US')}
                     </Text>
                   </View>
                 </View>

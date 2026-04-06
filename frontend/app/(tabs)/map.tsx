@@ -169,7 +169,7 @@ function generateMapHTML(companies: Company[], categories: CategoryInfo): string
       });
 
       var posText = c.positions > 0 ? '<br><span class="popup-positions">' + c.positions + ' vagas abertas</span>' : '';
-      var investText = c.investment ? '<br>Investimento mín: R$ ' + c.minInvest.toLocaleString('pt-BR') : '';
+      var investText = c.investment ? '<br>Investimento mín: $ ' + c.minInvest.toLocaleString('en-US') : '';
 
       var popup = '<div class="popup-name">' + c.name + '</div>' +
         '<div class="popup-desc">' + c.description + '</div>' +
@@ -455,7 +455,7 @@ export default function MapScreen() {
                     <View style={styles.investInfo}>
                       <Text style={styles.investText}>Investimento disponível</Text>
                       <Text style={styles.investMin}>
-                        Mínimo: R$ {selectedCompany.min_investment.toLocaleString('pt-BR')}
+                        Mínimo: $ {selectedCompany.min_investment.toLocaleString('en-US')}
                       </Text>
                     </View>
                   </View>

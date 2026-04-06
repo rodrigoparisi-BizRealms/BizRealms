@@ -183,7 +183,7 @@ export default function Jobs() {
 
       Alert.alert(
         'Parabéns!',
-        `${response.data.message}\n\nGanho diário: R$ ${response.data.daily_earnings.toFixed(2)}`
+        `${response.data.message}\n\nGanho diário: $ ${response.data.daily_earnings.toFixed(2)}`
       );
       await loadData();
       await refreshUser();
@@ -204,7 +204,7 @@ export default function Jobs() {
         Alert.alert('Aviso', response.data.message);
       } else {
         let message = `${response.data.message}\n\n` +
-          `Ganhos: R$ ${response.data.earnings.toFixed(2)}\n` +
+          `Ganhos: $ ${response.data.earnings.toFixed(2)}\n` +
           `XP: +${response.data.xp_gained}\n` +
           `Dias trabalhados: ${response.data.days_worked}`;
         
@@ -298,7 +298,7 @@ export default function Jobs() {
       const title = 'Boost Ativado!';
       const msg = `${response.data.message}\n\n` +
         `Multiplicador: ${response.data.multiplier}x\n` +
-        `Ganho diário: R$ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
+        `Ganho diário: $ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
         `Duração restante: ${durStr}`;
 
       if (Platform.OS === 'web') {
@@ -394,7 +394,7 @@ export default function Jobs() {
                 {formatMoney(currentJob.salary)}/{t('general.month')}
               </Text>
               <Text style={styles.dailyEarnings}>
-                R$ {((currentJob.salary / 30) * (adBoost.active ? adBoost.multiplier : 1)).toFixed(2)}/dia
+                $ {((currentJob.salary / 30) * (adBoost.active ? adBoost.multiplier : 1)).toFixed(2)}/dia
                 {adBoost.active && adBoost.multiplier > 1 && (
                   <Text style={styles.boosted}> BOOST!</Text>
                 )}
