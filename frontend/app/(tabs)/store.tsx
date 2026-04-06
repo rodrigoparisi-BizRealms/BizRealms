@@ -13,6 +13,8 @@ import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../context/ThemeContext';
 
+import { useAds } from '../../context/AdContext';
+
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const CATEGORY_CFG: Record<string, { label: string; icon: string; color: string }> = {
@@ -24,6 +26,7 @@ const CATEGORY_CFG: Record<string, { label: string; icon: string; color: string 
 export default function Store() {
   const { token, user, refreshUser } = useAuth();
   const { colors } = useTheme();
+  const { showAd } = useAds();
   const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const [items, setItems] = useState<any[]>([]);
@@ -226,7 +229,7 @@ export default function Store() {
         {dailyStatus?.available && (
           <TouchableOpacity
             style={[s.dailyCard, claimingDaily && { opacity: 0.5 }]}
-            onPress={handleDailyReward}
+            onPress={() => showAd(() => handleDailyReward(), 'reward')}
             disabled={claimingDaily}
             activeOpacity={0.7}
           >
@@ -236,7 +239,7 @@ export default function Store() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.dailyTitle}>{t('store.dailyReward')}</Text>
-                <Text style={s.dailyDesc}>Assista uma propaganda e ganhe R$ {dailyStatus.reward_amount?.toLocaleString('pt-BR')}</Text>
+                <Text style={s.dailyDesc}>{t('store.watchAdForReward') || 'Assista uma propaganda e ganhe'} R$ {dailyStatus.reward_amount?.toLocaleString('pt-BR')}</Text>
               </View>
             </View>
             {claimingDaily ? (
@@ -250,16 +253,38 @@ export default function Store() {
           </TouchableOpacity>
         )}
         {dailyStatus && !dailyStatus.available && (
-          <View style={[s.dailyCard, { borderColor: '#333', opacity: 0.6 }]}>
-            <View style={s.dailyLeft}>
-              <View style={[s.dailyIconBg, { backgroundColor: '#333' }]}>
-                <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.dailyTitle, { color: '#666' }]}>{t('store.dailyClaimed')}</Text>
-                <Text style={s.dailyDesc}>Volte amanhã para ganhar mais</Text>
+          <View style={{ gap: 8, marginBottom: 12 }}>
+            <View style={[s.dailyCard, { borderColor: '#4CAF50', marginBottom: 0 }]}>
+              <View style={s.dailyLeft}>
+                <View style={[s.dailyIconBg, { backgroundColor: '#1a3a1a' }]}>
+                  <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.dailyTitle, { color: '#4CAF50' }]}>{t('store.dailyClaimed')}</Text>
+                  <Text style={s.dailyDesc}>{t('store.comeBackTomorrow') || 'Volte amanhã para ganhar mais'}</Text>
+                </View>
               </View>
             </View>
+            {/* Double reward via ad */}
+            {!dailyStatus.doubled && (
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FF980015', borderRadius: 12, paddingVertical: 12, borderWidth: 1, borderColor: '#FF980030' }}
+                onPress={() => showAd(async () => {
+                  try {
+                    const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/store/double-daily`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                    showAlert('Dobrou!', r.data?.message || 'Recompensa diária dobrada!');
+                    await loadData();
+                    await refreshUser();
+                  } catch (e: any) {
+                    showAlert('Erro', e.response?.data?.detail || 'Erro');
+                  }
+                }, 'double')}
+              >
+                <Ionicons name="flash" size={18} color="#FF9800" />
+                <Text style={{ color: '#FF9800', fontSize: 14, fontWeight: '700' }}>{t('store.doubleReward') || 'Duplique o Valor!'}</Text>
+                <Ionicons name="play-circle" size={16} color="#FF980080" />
+              </TouchableOpacity>
+            )}
           </View>
         )}
 

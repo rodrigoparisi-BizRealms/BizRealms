@@ -369,3 +369,66 @@ async def complete_character_profile(
     }
 
 
+
+@router.post("/user/reset-account")
+async def reset_account(current_user: dict = Depends(get_current_user)):
+    """Reset all game data for the current user (keeps auth info)."""
+    uid = current_user['id']
+    
+    # Reset user game data (keep auth fields)
+    await db.users.update_one(
+        {"id": uid},
+        {"$set": {
+            "money": 1000,
+            "level": 1,
+            "experience_points": 0,
+            "education": [],
+            "certifications": [],
+            "work_experience": [],
+            "skills": {},
+            "background": "",
+            "dream": "",
+            "daily_offers_used": 0,
+            "last_offer_reset": None,
+            "ads_watched_today": 0,
+        }}
+    )
+    
+    # Delete all user's game data
+    await db.user_companies.delete_many({"user_id": uid})
+    await db.user_assets.delete_many({"user_id": uid})
+    await db.user_investments.delete_many({"user_id": uid})
+    await db.company_offers.delete_many({"user_id": uid})
+    await db.asset_offers.delete_many({"user_id": uid})
+    await db.user_loans.delete_many({"user_id": uid})
+    await db.user_credit_cards.delete_many({"user_id": uid})
+    await db.notifications.delete_many({"user_id": uid})
+    await db.achievements.delete_many({"user_id": uid})
+    
+    return {"success": True, "message": "Conta zerada com sucesso. Todos os dados do jogo foram reiniciados."}
+
+@router.post("/user/watch-ad")
+async def watch_ad(current_user: dict = Depends(get_current_user)):
+    """Track ad watch and unlock rewards."""
+    uid = current_user['id']
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Track ads watched
+    user = await db.users.find_one({"id": uid})
+    last_ad_date = user.get('last_ad_date', '')
+    ads_today = user.get('ads_watched_today', 0) if last_ad_date == today else 0
+    
+    await db.users.update_one(
+        {"id": uid},
+        {"$set": {
+            "ads_watched_today": ads_today + 1,
+            "last_ad_date": today,
+        }}
+    )
+    
+    return {
+        "success": True,
+        "ads_watched_today": ads_today + 1,
+        "message": "Anúncio assistido com sucesso!",
+    }
+

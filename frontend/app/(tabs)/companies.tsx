@@ -13,6 +13,8 @@ import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../context/ThemeContext';
 
+import { useAds } from '../../context/AdContext';
+
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const SEGMENT_LABELS: Record<string, string> = {
@@ -25,6 +27,7 @@ const SEGMENT_LABELS: Record<string, string> = {
 export default function Companies() {
   const { token, user, refreshUser } = useAuth();
   const { colors } = useTheme();
+  const { showAd } = useAds();
   const [available, setAvailable] = useState<any[]>([]);
   const [owned, setOwned] = useState<any[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -313,6 +316,18 @@ export default function Companies() {
 
         {/* OFFERS VIEW */}
         {viewMode === 'offers' && (<>
+          {/* Ad-gated offer controls */}
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <TouchableOpacity
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FF980020', borderRadius: 12, paddingVertical: 12, borderWidth: 1, borderColor: '#FF980040' }}
+              onPress={() => showAd(() => { onRefresh(); }, 'offer')}
+            >
+              <Ionicons name="add-circle" size={18} color="#FF9800" />
+              <Text style={{ color: '#FF9800', fontSize: 13, fontWeight: '600' }}>{t('companies.newOffersAd') || 'Novas Ofertas'}</Text>
+              <Ionicons name="play-circle" size={14} color="#FF980080" />
+            </TouchableOpacity>
+          </View>
+
           {offers.length === 0 ? (
             <View style={s.empty}>
               <Ionicons name="mail-outline" size={64} color="#555" />
@@ -386,6 +401,20 @@ export default function Companies() {
                         {isGoodDeal ? '+' : ''}{profitPercent}% ({profitAmount >= 0 ? '+' : ''}R$ {profitAmount.toLocaleString('pt-BR')})
                       </Text>
                     </View>
+
+                    {/* Better Offer via Ad */}
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#9C27B010', borderRadius: 8, paddingVertical: 8, marginBottom: 8, borderWidth: 1, borderColor: '#9C27B030' }}
+                      onPress={() => showAd(() => {
+                        // Improve offer by 15-25%
+                        const improvedOffer = { ...offer, offer_amount: Math.round(offer.offer_amount * (1 + Math.random() * 0.1 + 0.15)) };
+                        setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, offer_amount: improvedOffer.offer_amount, multiplier: improvedOffer.offer_amount / o.purchase_price } : o));
+                      }, 'better_offer')}
+                    >
+                      <Ionicons name="trending-up" size={16} color="#9C27B0" />
+                      <Text style={{ color: '#9C27B0', fontSize: 12, fontWeight: '600' }}>{t('companies.betterOfferAd') || 'Melhor Oferta'}</Text>
+                      <Ionicons name="play-circle" size={14} color="#9C27B060" />
+                    </TouchableOpacity>
 
                     {/* Actions */}
                     <View style={s.offerActions}>

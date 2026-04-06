@@ -223,8 +223,43 @@ async def daily_reward_status(current_user: dict = Depends(get_current_user)):
         "available": existing is None,
         "already_claimed": existing is not None,
         "reward_amount": reward_amount,
+        "doubled": existing.get('doubled', False) if existing else False,
     }
 
+@router.post("/store/double-daily")
+async def double_daily_reward(current_user: dict = Depends(get_current_user)):
+    """Double today's daily reward by watching an ad."""
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    
+    existing = await db.daily_rewards.find_one({
+        "user_id": current_user['id'],
+        "date": today
+    })
+    if not existing:
+        raise HTTPException(status_code=400, detail="Resgate sua recompensa diária primeiro!")
+    if existing.get('doubled'):
+        raise HTTPException(status_code=400, detail="Recompensa já foi dobrada hoje!")
+    
+    # Double the reward
+    original_amount = existing.get('amount', 500)
+    user = await db.users.find_one({"id": current_user['id']})
+    new_money = user.get('money', 0) + original_amount
+    
+    await db.users.update_one(
+        {"id": current_user['id']},
+        {"$set": {"money": new_money}}
+    )
+    await db.daily_rewards.update_one(
+        {"_id": existing['_id']},
+        {"$set": {"doubled": True, "double_amount": original_amount}}
+    )
+    
+    return {
+        "success": True,
+        "message": f"Recompensa dobrada! +R$ {original_amount:,.0f} extras!",
+        "bonus_amount": original_amount,
+        "new_balance": round(new_money, 2),
+    }
 
 
 

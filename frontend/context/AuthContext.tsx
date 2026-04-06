@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { Platform } from 'react-native';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -33,6 +35,9 @@ interface AuthContextType {
   logout: () => Promise<void>;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  biometricEnabled: boolean;
+  biometricAvailable: boolean;
+  toggleBiometric: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,10 +46,52 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   useEffect(() => {
     loadStoredAuth();
+    checkBiometric();
   }, []);
+
+  const checkBiometric = async () => {
+    if (Platform.OS === 'web') return;
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      setBiometricAvailable(compatible && enrolled);
+      const enabled = await AsyncStorage.getItem('biometric_enabled');
+      setBiometricEnabled(enabled === 'true');
+    } catch {
+      setBiometricAvailable(false);
+    }
+  };
+
+  const authenticateWithBiometric = async (): Promise<boolean> => {
+    if (Platform.OS === 'web') return true;
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Autentique-se para acessar o BizRealms',
+        fallbackLabel: 'Usar senha',
+        cancelLabel: 'Cancelar',
+      });
+      return result.success;
+    } catch {
+      return true; // Allow access if biometric fails
+    }
+  };
+
+  const toggleBiometric = async () => {
+    if (!biometricAvailable) return;
+    const newState = !biometricEnabled;
+    if (newState) {
+      // Verify identity before enabling
+      const verified = await authenticateWithBiometric();
+      if (!verified) return;
+    }
+    setBiometricEnabled(newState);
+    await AsyncStorage.setItem('biometric_enabled', newState ? 'true' : 'false');
+  };
 
   const loadStoredAuth = async () => {
     try {
@@ -52,6 +99,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const storedUser = await AsyncStorage.getItem('user');
       
       if (storedToken && storedUser) {
+        // Check if biometric is required
+        const bioEnabled = await AsyncStorage.getItem('biometric_enabled');
+        if (bioEnabled === 'true' && Platform.OS !== 'web') {
+          const verified = await authenticateWithBiometric();
+          if (!verified) {
+            // User failed biometric - don't load session
+            setLoading(false);
+            return;
+          }
+        }
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
@@ -127,7 +184,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, loading, refreshUser, biometricEnabled, biometricAvailable, toggleBiometric }}>
       {children}
     </AuthContext.Provider>
   );

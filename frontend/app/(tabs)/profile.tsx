@@ -15,21 +15,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { useMusic, JAZZ_BLUES_TRACKS, ALL_YOUTUBE_IDS } from '../../context/MusicContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
+import { useAds } from '../../context/AdContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 import { useTheme } from '../../context/ThemeContext';
 
 export default function Profile() {
-  const { user, token, logout, refreshUser } = useAuth();
+  const { user, token, logout, refreshUser, biometricEnabled, biometricAvailable, toggleBiometric } = useAuth();
   const { locale, setLocale, languages, t, formatMoney } = useLanguage();
-  const { activeTrack, isPlaying, playTrack, togglePlay, stopMusic, musicEnabled, setMusicEnabled, nextTrack } = useMusic();
   const { isDark, colors, toggleTheme } = useTheme();
+  const { showAd } = useAds();
   const router = useRouter();
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -399,6 +399,34 @@ export default function Profile() {
     { label: 'Doutorado', value: '4' },
   ];
 
+  const handleResetAccount = () => {
+    const doReset = async () => {
+      try {
+        await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/user/reset-account`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showAlert('Conta Zerada', t('profile.accountResetSuccess') || 'Sua conta foi zerada com sucesso. Todos os dados do jogo foram reiniciados.');
+        await refreshUser();
+      } catch (e: any) {
+        showAlert('Erro', e.response?.data?.detail || 'Erro ao zerar conta');
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm(t('profile.resetConfirmMsg') || 'TEM CERTEZA que deseja ZERAR sua conta? Todos os seus dados do jogo (dinheiro, empresas, investimentos, patrimônio, empregos) serão apagados permanentemente. Esta ação NÃO pode ser desfeita!')) {
+        doReset();
+      }
+    } else {
+      Alert.alert(
+        t('profile.resetAccount') || 'Zerar Conta',
+        t('profile.resetConfirmMsg') || 'TEM CERTEZA que deseja ZERAR sua conta? Todos os seus dados do jogo serão apagados permanentemente. Esta ação NÃO pode ser desfeita!',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'ZERAR TUDO', style: 'destructive', onPress: doReset },
+        ]
+      );
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -699,6 +727,32 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
+        {/* Biometric / Security Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="finger-print" size={22} color="#2196F3" />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.security') || 'Segurança'}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }]}
+            onPress={biometricAvailable ? toggleBiometric : undefined}
+            activeOpacity={biometricAvailable ? 0.7 : 1}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: biometricEnabled ? '#1a3a4a' : '#2a2a2a', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="finger-print" size={22} color={biometricEnabled ? '#2196F3' : '#666'} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{t('profile.biometric') || 'Biometria / Face ID'}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{biometricAvailable ? (t('profile.biometricHint') || 'Proteja o acesso ao jogo') : (t('profile.biometricUnavailable') || 'Indisponível neste dispositivo')}</Text>
+              </View>
+            </View>
+            <View style={{ width: 52, height: 30, borderRadius: 15, backgroundColor: biometricEnabled ? '#2196F3' : '#444', justifyContent: 'center', paddingHorizontal: 3, opacity: biometricAvailable ? 1 : 0.4 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignSelf: biometricEnabled ? 'flex-end' : 'flex-start' }} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* PayPal Account Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
@@ -743,106 +797,6 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Music Player */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Ionicons name="musical-notes" size={22} color="#9C27B0" />
-            <Text style={styles.sectionTitle}>Jazz & Blues</Text>
-            <TouchableOpacity
-              style={[mStyles.toggleBtn, musicEnabled && mStyles.toggleBtnActive]}
-              onPress={() => {
-                setMusicEnabled(!musicEnabled);
-                if (musicEnabled) stopMusic();
-              }}
-            >
-              <Ionicons name={musicEnabled ? 'volume-high' : 'volume-mute'} size={16} color={musicEnabled ? '#9C27B0' : '#666'} />
-              <Text style={[mStyles.toggleText, musicEnabled && { color: '#9C27B0' }]}>{musicEnabled ? 'ON' : 'OFF'}</Text>
-            </TouchableOpacity>
-          </View>
-          {!musicEnabled ? (
-            <View style={mStyles.disabledCard}>
-              <Ionicons name="volume-mute" size={28} color="#555" />
-              <Text style={mStyles.disabledText}>Som desligado</Text>
-            </View>
-          ) : (
-            <View style={mStyles.playerCard}>
-              {/* Now Playing */}
-              {activeTrack && isPlaying && (
-                <View style={mStyles.nowPlaying}>
-                  <View style={[mStyles.npDot, { backgroundColor: activeTrack.color }]} />
-                  <Ionicons name="musical-note" size={16} color={activeTrack.color} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={mStyles.npName} numberOfLines={1}>{activeTrack.name}</Text>
-                    <Text style={mStyles.npArtist} numberOfLines={1}>{activeTrack.artist}</Text>
-                  </View>
-                  <TouchableOpacity style={mStyles.skipBtn} onPress={nextTrack}>
-                    <Ionicons name="play-skip-forward" size={16} color="#fff" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={mStyles.playPauseBtn} onPress={togglePlay}>
-                    <Ionicons name={isPlaying ? 'pause' : 'play'} size={18} color="#fff" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={mStyles.stopBtn} onPress={stopMusic}>
-                    <Ionicons name="stop" size={14} color="#F44336" />
-                  </TouchableOpacity>
-                </View>
-              )}
-              {/* Hidden iframe for audio - uses YouTube playlist for auto-advance */}
-              {activeTrack && isPlaying && Platform.OS === 'web' && (
-                <View style={{ height: 2, overflow: 'hidden', marginBottom: -2 }}>
-                  {/* @ts-ignore */}
-                  <iframe
-                    key={activeTrack.id}
-                    src={`https://www.youtube.com/embed/${activeTrack.youtubeId}?autoplay=1&loop=1&playlist=${ALL_YOUTUBE_IDS}&rel=0&enablejsapi=1`}
-                    style={{ width: 300, height: 200, border: 'none', position: 'absolute', top: 0, left: 0 }}
-                    allow="autoplay; encrypted-media"
-                  />
-                </View>
-              )}
-              {/* Auto-play info */}
-              {!activeTrack && (
-                <View style={mStyles.autoPlayInfo}>
-                  <Ionicons name="shuffle" size={16} color="#9C27B0" />
-                  <Text style={mStyles.autoPlayText}>Toque para iniciar a playlist automatica</Text>
-                </View>
-              )}
-              {/* Track List */}
-              {JAZZ_BLUES_TRACKS.map((track) => {
-                const isCurrent = activeTrack?.id === track.id && isPlaying;
-                return (
-                  <TouchableOpacity
-                    key={track.id}
-                    style={[mStyles.trackRow, isCurrent && { backgroundColor: track.color + '15' }]}
-                    onPress={() => isCurrent ? stopMusic() : playTrack(track)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[mStyles.trackIcon, { backgroundColor: track.color + '30' }]}>
-                      <Ionicons
-                        name={isCurrent ? 'pause' : 'play'}
-                        size={16}
-                        color={track.color}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[mStyles.trackName, isCurrent && { color: track.color }]}>
-                        {track.name}
-                      </Text>
-                      <Text style={mStyles.trackArtist}>{track.artist}</Text>
-                    </View>
-                    {isCurrent && (
-                      <View style={mStyles.eqBars}>
-                        <View style={[mStyles.eqBar, { height: 10, backgroundColor: track.color }]} />
-                        <View style={[mStyles.eqBar, { height: 16, backgroundColor: track.color }]} />
-                        <View style={[mStyles.eqBar, { height: 8, backgroundColor: track.color }]} />
-                        <View style={[mStyles.eqBar, { height: 14, backgroundColor: track.color }]} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-        </View>
-
         {/* Legal Links */}
         <View style={styles.legalSection}>
           <TouchableOpacity style={styles.legalLink} onPress={() => router.push('/legal/terms')}>
@@ -856,6 +810,15 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color="#555" />
           </TouchableOpacity>
         </View>
+
+        {/* Reset Account Button */}
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, backgroundColor: '#2a1a1a', borderRadius: 12, marginHorizontal: 16, marginBottom: 8 }}
+          onPress={handleResetAccount}
+        >
+          <Ionicons name="refresh-circle" size={22} color="#FF9800" />
+          <Text style={{ color: '#FF9800', fontSize: 15, fontWeight: '600' }}>{t('profile.resetAccount') || 'Zerar Conta'}</Text>
+        </TouchableOpacity>
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

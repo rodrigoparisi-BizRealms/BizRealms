@@ -4,50 +4,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import { useMusic } from '../../context/MusicContext';
 import { useTheme } from '../../context/ThemeContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
-
-function MiniPlayer() {
-  const { activeTrack, isPlaying, stopMusic } = useMusic();
-  const { colors } = useTheme();
-
-  if (!activeTrack || !isPlaying) return null;
-
-  return (
-    <View style={[mp.bar, { backgroundColor: colors.surface, borderTopColor: colors.divider }]}>
-      <View style={[mp.dot, { backgroundColor: activeTrack.color }]} />
-      <Ionicons name="musical-notes" size={16} color={activeTrack.color} />
-      <Text style={[mp.text, { color: colors.textSecondary }]} numberOfLines={1}>{activeTrack.name}</Text>
-      <View style={mp.eq}>
-        <View style={[mp.eqBar, { height: 8, backgroundColor: activeTrack.color }]} />
-        <View style={[mp.eqBar, { height: 14, backgroundColor: activeTrack.color }]} />
-        <View style={[mp.eqBar, { height: 6, backgroundColor: activeTrack.color }]} />
-      </View>
-      <TouchableOpacity onPress={stopMusic} style={[mp.closeBtn, { backgroundColor: colors.inputBg }]}>
-        <Ionicons name="close" size={16} color={colors.textMuted} />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const mp = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e1e1e',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#2a2a2a',
-    gap: 8,
-  },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  text: { flex: 1, color: '#ccc', fontSize: 12, fontWeight: '600' },
-  eq: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 14 },
-  eqBar: { width: 3, borderRadius: 2 },
-  closeBtn: { padding: 4, backgroundColor: '#2a2a2a', borderRadius: 6 },
-});
 
 export default function TabsLayout() {
   const { t } = useLanguage();
@@ -145,8 +103,6 @@ export default function TabsLayout() {
           <Tabs.Screen name="coaching" options={{ href: null }} />
         </Tabs>
       </View>
-      {/* Persistent mini-player - stays mounted across tab switches */}
-      <MiniPlayer />
     </View>
   );
 }
