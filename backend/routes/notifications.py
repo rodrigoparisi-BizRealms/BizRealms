@@ -26,101 +26,368 @@ router = APIRouter()
 
 # ==================== ACHIEVEMENTS / BADGES ====================
 
-ACHIEVEMENTS = [
-    {"id": "first_job", "icon": "briefcase", "color": "#2196F3", "xp": 50, "money": 500},
-    {"id": "first_company", "icon": "business", "color": "#FF9800", "xp": 100, "money": 1000},
-    {"id": "first_investment", "icon": "trending-up", "color": "#9C27B0", "xp": 75, "money": 750},
-    {"id": "millionaire", "icon": "cash", "color": "#4CAF50", "xp": 500, "money": 5000},
-    {"id": "level_5", "icon": "star", "color": "#FFD700", "xp": 200, "money": 2000},
-    {"id": "level_10", "icon": "trophy", "color": "#FFD700", "xp": 500, "money": 5000},
-    {"id": "five_companies", "icon": "storefront", "color": "#FF5722", "xp": 300, "money": 3000},
-    {"id": "ten_investments", "icon": "analytics", "color": "#00BCD4", "xp": 250, "money": 2500},
-    {"id": "first_loan", "icon": "card", "color": "#1E88E5", "xp": 50, "money": 500},
-    {"id": "collector", "icon": "wallet", "color": "#E91E63", "xp": 150, "money": 1500},
+# Tiered achievement system - each achievement has progressive tiers
+# Players always have a next tier to chase
+ACHIEVEMENT_GROUPS = [
+    {
+        "group": "jobs",
+        "icon": "briefcase",
+        "color": "#2196F3",
+        "tiers": [
+            {"id": "jobs_1", "target": 1, "xp": 50, "money": 500},
+            {"id": "jobs_5", "target": 5, "xp": 150, "money": 2000},
+            {"id": "jobs_20", "target": 20, "xp": 400, "money": 8000},
+            {"id": "jobs_50", "target": 50, "xp": 800, "money": 20000},
+            {"id": "jobs_100", "target": 100, "xp": 1500, "money": 50000},
+        ],
+    },
+    {
+        "group": "companies",
+        "icon": "business",
+        "color": "#FF9800",
+        "tiers": [
+            {"id": "companies_1", "target": 1, "xp": 100, "money": 1000},
+            {"id": "companies_3", "target": 3, "xp": 250, "money": 3000},
+            {"id": "companies_5", "target": 5, "xp": 500, "money": 8000},
+            {"id": "companies_10", "target": 10, "xp": 1000, "money": 25000},
+            {"id": "companies_20", "target": 20, "xp": 2000, "money": 60000},
+        ],
+    },
+    {
+        "group": "investments",
+        "icon": "trending-up",
+        "color": "#9C27B0",
+        "tiers": [
+            {"id": "invest_1", "target": 1, "xp": 75, "money": 750},
+            {"id": "invest_5", "target": 5, "xp": 200, "money": 2500},
+            {"id": "invest_10", "target": 10, "xp": 400, "money": 6000},
+            {"id": "invest_25", "target": 25, "xp": 800, "money": 15000},
+            {"id": "invest_50", "target": 50, "xp": 1500, "money": 40000},
+        ],
+    },
+    {
+        "group": "money",
+        "icon": "cash",
+        "color": "#4CAF50",
+        "tiers": [
+            {"id": "money_10k", "target": 10000, "xp": 50, "money": 500},
+            {"id": "money_100k", "target": 100000, "xp": 200, "money": 2000},
+            {"id": "money_1m", "target": 1000000, "xp": 500, "money": 10000},
+            {"id": "money_10m", "target": 10000000, "xp": 1000, "money": 50000},
+            {"id": "money_100m", "target": 100000000, "xp": 2500, "money": 200000},
+            {"id": "money_1b", "target": 1000000000, "xp": 5000, "money": 1000000},
+        ],
+    },
+    {
+        "group": "level",
+        "icon": "star",
+        "color": "#FFD700",
+        "tiers": [
+            {"id": "level_3", "target": 3, "xp": 100, "money": 1000},
+            {"id": "level_5", "target": 5, "xp": 200, "money": 2500},
+            {"id": "level_10", "target": 10, "xp": 500, "money": 5000},
+            {"id": "level_15", "target": 15, "xp": 800, "money": 12000},
+            {"id": "level_20", "target": 20, "xp": 1200, "money": 25000},
+            {"id": "level_30", "target": 30, "xp": 2000, "money": 60000},
+        ],
+    },
+    {
+        "group": "education",
+        "icon": "school",
+        "color": "#00BCD4",
+        "tiers": [
+            {"id": "edu_1", "target": 1, "xp": 75, "money": 500},
+            {"id": "edu_3", "target": 3, "xp": 200, "money": 2000},
+            {"id": "edu_5", "target": 5, "xp": 400, "money": 5000},
+        ],
+    },
+    {
+        "group": "certifications",
+        "icon": "ribbon",
+        "color": "#E91E63",
+        "tiers": [
+            {"id": "cert_1", "target": 1, "xp": 100, "money": 1500},
+            {"id": "cert_3", "target": 3, "xp": 300, "money": 5000},
+            {"id": "cert_5", "target": 5, "xp": 600, "money": 15000},
+        ],
+    },
+    {
+        "group": "courses",
+        "icon": "book",
+        "color": "#3F51B5",
+        "tiers": [
+            {"id": "courses_1", "target": 1, "xp": 100, "money": 1500},
+            {"id": "courses_3", "target": 3, "xp": 300, "money": 5000},
+            {"id": "courses_5", "target": 5, "xp": 600, "money": 12000},
+            {"id": "courses_10", "target": 10, "xp": 1200, "money": 30000},
+        ],
+    },
+    {
+        "group": "assets",
+        "icon": "home",
+        "color": "#795548",
+        "tiers": [
+            {"id": "assets_1", "target": 1, "xp": 100, "money": 1000},
+            {"id": "assets_3", "target": 3, "xp": 250, "money": 3000},
+            {"id": "assets_5", "target": 5, "xp": 500, "money": 8000},
+            {"id": "assets_10", "target": 10, "xp": 1000, "money": 25000},
+        ],
+    },
+    {
+        "group": "loans",
+        "icon": "card",
+        "color": "#1E88E5",
+        "tiers": [
+            {"id": "loans_1", "target": 1, "xp": 50, "money": 500},
+            {"id": "loans_3", "target": 3, "xp": 150, "money": 2000},
+            {"id": "loans_5", "target": 5, "xp": 300, "money": 5000},
+        ],
+    },
+    {
+        "group": "franchises",
+        "icon": "git-branch",
+        "color": "#FF5722",
+        "tiers": [
+            {"id": "franchise_1", "target": 1, "xp": 150, "money": 2000},
+            {"id": "franchise_3", "target": 3, "xp": 400, "money": 6000},
+            {"id": "franchise_5", "target": 5, "xp": 800, "money": 15000},
+            {"id": "franchise_10", "target": 10, "xp": 1500, "money": 35000},
+        ],
+    },
+    {
+        "group": "net_worth",
+        "icon": "trophy",
+        "color": "#FF6F00",
+        "tiers": [
+            {"id": "nw_50k", "target": 50000, "xp": 100, "money": 1000},
+            {"id": "nw_500k", "target": 500000, "xp": 300, "money": 5000},
+            {"id": "nw_5m", "target": 5000000, "xp": 800, "money": 25000},
+            {"id": "nw_50m", "target": 50000000, "xp": 2000, "money": 100000},
+            {"id": "nw_500m", "target": 500000000, "xp": 5000, "money": 500000},
+        ],
+    },
 ]
+
+# Flatten all tier IDs for the lookup
+ALL_TIER_IDS = set()
+for g in ACHIEVEMENT_GROUPS:
+    for t in g['tiers']:
+        ALL_TIER_IDS.add(t['id'])
+
 
 @router.get("/achievements")
 async def get_achievements(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get user's achievements and available ones."""
+    """Get user's tiered achievements with progress."""
     user = await get_current_user(credentials)
-    
+    uid = user['id']
+
     # Get unlocked achievements
-    unlocked = await db.achievements.find({'user_id': user['id']}).to_list(100)
+    unlocked = await db.achievements.find({'user_id': uid}).to_list(500)
     unlocked_ids = {a['achievement_id'] for a in unlocked}
-    
+    unlocked_map = {a['achievement_id']: a for a in unlocked}
+
+    # Get current stats for progress calculation
+    companies_count = await db.companies.count_documents({'owner_id': uid, 'is_franchise': {'$ne': True}})
+    franchise_count = await db.companies.count_documents({'owner_id': uid, 'is_franchise': True})
+    investments_count = await db.investments.count_documents({'user_id': uid})
+    assets_count = await db.assets.count_documents({'user_id': uid})
+    loans_count = await db.loans.count_documents({'user_id': uid})
+    courses_count = await db.user_courses.count_documents({'user_id': uid, 'completed': True})
+    work_exp = user.get('work_experience', [])
+    unique_jobs = len(set(j.get('company', '') + j.get('position', '') for j in work_exp)) if work_exp else 0
+    if user.get('current_job'):
+        unique_jobs = max(unique_jobs, 1)
+    education_count = len(user.get('education', []))
+    cert_count = len(user.get('certifications', []))
+    money = user.get('money', 0)
+    level = user.get('level', 1)
+
+    # Calculate approx net worth for net_worth group
+    inv_val = 0
+    holdings = await db.investments.find({'user_id': uid}).to_list(100)
+    for h in holdings:
+        inv_val += h.get('current_value', h.get('quantity', 0) * h.get('current_price', h.get('buy_price', 0)))
+    comp_val = 0
+    user_companies = await db.companies.find({'owner_id': uid}).to_list(100)
+    for c in user_companies:
+        comp_val += c.get('purchase_price', 0)
+    asset_val = 0
+    user_assets = await db.assets.find({'user_id': uid}).to_list(100)
+    for a in user_assets:
+        asset_val += a.get('current_value', a.get('purchase_price', 0))
+    net_worth = money + inv_val + comp_val + asset_val
+
+    progress_map = {
+        'jobs': unique_jobs,
+        'companies': companies_count,
+        'investments': investments_count,
+        'money': money,
+        'level': level,
+        'education': education_count,
+        'certifications': cert_count,
+        'courses': courses_count,
+        'assets': assets_count,
+        'loans': loans_count,
+        'franchises': franchise_count,
+        'net_worth': net_worth,
+    }
+
     result = []
-    for ach in ACHIEVEMENTS:
-        is_unlocked = ach['id'] in unlocked_ids
-        unlocked_data = next((a for a in unlocked if a.get('achievement_id') == ach['id']), None)
+    total_tiers = 0
+    total_unlocked = 0
+
+    for group in ACHIEVEMENT_GROUPS:
+        current_progress = progress_map.get(group['group'], 0)
+        completed_tiers = 0
+        current_tier_idx = 0
+
+        for i, tier in enumerate(group['tiers']):
+            total_tiers += 1
+            if tier['id'] in unlocked_ids:
+                completed_tiers += 1
+                total_unlocked += 1
+                current_tier_idx = i + 1
+
+        # Determine next tier (or completed all)
+        all_done = completed_tiers >= len(group['tiers'])
+        next_tier = group['tiers'][current_tier_idx] if not all_done else None
+        last_completed = group['tiers'][current_tier_idx - 1] if current_tier_idx > 0 else None
+
+        # Progress percentage toward next tier
+        if next_tier:
+            prev_target = group['tiers'][current_tier_idx - 1]['target'] if current_tier_idx > 0 else 0
+            range_size = next_tier['target'] - prev_target
+            progress_in_range = current_progress - prev_target
+            progress_pct = min(100, max(0, (progress_in_range / range_size * 100))) if range_size > 0 else 0
+        else:
+            progress_pct = 100
+
         result.append({
-            **ach,
-            'unlocked': is_unlocked,
-            'unlocked_at': unlocked_data['unlocked_at'].isoformat() if unlocked_data and isinstance(unlocked_data.get('unlocked_at'), datetime) else None,
+            'group': group['group'],
+            'icon': group['icon'],
+            'color': group['color'],
+            'total_tiers': len(group['tiers']),
+            'completed_tiers': completed_tiers,
+            'all_done': all_done,
+            'current_progress': round(current_progress, 2),
+            'next_tier': next_tier,
+            'last_completed': last_completed,
+            'progress_pct': round(progress_pct, 1),
+            'tiers': [
+                {
+                    **tier,
+                    'unlocked': tier['id'] in unlocked_ids,
+                    'unlocked_at': unlocked_map[tier['id']]['unlocked_at'].isoformat()
+                    if tier['id'] in unlocked_map and isinstance(unlocked_map[tier['id']].get('unlocked_at'), datetime) else None,
+                }
+                for tier in group['tiers']
+            ],
         })
-    
-    return {"achievements": result, "total": len(ACHIEVEMENTS), "unlocked": len(unlocked_ids)}
+
+    return {"achievements": result, "total": total_tiers, "unlocked": total_unlocked}
+
 
 @router.post("/achievements/check")
 async def check_achievements(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Check and unlock any new achievements based on current state."""
+    """Check and unlock any new tiered achievements based on current state."""
     user = await get_current_user(credentials)
     uid = user['id']
-    
-    unlocked = await db.achievements.find({'user_id': uid}).to_list(100)
+
+    unlocked = await db.achievements.find({'user_id': uid}).to_list(500)
     unlocked_ids = {a['achievement_id'] for a in unlocked}
     new_unlocks = []
-    
-    # Check conditions
-    jobs = await db.users.find_one({'id': uid})
-    companies = await db.companies.count_documents({'owner_id': uid})
-    investments = await db.investments.count_documents({'user_id': uid})
+
+    # Get current stats
+    companies_count = await db.companies.count_documents({'owner_id': uid, 'is_franchise': {'$ne': True}})
+    franchise_count = await db.companies.count_documents({'owner_id': uid, 'is_franchise': True})
+    investments_count = await db.investments.count_documents({'user_id': uid})
+    assets_count = await db.assets.count_documents({'user_id': uid})
+    loans_count = await db.loans.count_documents({'user_id': uid})
+    courses_count = await db.user_courses.count_documents({'user_id': uid, 'completed': True})
+    work_exp = user.get('work_experience', [])
+    unique_jobs = len(set(j.get('company', '') + j.get('position', '') for j in work_exp)) if work_exp else 0
+    if user.get('current_job'):
+        unique_jobs = max(unique_jobs, 1)
+    education_count = len(user.get('education', []))
+    cert_count = len(user.get('certifications', []))
     money = user.get('money', 0)
     level = user.get('level', 1)
-    loans = await db.loans.count_documents({'user_id': uid})
-    
-    conditions = {
-        'first_job': user.get('current_job') is not None,
-        'first_company': companies >= 1,
-        'first_investment': investments >= 1,
-        'millionaire': money >= 1_000_000,
-        'level_5': level >= 5,
-        'level_10': level >= 10,
-        'five_companies': companies >= 5,
-        'ten_investments': investments >= 10,
-        'first_loan': loans >= 1,
-        'collector': money >= 100_000,
+
+    # Net worth
+    inv_val = 0
+    holdings = await db.investments.find({'user_id': uid}).to_list(100)
+    for h in holdings:
+        inv_val += h.get('current_value', h.get('quantity', 0) * h.get('current_price', h.get('buy_price', 0)))
+    comp_val = 0
+    user_comps = await db.companies.find({'owner_id': uid}).to_list(100)
+    for c in user_comps:
+        comp_val += c.get('purchase_price', 0)
+    asset_val = 0
+    user_assets = await db.assets.find({'user_id': uid}).to_list(100)
+    for a in user_assets:
+        asset_val += a.get('current_value', a.get('purchase_price', 0))
+    net_worth = money + inv_val + comp_val + asset_val
+
+    progress_map = {
+        'jobs': unique_jobs,
+        'companies': companies_count,
+        'investments': investments_count,
+        'money': money,
+        'level': level,
+        'education': education_count,
+        'certifications': cert_count,
+        'courses': courses_count,
+        'assets': assets_count,
+        'loans': loans_count,
+        'franchises': franchise_count,
+        'net_worth': net_worth,
     }
-    
-    for ach_id, condition in conditions.items():
-        if condition and ach_id not in unlocked_ids:
-            ach_data = next((a for a in ACHIEVEMENTS if a['id'] == ach_id), None)
-            if ach_data:
+
+    total_money_earned = 0
+    total_xp_earned = 0
+
+    for group in ACHIEVEMENT_GROUPS:
+        current_val = progress_map.get(group['group'], 0)
+        for tier in group['tiers']:
+            if tier['id'] not in unlocked_ids and current_val >= tier['target']:
+                # Unlock this tier!
                 await db.achievements.insert_one({
                     'user_id': uid,
-                    'achievement_id': ach_id,
+                    'achievement_id': tier['id'],
+                    'group': group['group'],
                     'unlocked_at': datetime.utcnow(),
                 })
-                
-                # Grant rewards
-                await db.users.update_one(
-                    {'id': uid},
-                    {'$inc': {'experience': ach_data['xp'], 'money': ach_data['money']}}
-                )
-                
+
+                total_money_earned += tier['money']
+                total_xp_earned += tier['xp']
+
                 # Add notification
                 await db.notifications.insert_one({
                     'user_id': uid,
                     'type': 'achievement',
-                    'title': f'Achievement Unlocked!',
-                    'message': f'You unlocked "{ach_id}"! +{ach_data["xp"]} XP, +${ach_data["money"]}',
-                    'icon': ach_data['icon'],
+                    'title': f'Conquista Desbloqueada!',
+                    'message': f'{group["group"]} Tier {tier["target"]}! +{tier["xp"]} XP, +${tier["money"]:,}',
+                    'icon': group['icon'],
                     'read': False,
                     'created_at': datetime.utcnow(),
                 })
-                
-                new_unlocks.append(ach_id)
-    
-    return {"new_unlocks": new_unlocks, "count": len(new_unlocks)}
+
+                new_unlocks.append(tier['id'])
+                unlocked_ids.add(tier['id'])
+
+    # Grant all rewards at once
+    if total_money_earned > 0 or total_xp_earned > 0:
+        await db.users.update_one(
+            {'id': uid},
+            {'$inc': {'experience': total_xp_earned, 'money': total_money_earned}}
+        )
+
+    return {
+        "new_unlocks": new_unlocks,
+        "count": len(new_unlocks),
+        "money_earned": total_money_earned,
+        "xp_earned": total_xp_earned,
+    }
 
 # ==================== IN-APP NOTIFICATIONS ====================
 

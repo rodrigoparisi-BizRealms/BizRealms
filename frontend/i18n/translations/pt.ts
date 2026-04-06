@@ -578,9 +578,13 @@ export default {
   achievements: {
     title: 'Conquistas',
     subtitle: 'Desbloqueie conquistas e ganhe recompensas',
-    unlocked: 'Desbloqueada',
+    unlocked: 'desbloqueadas',
     locked: 'Bloqueada',
     progress: 'Progresso',
+    nextGoal: 'Próximo',
+    allComplete: 'Todas concluídas!',
+    reward: 'Recompensa',
+    newUnlock: 'Conquista Desbloqueada!',
   },
   // Notifications
   notifications: {

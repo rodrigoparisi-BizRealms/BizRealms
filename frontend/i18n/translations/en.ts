@@ -562,9 +562,13 @@ export default {
   achievements: {
     title: 'Achievements',
     subtitle: 'Unlock achievements and earn rewards',
-    unlocked: 'Unlocked',
+    unlocked: 'unlocked',
     locked: 'Locked',
     progress: 'Progress',
+    nextGoal: 'Next',
+    allComplete: 'All complete!',
+    reward: 'Reward',
+    newUnlock: 'Achievement Unlocked!',
   },
   // Notifications
   notifications: {
