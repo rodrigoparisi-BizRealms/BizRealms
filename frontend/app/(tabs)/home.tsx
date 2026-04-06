@@ -24,6 +24,7 @@ import { CacheService } from '../../services/CacheService';
 import { useNetwork } from '../../context/NetworkContext';
 import { useTheme } from '../../context/ThemeContext';
 import EventModal from '../../components/EventModal';
+import CrisisModal from '../../components/CrisisModal';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -60,6 +61,9 @@ export default function Home() {
   const [eventModalVisible, setEventModalVisible] = useState(false);
   const [eventLoading, setEventLoading] = useState(false);
   const [eventCooldown, setEventCooldown] = useState(0);
+  const [phaseData, setPhaseData] = useState<any>(null);
+  const [activeCrisis, setActiveCrisis] = useState<any>(null);
+  const [crisisModalVisible, setCrisisModalVisible] = useState(false);
 
   const GAME_TIPS = [
     { icon: 'briefcase', color: '#4CAF50', tip: 'Invista em cursos para desbloquear vagas com salários maiores!' },
@@ -192,11 +196,87 @@ export default function Home() {
     checkActiveEvent();
   };
 
+  // ==================== LIFE PHASES & CRISES ====================
+  const loadPhaseData = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/phases/current`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      setPhaseData(res.data);
+    } catch (e) {
+      console.log('Phase load error:', e);
+    }
+  }, [token]);
+
+  const checkCrises = useCallback(async () => {
+    if (!token) return;
+    try {
+      // First check for existing active crises
+      const activeRes = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/crises/active`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      if (activeRes.data?.count > 0) {
+        setActiveCrisis(activeRes.data.crises[0]);
+        return;
+      }
+      // Try to generate new crisis
+      const genRes = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/crises/check`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      if (genRes.data?.generated && genRes.data.crisis) {
+        setActiveCrisis(genRes.data.crisis);
+        haptic('warning');
+      } else {
+        setActiveCrisis(null);
+      }
+    } catch (e) {
+      console.log('Crisis check error:', e);
+    }
+  }, [token]);
+
+  useEffect(() => { loadPhaseData(); checkCrises(); }, [loadPhaseData, checkCrises]);
+
+  const handleCrisisResolve = async (crisisId: string, optionId: string) => {
+    if (!token) return null;
+    try {
+      const res = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/crises/resolve`, {
+        crisis_id: crisisId,
+        option_id: optionId,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      if (res.data?.success) {
+        haptic('success');
+        refreshUser();
+        loadAllData();
+        loadPhaseData();
+        return res.data;
+      }
+      return null;
+    } catch (e) {
+      console.log('Crisis resolve error:', e);
+      return null;
+    }
+  };
+
+  const handleCrisisClose = () => {
+    setCrisisModalVisible(false);
+    setActiveCrisis(null);
+    checkCrises();
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshUser();
     await loadAllData();
     await checkActiveEvent();
+    await loadPhaseData();
+    await checkCrises();
     setRefreshing(false);
   };
 
@@ -319,6 +399,66 @@ export default function Home() {
           </View>
         </View>
 
+        {/* Life Phase Card */}
+        {phaseData && (
+          <View style={[styles.phaseCard, { borderColor: phaseData.phase.color + '50' }]}>
+            <View style={styles.phaseCardHeader}>
+              <View style={[styles.phaseIconBg, { backgroundColor: phaseData.phase.color + '20' }]}>
+                <Text style={{ fontSize: 20 }}>{phaseData.phase.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.phaseCardLabel}>Fase de Vida</Text>
+                <Text style={[styles.phaseCardName, { color: phaseData.phase.color }]}>
+                  {phaseData.phase.name}
+                </Text>
+              </View>
+              <View style={styles.phaseIndexBadge}>
+                <Text style={styles.phaseIndexText}>
+                  {phaseData.phase_index + 1}/{phaseData.total_phases}
+                </Text>
+              </View>
+            </View>
+            {phaseData.next_phase && (
+              <View style={styles.phaseProgressSection}>
+                <View style={styles.phaseProgressBar}>
+                  <View style={[styles.phaseProgressFill, {
+                    width: `${Math.max(phaseData.progress * 100, 2)}%`,
+                    backgroundColor: phaseData.phase.color,
+                  }]} />
+                </View>
+                <Text style={styles.phaseProgressText}>
+                  {phaseData.next_phase.emoji} {phaseData.next_phase.name}: faltam {fm(phaseData.next_phase.remaining)}
+                </Text>
+              </View>
+            )}
+            {phaseData.phase.bonuses && (
+              <View style={styles.phaseBonusRow}>
+                {phaseData.phase.bonuses.xp_multiplier > 1 && (
+                  <View style={[styles.phaseBonusPill, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFD700' }}>
+                      XP x{phaseData.phase.bonuses.xp_multiplier}
+                    </Text>
+                  </View>
+                )}
+                {phaseData.phase.bonuses.income_bonus > 0 && (
+                  <View style={[styles.phaseBonusPill, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#4CAF50' }}>
+                      +{phaseData.phase.bonuses.income_bonus}% renda
+                    </Text>
+                  </View>
+                )}
+                {phaseData.phase.bonuses.company_slots > 1 && (
+                  <View style={[styles.phaseBonusPill, { backgroundColor: 'rgba(33,150,243,0.15)' }]}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#2196F3' }}>
+                      {phaseData.phase.bonuses.company_slots} empresas
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Experience Progress */}
         <View style={styles.expCard}>
           <View style={styles.expHeader}>
@@ -409,6 +549,52 @@ export default function Home() {
           onChoose={handleEventChoice}
           onClose={handleEventClose}
           loading={eventLoading}
+        />
+
+        {/* Active Crisis Card */}
+        {activeCrisis && activeCrisis.status === 'active' && (
+          <TouchableOpacity
+            style={[styles.crisisCard, { borderColor: activeCrisis.color + '80' }]}
+            onPress={() => { haptic('warning'); setCrisisModalVisible(true); }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.crisisCardHeader}>
+              <View style={[styles.eventIconBg, { backgroundColor: activeCrisis.color + '25' }]}>
+                <Text style={{ fontSize: 22 }}>{activeCrisis.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.crisisLabel, { color: activeCrisis.color }]}>
+                    CRISE
+                  </Text>
+                  <View style={[styles.crisisSeverityPill, { backgroundColor: activeCrisis.color + '25' }]}>
+                    <Text style={{ fontSize: 9, fontWeight: '800', color: activeCrisis.color }}>
+                      {activeCrisis.severity === 'low' ? 'LEVE' :
+                       activeCrisis.severity === 'medium' ? 'MODERADA' :
+                       activeCrisis.severity === 'high' ? 'GRAVE' : 'CRÍTICA'}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.crisisTitle} numberOfLines={1}>{activeCrisis.title}</Text>
+              </View>
+              <View style={[styles.crisisPulseDot, { backgroundColor: '#F44336' }]} />
+            </View>
+            <Text style={styles.crisisDesc} numberOfLines={2}>{activeCrisis.description}</Text>
+            <View style={styles.crisisAction}>
+              <Text style={{ fontSize: 11, color: '#F44336', fontWeight: '600' }}>
+                Resolva antes que expire!
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color="#F44336" />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Crisis Modal */}
+        <CrisisModal
+          visible={crisisModalVisible}
+          crisis={activeCrisis}
+          onResolve={handleCrisisResolve}
+          onClose={handleCrisisClose}
         />
 
         {/* Rankings Panel */}
@@ -1206,5 +1392,125 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Phase Card
+  phaseCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  phaseCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  phaseIconBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  phaseCardLabel: {
+    fontSize: 11,
+    color: '#888',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  phaseCardName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 1,
+  },
+  phaseIndexBadge: {
+    backgroundColor: '#3a3a3a',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  phaseIndexText: {
+    fontSize: 11,
+    color: '#aaa',
+    fontWeight: '700',
+  },
+  phaseProgressSection: {
+    marginTop: 10,
+    gap: 4,
+  },
+  phaseProgressBar: {
+    height: 6,
+    backgroundColor: '#3a3a3a',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  phaseProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  phaseProgressText: {
+    fontSize: 11,
+    color: '#888',
+  },
+  phaseBonusRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
+  phaseBonusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  // Crisis Card
+  crisisCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 2,
+  },
+  crisisCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  crisisLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  crisisSeverityPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  crisisTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 2,
+  },
+  crisisPulseDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  crisisDesc: {
+    fontSize: 13,
+    color: '#aaa',
+    lineHeight: 19,
+    marginTop: 10,
+    marginLeft: 52,
+  },
+  crisisAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    marginTop: 8,
   },
 });
