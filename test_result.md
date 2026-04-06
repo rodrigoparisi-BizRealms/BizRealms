@@ -681,6 +681,30 @@ metadata:
         agent: "testing"
         comment: "✅ VERIFIED: Company Creation Bug Fix successful. ✅ POST /api/companies/create working correctly after random import fix ✅ Company creation test: successfully created 'Test Company API' in restaurante segment ✅ Cost validation: properly deducted R$ 5,000 creation cost from user balance ✅ Company data: generated realistic monthly revenue (R$ 844), proper segment assignment, correct icon/color ✅ Balance verification: user balance correctly decreased from R$ 54,740.48 to R$ 49,740.48 ✅ No import errors: random module properly imported as _random and used consistently ✅ Logger import: missing logger import added successfully ✅ Authentication required and working correctly. Company creation system is production-ready with bug fix applied."
 
+  - task: "Certification Ranking Bonus"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/rankings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Certification Ranking Bonus system fully functional. ✅ GET /api/rankings now includes all required certification bonus fields: cert_bonus_pct (10%), cert_bonus_value (R$ 7,701.12), cert_count (2), base_net_worth (R$ 77,011.21), total_net_worth (R$ 84,712.34) ✅ Certification bonus calculation working correctly: +5% per certification, max +25% (5 certs) ✅ Mathematical verification: total_net_worth = base_net_worth + cert_bonus_value ✅ Test user has 2 certifications resulting in 10% bonus ✅ Rankings endpoint working with 9 players ✅ Authentication required and working correctly. Certification ranking bonus system is production-ready."
+
+  - task: "Ad-Free Subscription"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/store.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Ad-Free Subscription system fully functional. ✅ GET /api/store/items includes new 'ad_free_monthly' item in 'premium' category (R$ 9.90, is_subscription: true) ✅ GET /api/store/subscription-status correctly returns inactive status for users without subscription: ad_free=false, expires_at=null, days_remaining=0 ✅ POST /api/store/purchase successfully purchases ad_free_monthly subscription with MOCK payment system ✅ Subscription activation working: after purchase, subscription-status shows ad_free=true, expires_at set to ~30 days from now, days_remaining=29 ✅ Complete subscription flow tested: inactive → purchase → active ✅ Authentication required and working correctly. Ad-free subscription system is production-ready with full purchase and status tracking functionality."
+
 test_plan:
   current_focus: []
   stuck_tasks: []
@@ -947,3 +971,6 @@ agent_communication:
 
   - agent: "testing"
     message: "🎉 NEW BACKEND ENDPOINTS TESTING COMPLETE! ✅ Comprehensive testing of 4 new backend endpoints completed successfully. ALL 4 TESTS PASSED: ✅ DAILY REWARD FLOW: Complete flow tested (check status → claim → double) - claimed R$ 7,600 daily reward, successfully doubled for additional R$ 7,600 bonus, total R$ 15,200 added to balance. Status tracking and validation working correctly. ✅ WATCH AD TRACKING: POST /api/user/watch-ad correctly increments ads_watched_today counter (1→2), daily reset logic working, authentication required. ✅ COMPANY CREATION BUG FIX: POST /api/companies/create working after random import fix - successfully created 'Test Company API' for R$ 5,000, balance correctly decreased, no import errors. ✅ ACCOUNT RESET: POST /api/user/reset-account fully functional - tested with temporary user, all game data reset (money→R$1,000, level→1, XP→0, education cleared), authentication preserved. All endpoints production-ready with proper validation, error handling, and authentication. Backend testing complete - no critical issues found."
+
+  - agent: "testing"
+    message: "🎉 CERTIFICATION RANKING BONUS & AD-FREE SUBSCRIPTION TESTING COMPLETE! ✅ Comprehensive testing of new BizRealms features completed successfully. ALL 5 TESTS PASSED: ✅ CERTIFICATION RANKING BONUS: GET /api/rankings now includes all required certification bonus fields (cert_bonus_pct: 10%, cert_bonus_value: R$ 7,701.12, cert_count: 2, base_net_worth: R$ 77,011.21, total_net_worth: R$ 84,712.34). Certification bonus calculation working correctly: +5% per certification, max +25%. Mathematical verification passed: total_net_worth = base_net_worth + cert_bonus_value. ✅ AD-FREE SUBSCRIPTION STORE ITEM: GET /api/store/items includes new 'ad_free_monthly' item in 'premium' category (R$ 9.90, is_subscription: true). ✅ SUBSCRIPTION STATUS INACTIVE: GET /api/store/subscription-status correctly returns inactive status (ad_free=false, expires_at=null, days_remaining=0) for users without subscription. ✅ SUBSCRIPTION PURCHASE: POST /api/store/purchase successfully purchases ad_free_monthly subscription with MOCK payment system (transaction ID: MOCK_2110E1CD6FC5). ✅ SUBSCRIPTION STATUS ACTIVE: After purchase, subscription-status shows ad_free=true, expires_at set to ~30 days from now, days_remaining=29. Complete subscription flow tested: inactive → purchase → active. Both new features are production-ready with full functionality verified."

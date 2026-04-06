@@ -10,6 +10,7 @@ const CURRENCY_CONFIG: Record<string, { symbol: string; code: string; locale: st
   de: { symbol: '€', code: 'EUR', locale: 'de-DE', separator: '.', decimal: ',' },
   fr: { symbol: '€', code: 'EUR', locale: 'fr-FR', separator: ' ', decimal: ',' },
   it: { symbol: '€', code: 'EUR', locale: 'it-IT', separator: '.', decimal: ',' },
+  zh: { symbol: '¥', code: 'CNY', locale: 'zh-CN', separator: ',', decimal: '.' },
 };
 
 interface LanguageContextType {

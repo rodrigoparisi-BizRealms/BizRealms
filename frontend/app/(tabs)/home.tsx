@@ -300,6 +300,9 @@ export default function Home() {
                   <Text style={styles.miniTicker} numberOfLines={1}>
                     {r.user_id === user?.id ? t('home.you') : r.name}
                   </Text>
+                  {r.cert_count > 0 && (
+                    <Text style={{ fontSize: 10, color: '#FF9800', fontWeight: 'bold', marginRight: 4 }}>🎓+{r.cert_bonus_pct}%</Text>
+                  )}
                   <Text style={[styles.miniProfit, { color: '#FFD700' }]}>
                     {fm(r.total_net_worth)}
                   </Text>

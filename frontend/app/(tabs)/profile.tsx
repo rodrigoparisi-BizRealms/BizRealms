@@ -36,6 +36,7 @@ export default function Profile() {
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [savingPhoto, setSavingPhoto] = useState(false);
 
@@ -673,34 +674,47 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Language Section */}
+        {/* Language Section - Dropdown Picker */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="language" size={22} color="#2196F3" />
-            <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.language') || 'Idioma'}</Text>
           </View>
-          <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
-            <Text style={{ color: '#888', fontSize: 11, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 }}>
-              {t('profile.languageAutoHint') || 'Idioma detectado automaticamente pelo seu dispositivo. Selecione para alterar:'}
-            </Text>
-            {languages.map((lang, idx) => (
-              <TouchableOpacity
-                key={lang.code}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  paddingHorizontal: 16, paddingVertical: 14,
-                  backgroundColor: locale === lang.code ? '#1a2a4a' : 'transparent',
-                  borderBottomWidth: idx < languages.length - 1 ? 1 : 0,
-                  borderBottomColor: '#2a2a2a',
-                }}
-                onPress={() => setLocale(lang.code)}
-              >
-                <Text style={{ fontSize: 24 }}>{lang.flag}</Text>
-                <Text style={{ color: locale === lang.code ? '#2196F3' : '#ccc', fontSize: 15, fontWeight: locale === lang.code ? 'bold' : 'normal', flex: 1 }}>{lang.name}</Text>
-                {locale === lang.code && <Ionicons name="checkmark-circle" size={20} color="#2196F3" />}
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }]}
+            onPress={() => { playClick(); setShowLangPicker(!showLangPicker); }}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 24 }}>{languages.find(l => l.code === locale)?.flag || '🌐'}</Text>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{languages.find(l => l.code === locale)?.name || 'Selecione'}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{t('profile.selectLanguage') || 'Toque para alterar idioma'}</Text>
+              </View>
+            </View>
+            <Ionicons name={showLangPicker ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          {showLangPicker && (
+            <View style={[styles.card, { padding: 0, overflow: 'hidden', marginTop: 8, backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1 }]}>
+              {languages.map((lang, idx) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 12,
+                    paddingHorizontal: 16, paddingVertical: 14,
+                    backgroundColor: locale === lang.code ? (isDark ? '#1a2a4a' : '#E3F2FD') : 'transparent',
+                    borderBottomWidth: idx < languages.length - 1 ? 1 : 0,
+                    borderBottomColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                  }}
+                  onPress={() => { playClick(); setLocale(lang.code); setShowLangPicker(false); }}
+                >
+                  <Text style={{ fontSize: 24 }}>{lang.flag}</Text>
+                  <Text style={{ color: locale === lang.code ? '#2196F3' : colors.text, fontSize: 15, fontWeight: locale === lang.code ? 'bold' : 'normal', flex: 1 }}>{lang.name}</Text>
+                  {locale === lang.code && <Ionicons name="checkmark-circle" size={20} color="#2196F3" />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Theme Toggle Section */}

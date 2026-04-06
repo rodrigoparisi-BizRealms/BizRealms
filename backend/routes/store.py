@@ -40,6 +40,8 @@ STORE_ITEMS = [
     {"id": "earnings_3x_3h", "category": "ganhos", "name": "Boost 3x (3 horas)", "description": "Triplique todos os seus ganhos por 3 horas", "game_reward": {"earnings_multiplier": 3.0, "duration_hours": 3}, "price_brl": 4.90, "icon": "flash", "color": "#E91E63", "popular": True},
     {"id": "earnings_5x_6h", "category": "ganhos", "name": "Boost 5x (6 horas)", "description": "Quintuplique seus ganhos por 6 horas inteiras!", "game_reward": {"earnings_multiplier": 5.0, "duration_hours": 6}, "price_brl": 9.90, "icon": "flash", "color": "#E91E63", "popular": False, "best_value": True},
     {"id": "earnings_10x_12h", "category": "ganhos", "name": "Boost 10x (12 horas)", "description": "O boost MÁXIMO! 10x ganhos por 12 horas", "game_reward": {"earnings_multiplier": 10.0, "duration_hours": 12}, "price_brl": 19.90, "icon": "rocket", "color": "#E91E63", "popular": False},
+    # Ad-Free Subscription
+    {"id": "ad_free_monthly", "category": "premium", "name": "Sem Propagandas", "description": "Remova todos os anúncios e ganhe bônus automáticos por 30 dias", "game_reward": {"ad_free": True, "duration_days": 30}, "price_brl": 9.90, "icon": "shield-checkmark", "color": "#9C27B0", "popular": True, "is_subscription": True},
 ]
 
 @router.get("/store/items")
@@ -135,6 +137,36 @@ async def purchase_store_item(request: dict, current_user: dict = Depends(get_cu
             await db.ad_boosts.insert_one(boost.dict())
         messages.append(f"Boost {reward['earnings_multiplier']}x ativado por {duration_hours}h!")
 
+    # Handle ad-free subscription
+    if reward.get('ad_free'):
+        now = datetime.utcnow()
+        duration_days = reward.get('duration_days', 30)
+        expires_at = now + timedelta(days=duration_days)
+
+        existing_sub = await db.subscriptions.find_one({"user_id": current_user['id'], "type": "ad_free"})
+        if existing_sub:
+            old_expires = existing_sub.get('expires_at', now)
+            if isinstance(old_expires, str):
+                old_expires = datetime.fromisoformat(old_expires.replace('Z', '+00:00'))
+            # Extend from current expiry if still active
+            base = max(old_expires, now)
+            new_expires = base + timedelta(days=duration_days)
+            await db.subscriptions.update_one(
+                {"_id": existing_sub['_id']},
+                {"$set": {"expires_at": new_expires, "updated_at": now}}
+            )
+        else:
+            await db.subscriptions.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": current_user['id'],
+                "type": "ad_free",
+                "active": True,
+                "expires_at": expires_at,
+                "created_at": now,
+                "updated_at": now,
+            })
+        messages.append(f"Sem Propagandas ativado por {duration_days} dias!")
+
     if update_ops:
         await db.users.update_one({"id": current_user['id']}, {"$set": update_ops})
 
@@ -161,6 +193,34 @@ async def get_store_purchases(current_user: dict = Depends(get_current_user)):
         if isinstance(p.get('created_at'), datetime):
             p['created_at'] = p['created_at'].isoformat()
     return purchases
+
+
+# ==================== AD-FREE SUBSCRIPTION STATUS ====================
+
+@router.get("/store/subscription-status")
+async def get_subscription_status(current_user: dict = Depends(get_current_user)):
+    """Check if user has active ad-free subscription"""
+    now = datetime.utcnow()
+    sub = await db.subscriptions.find_one({
+        "user_id": current_user['id'],
+        "type": "ad_free"
+    })
+    
+    if not sub:
+        return {"ad_free": False, "expires_at": None, "days_remaining": 0}
+    
+    expires_at = sub.get('expires_at', now)
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+    
+    is_active = expires_at > now
+    days_remaining = max(0, (expires_at - now).days) if is_active else 0
+    
+    return {
+        "ad_free": is_active,
+        "expires_at": expires_at.isoformat() if is_active else None,
+        "days_remaining": days_remaining,
+    }
 
 # ==================== DAILY FREE MONEY (PROPAGANDA DIÁRIA) ====================
 

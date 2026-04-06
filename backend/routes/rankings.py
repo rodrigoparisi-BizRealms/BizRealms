@@ -63,6 +63,13 @@ async def calculate_user_net_worth(user: dict) -> dict:
 
     total = cash + investment_value + companies_value + assets_value
 
+    # Certification bonus: +5% per certification, max +25% (5 certs)
+    certifications = user.get('certifications', [])
+    cert_count = len(certifications)
+    cert_bonus_pct = min(cert_count * 5, 25)  # 5% per cert, max 25%
+    cert_bonus_value = total * (cert_bonus_pct / 100)
+    total_with_bonus = total + cert_bonus_value
+
     return {
         "user_id": user_id,
         "name": user.get('name', 'Jogador'),
@@ -75,7 +82,11 @@ async def calculate_user_net_worth(user: dict) -> dict:
         "companies_value": round(companies_value, 2),
         "companies_revenue": round(companies_revenue, 2),
         "assets_value": round(assets_value, 2),
-        "total_net_worth": round(total, 2),
+        "total_net_worth": round(total_with_bonus, 2),
+        "base_net_worth": round(total, 2),
+        "cert_bonus_pct": cert_bonus_pct,
+        "cert_bonus_value": round(cert_bonus_value, 2),
+        "cert_count": cert_count,
         "num_companies": len(companies),
         "num_assets": len(assets),
         "num_investments": len(holdings),

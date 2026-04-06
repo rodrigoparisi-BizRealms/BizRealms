@@ -22,6 +22,7 @@ const CATEGORY_CFG: Record<string, { label: string; icon: string; color: string 
   dinheiro: { label: 'Dinheiro', icon: 'cash', color: '#4CAF50' },
   xp: { label: 'XP', icon: 'star', color: '#FF9800' },
   ganhos: { label: 'Boost Ganhos', icon: 'flash', color: '#E91E63' },
+  premium: { label: 'Premium', icon: 'shield-checkmark', color: '#9C27B0' },
 };
 
 export default function Store() {

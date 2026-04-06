@@ -296,6 +296,9 @@ export default function Rankings() {
               </View>
               <View style={s.rankRight}>
                 <Text style={s.rankValue}>{formatMoney(r.total_net_worth)}</Text>
+                {r.cert_count > 0 && (
+                  <Text style={{ fontSize: 10, color: '#FF9800', fontWeight: 'bold' }}>🎓+{r.cert_bonus_pct}%</Text>
+                )}
                 {r.position_change !== 0 && !r.is_new && (
                   <View style={s.changeRow}>
                     <Ionicons
