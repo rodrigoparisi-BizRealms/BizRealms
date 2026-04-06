@@ -10,7 +10,7 @@ import uuid
 import random
 import logging
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 
@@ -18,12 +18,9 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-security = HTTPBearer()
 
-# Import shared deps
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import db, get_current_user
+from database import db
+from utils import get_current_user, security
 
 # ==================== EVENT CONFIGURATION ====================
 
@@ -282,6 +279,7 @@ async def generate_event(current_user: dict = Depends(get_current_user)):
 
     # Try GPT generation first
     event_data = None
+    ai_generated = False
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         llm_key = os.getenv('EMERGENT_LLM_KEY')
@@ -320,6 +318,7 @@ Gere um evento SURPREENDENTE e ÚNICO para este jogador."""
                 clean = clean.split('\n', 1)[1] if '\n' in clean else clean[3:]
                 clean = clean.rsplit('```', 1)[0]
             event_data = json.loads(clean)
+            ai_generated = True
             logger.info(f"GPT event generated for user {uid}")
     except Exception as e:
         logger.warning(f"GPT event generation failed: {e}, using fallback")
@@ -349,7 +348,7 @@ Gere um evento SURPREENDENTE e ÚNICO para este jogador."""
         "color": type_config['color'],
         "choices": event_data.get('choices', []),
         "difficulty": difficulty,
-        "ai_generated": event_data is not None and 'pool' not in str(type(event_data)),
+        "ai_generated": ai_generated,
         "resolved": False,
         "created_at": now,
         "expires_at": now + timedelta(hours=EVENT_EXPIRY_HOURS),
@@ -369,7 +368,7 @@ async def choose_event_option(request: dict, current_user: dict = Depends(get_cu
     choice_id = request.get('choice_id')
 
     if not event_id or not choice_id:
-        return {"error": "event_id e choice_id são obrigatórios"}
+        raise HTTPException(status_code=400, detail="event_id e choice_id são obrigatórios")
 
     # Find the active event
     event = await db.game_events.find_one({
@@ -378,7 +377,7 @@ async def choose_event_option(request: dict, current_user: dict = Depends(get_cu
         "resolved": False,
     })
     if not event:
-        return {"error": "Evento não encontrado ou já resolvido"}
+        raise HTTPException(status_code=404, detail="Evento não encontrado ou já resolvido")
 
     # Find the chosen option
     chosen = None
@@ -388,7 +387,7 @@ async def choose_event_option(request: dict, current_user: dict = Depends(get_cu
             break
 
     if not chosen:
-        return {"error": "Escolha inválida"}
+        raise HTTPException(status_code=400, detail="Escolha inválida")
 
     consequences = chosen.get('consequences', {})
     money_change = consequences.get('money', 0)
@@ -399,7 +398,7 @@ async def choose_event_option(request: dict, current_user: dict = Depends(get_cu
     if money_change != 0:
         update['money'] = money_change
     if xp_change != 0:
-        update['experience'] = xp_change
+        update['experience_points'] = xp_change
 
     if update:
         # Ensure money doesn't go below 0

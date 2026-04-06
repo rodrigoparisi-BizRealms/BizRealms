@@ -194,6 +194,7 @@ from routes.store import router as store_router
 from routes.bank import router as bank_router
 from routes.market import router as market_router
 from routes.notifications import router as notifications_router
+from routes.events import router as events_router
 
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
@@ -206,6 +207,7 @@ api_router.include_router(store_router)
 api_router.include_router(bank_router)
 api_router.include_router(market_router)
 api_router.include_router(notifications_router)
+api_router.include_router(events_router)
 
 # Include the api_router in the main app
 app.include_router(api_router)

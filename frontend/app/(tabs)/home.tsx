@@ -23,6 +23,7 @@ import { useSound } from '../../context/SoundContext';
 import { CacheService } from '../../services/CacheService';
 import { useNetwork } from '../../context/NetworkContext';
 import { useTheme } from '../../context/ThemeContext';
+import EventModal from '../../components/EventModal';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -55,6 +56,10 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [tipIndex, setTipIndex] = useState(0);
+  const [activeEvent, setActiveEvent] = useState<any>(null);
+  const [eventModalVisible, setEventModalVisible] = useState(false);
+  const [eventLoading, setEventLoading] = useState(false);
+  const [eventCooldown, setEventCooldown] = useState(0);
 
   const GAME_TIPS = [
     { icon: 'briefcase', color: '#4CAF50', tip: 'Invista em cursos para desbloquear vagas com salários maiores!' },
@@ -116,10 +121,82 @@ export default function Home() {
 
   useEffect(() => { loadAllData(); }, [loadAllData]);
 
+  // ==================== AI DYNAMIC EVENTS ====================
+  const checkActiveEvent = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/events/active`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      if (res.data?.has_event && res.data.event) {
+        setActiveEvent(res.data.event);
+      } else {
+        setActiveEvent(null);
+        setEventCooldown(res.data?.cooldown_remaining || 0);
+      }
+    } catch (e) {
+      console.log('Event check error:', e);
+    }
+  }, [token]);
+
+  useEffect(() => { checkActiveEvent(); }, [checkActiveEvent]);
+
+  const generateEvent = async () => {
+    if (!token) return;
+    setEventLoading(true);
+    try {
+      const res = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/events/generate`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000,
+      });
+      if (res.data?.event) {
+        setActiveEvent(res.data.event);
+        setEventModalVisible(true);
+        haptic('medium');
+      }
+    } catch (e) {
+      console.log('Event generate error:', e);
+    } finally {
+      setEventLoading(false);
+    }
+  };
+
+  const handleEventChoice = async (eventId: string, choiceId: string) => {
+    if (!token) return null;
+    try {
+      const res = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/events/choose`, {
+        event_id: eventId,
+        choice_id: choiceId,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      if (res.data?.success) {
+        haptic('success');
+        // Refresh user data after event choice
+        refreshUser();
+        loadAllData();
+        return res.data;
+      }
+      return null;
+    } catch (e) {
+      console.log('Event choice error:', e);
+      return null;
+    }
+  };
+
+  const handleEventClose = () => {
+    setEventModalVisible(false);
+    setActiveEvent(null);
+    checkActiveEvent();
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshUser();
     await loadAllData();
+    await checkActiveEvent();
     setRefreshing(false);
   };
 
@@ -254,6 +331,85 @@ export default function Home() {
             <View style={[styles.progressFill, { width: `${levelProgress}%` }]} />
           </View>
         </View>
+
+        {/* AI Dynamic Events Card */}
+        {activeEvent ? (
+          <TouchableOpacity
+            style={[styles.eventCard, { borderColor: activeEvent.color + '60' }]}
+            onPress={() => { haptic('medium'); setEventModalVisible(true); }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.eventCardHeader}>
+              <View style={[styles.eventIconBg, { backgroundColor: activeEvent.color + '25' }]}>
+                <Text style={{ fontSize: 22 }}>{activeEvent.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.eventCardType, { color: activeEvent.color }]}>
+                    {activeEvent.type === 'opportunity' ? 'Oportunidade' :
+                     activeEvent.type === 'crisis' ? 'Crise' :
+                     activeEvent.type === 'challenge' ? 'Desafio' :
+                     activeEvent.type === 'luck' ? 'Sorte' :
+                     activeEvent.type === 'decision' ? 'Decisão' :
+                     activeEvent.type === 'market' ? 'Mercado' : activeEvent.type}
+                  </Text>
+                  {activeEvent.ai_generated && (
+                    <View style={styles.eventAiBadge}>
+                      <Ionicons name="sparkles" size={10} color="#FFD700" />
+                      <Text style={{ fontSize: 9, color: '#FFD700', fontWeight: '700' }}>IA</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.eventCardTitle} numberOfLines={1}>{activeEvent.title}</Text>
+              </View>
+              <View style={[styles.eventPulseDot, { backgroundColor: activeEvent.color }]} />
+            </View>
+            <Text style={styles.eventCardDesc} numberOfLines={2}>{activeEvent.description}</Text>
+            <View style={styles.eventCardAction}>
+              <Text style={[styles.eventCardActionText, { color: activeEvent.color }]}>
+                Toque para decidir
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={activeEvent.color} />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.eventCardGenerate, eventLoading && { opacity: 0.6 }]}
+            onPress={generateEvent}
+            disabled={eventLoading || eventCooldown > 0}
+            activeOpacity={0.7}
+          >
+            <View style={styles.eventCardHeader}>
+              <View style={[styles.eventIconBg, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
+                <Ionicons name="flash" size={22} color="#FFD700" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.eventGenerateTitle}>Evento Dinâmico</Text>
+                <Text style={styles.eventGenerateHint}>
+                  {eventCooldown > 0
+                    ? `Disponível em ${Math.ceil(eventCooldown / 60)} min`
+                    : 'Gere um evento surpresa com IA'}
+                </Text>
+              </View>
+              {eventLoading ? (
+                <ActivityIndicator size="small" color="#FFD700" />
+              ) : (
+                <View style={styles.eventGenerateBtn}>
+                  <Ionicons name="sparkles" size={16} color="#000" />
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Event Modal */}
+        <EventModal
+          visible={eventModalVisible}
+          event={activeEvent}
+          onChoose={handleEventChoice}
+          onClose={handleEventClose}
+          loading={eventLoading}
+        />
 
         {/* Rankings Panel */}
         <TouchableOpacity
@@ -960,5 +1116,95 @@ const styles = StyleSheet.create({
     width: 36,
     textAlign: 'right',
     fontSize: 13,
+  },
+  // Event Card
+  eventCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.5,
+  },
+  eventCardGenerate: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFD70040',
+  },
+  eventCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  eventIconBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eventCardType: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  eventCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 2,
+  },
+  eventPulseDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  eventAiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(255,215,0,0.15)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  eventCardDesc: {
+    fontSize: 13,
+    color: '#aaa',
+    lineHeight: 19,
+    marginTop: 10,
+    marginLeft: 52,
+  },
+  eventCardAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    marginTop: 8,
+  },
+  eventCardActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  eventGenerateTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  eventGenerateHint: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  eventGenerateBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFD700',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
