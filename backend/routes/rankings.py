@@ -33,7 +33,7 @@ async def calculate_user_net_worth(user: dict) -> dict:
 
     # Investment holdings value
     investment_value = 0
-    holdings = await db.user_holdings.find({"user_id": user_id}).to_list(200)
+    holdings = await db.user_holdings.find({"user_id": user_id}, {"asset_id": 1, "quantity": 1}).to_list(200)
     for h in holdings:
         asset = await db.investment_assets.find_one({"id": h['asset_id']})
         if asset:
@@ -43,14 +43,14 @@ async def calculate_user_net_worth(user: dict) -> dict:
     # Companies value (purchase_price + accumulated value)
     companies_value = 0
     companies_revenue = 0
-    companies = await db.user_companies.find({"user_id": user_id}).to_list(200)
+    companies = await db.user_companies.find({"user_id": user_id}, {"purchase_price": 1, "monthly_revenue": 1}).to_list(200)
     for c in companies:
         companies_value += c.get('purchase_price', 0)
         companies_revenue += c.get('monthly_revenue', 0)
 
     # Assets value (with appreciation/depreciation)
     assets_value = 0
-    assets = await db.user_assets.find({"user_id": user_id}).to_list(200)
+    assets = await db.user_assets.find({"user_id": user_id}, {"purchase_price": 1, "appreciation_rate": 1, "purchased_at": 1}).to_list(200)
     for a in assets:
         purchase_price = a.get('purchase_price', 0)
         rate = a.get('appreciation_rate', 0) / 100
