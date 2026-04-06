@@ -82,65 +82,99 @@ LEGAL_HTML_STYLE = """
 @app.get("/legal/terms", response_class=HTMLResponse)
 @app.get("/api/legal/terms", response_class=HTMLResponse)
 async def public_terms():
-    return HTMLResponse(f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Terms of Use</title>{LEGAL_HTML_STYLE}</head><body>
+    return HTMLResponse(f"""<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Termos de Uso</title>{LEGAL_HTML_STYLE}</head><body>
 <div class="logo"><span>BizRealms</span></div>
-<h1>Terms of Use</h1>
-<p class="meta">Last updated: June 2025</p>
-<h2>1. Acceptance of Terms</h2>
-<p>By downloading, installing, or using BizRealms ("the App"), you agree to be bound by these Terms of Use. If you do not agree, do not use the App.</p>
-<h2>2. Description of Service</h2>
-<p>BizRealms is a business simulation game where players manage virtual companies, investments, jobs, and assets. The in-game currency and assets have no real-world monetary value unless explicitly stated in our rewards program.</p>
-<h2>3. Account Registration</h2>
-<p>You must provide accurate information when creating an account. You are responsible for maintaining the security of your account credentials. One account per person is allowed.</p>
-<h2>4. In-App Purchases</h2>
-<p>The App may offer in-app purchases processed via Stripe. All purchases are final and non-refundable, except as required by applicable law. Virtual items purchased have no real-world value.</p>
-<h2>5. Real Money Rewards</h2>
-<p>BizRealms may offer real money rewards to top-ranked players. Eligibility, amounts, and payment methods are determined by BizRealms at its sole discretion. Players must provide valid payment information (e.g., PayPal account) to receive rewards.</p>
-<h2>6. Prohibited Conduct</h2>
-<p>You may not: use cheats, exploits, or automation; create multiple accounts; harass other players; attempt to manipulate rankings; or reverse-engineer the App.</p>
-<h2>7. Intellectual Property</h2>
-<p>All content, graphics, logos, and software in BizRealms are owned by BizRealms or its licensors and are protected by intellectual property laws.</p>
-<h2>8. Termination</h2>
-<p>We may suspend or terminate your account at any time for violation of these terms or for any other reason at our discretion.</p>
-<h2>9. Limitation of Liability</h2>
-<p>BizRealms is provided "as is" without warranties. We are not liable for any indirect, incidental, or consequential damages arising from your use of the App.</p>
-<h2>10. Changes to Terms</h2>
-<p>We may update these terms at any time. Continued use of the App after changes constitutes acceptance of the new terms.</p>
-<h2>11. Contact</h2>
-<p>For questions about these Terms, contact us at: <a href="mailto:support@bizrealms.com">support@bizrealms.com</a></p>
-<div class="footer">&copy; 2025 BizRealms. All rights reserved. | <a href="/legal/privacy">Privacy Policy</a></div>
+<h1>Termos de Uso / Terms of Use</h1>
+<p class="meta">Última atualização: Junho 2025</p>
+
+<h2>1. Aceitação dos Termos</h2>
+<p>Ao baixar, instalar ou usar o BizRealms ("o Aplicativo"), você concorda em ficar vinculado a estes Termos de Uso. Se você não concordar, não use o Aplicativo.</p>
+
+<h2>2. Descrição do Serviço</h2>
+<p>BizRealms é um jogo de simulação de negócios onde os jogadores gerenciam empresas virtuais, investimentos, empregos e ativos. A moeda e os ativos do jogo não possuem valor monetário real, exceto quando explicitamente declarado em nosso programa de recompensas.</p>
+
+<h2>3. Registro de Conta</h2>
+<p>Você deve fornecer informações precisas ao criar uma conta. Você é responsável por manter a segurança de suas credenciais. É permitida apenas uma conta por pessoa.</p>
+
+<h2>4. Compras no Aplicativo</h2>
+<p>O Aplicativo pode oferecer compras processadas via Stripe. Todas as compras são finais e não reembolsáveis, exceto conforme exigido pela legislação aplicável. Itens virtuais comprados não possuem valor no mundo real.</p>
+
+<h2>5. Recompensas em Dinheiro Real</h2>
+<p>O BizRealms pode oferecer recompensas em dinheiro real para jogadores com melhor ranking. Elegibilidade, valores e métodos de pagamento são determinados pelo BizRealms a seu exclusivo critério. Os jogadores devem fornecer informações válidas de pagamento (ex: conta PayPal e documento de identidade) para receber recompensas.</p>
+
+<h2>6. Conduta Proibida</h2>
+<p>Você não pode: usar trapaças, exploits ou automação; criar múltiplas contas; assediar outros jogadores; tentar manipular rankings; ou fazer engenharia reversa do Aplicativo.</p>
+
+<h2>7. Propriedade Intelectual</h2>
+<p>Todo conteúdo, gráficos, logos e software do BizRealms são de propriedade do BizRealms ou seus licenciadores e são protegidos por leis de propriedade intelectual.</p>
+
+<h2>8. Anúncios</h2>
+<p>O Aplicativo pode exibir anúncios como parte do modelo de monetização. Os jogadores podem assistir anúncios para obter benefícios no jogo. A exibição está sujeita à disponibilidade da rede de anúncios.</p>
+
+<h2>9. Rescisão</h2>
+<p>Podemos suspender ou encerrar sua conta a qualquer momento por violação destes termos ou por qualquer outro motivo a nosso critério.</p>
+
+<h2>10. Limitação de Responsabilidade</h2>
+<p>O BizRealms é fornecido "como está" sem garantias. Não somos responsáveis por danos indiretos, incidentais ou consequenciais decorrentes do uso do Aplicativo.</p>
+
+<h2>11. Lei Aplicável</h2>
+<p>Estes Termos são regidos pelas leis da República Federativa do Brasil. Quaisquer disputas serão resolvidas no foro da comarca do desenvolvedor.</p>
+
+<h2>12. Alterações nos Termos</h2>
+<p>Podemos atualizar estes termos a qualquer momento. O uso continuado do Aplicativo após as alterações constitui aceitação dos novos termos.</p>
+
+<h2>13. Contato</h2>
+<p>Para questões sobre estes Termos: <a href="mailto:support@bizrealms.com">support@bizrealms.com</a></p>
+
+<div class="footer">&copy; 2025 BizRealms. Todos os direitos reservados. | <a href="/legal/privacy">Política de Privacidade</a></div>
 </body></html>""")
 
 @app.get("/legal/privacy", response_class=HTMLResponse)
 @app.get("/api/legal/privacy", response_class=HTMLResponse)
 async def public_privacy():
-    return HTMLResponse(f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Privacy Policy</title>{LEGAL_HTML_STYLE}</head><body>
+    return HTMLResponse(f"""<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Política de Privacidade</title>{LEGAL_HTML_STYLE}</head><body>
 <div class="logo"><span>BizRealms</span></div>
-<h1>Privacy Policy</h1>
-<p class="meta">Last updated: June 2025</p>
-<h2>1. Information We Collect</h2>
-<p>We collect information you provide directly: name, email address, and optional profile data (avatar, city). We also collect gameplay data (progress, transactions, rankings) and device information (OS, language, timezone).</p>
-<h2>2. How We Use Your Information</h2>
-<p>We use your information to: provide and improve the game experience; manage your account; process in-app purchases and rewards; maintain rankings; send notifications about game events; and prevent fraud and abuse.</p>
-<h2>3. Information Sharing</h2>
-<p>We do not sell your personal information. We may share limited data with: payment processors (Stripe, for purchases and rewards); analytics providers (aggregated, anonymized data); and law enforcement (when required by law).</p>
-<h2>4. Data Security</h2>
-<p>We implement industry-standard security measures including encryption, secure authentication (JWT), password hashing (bcrypt), and regular security audits to protect your data.</p>
-<h2>5. Your Rights</h2>
-<p>You have the right to: access your personal data; correct inaccurate data; delete your account and associated data; export your data; and opt-out of marketing communications.</p>
-<h2>6. Cookies &amp; Tracking</h2>
-<p>The App uses local storage for authentication tokens and user preferences. We do not use third-party tracking cookies.</p>
-<h2>7. Children's Privacy</h2>
-<p>BizRealms is not intended for children under 13 (or the minimum age in your jurisdiction). We do not knowingly collect data from children.</p>
-<h2>8. International Data Transfers</h2>
-<p>Your data may be processed in servers located outside your country. We ensure appropriate safeguards are in place for international transfers.</p>
-<h2>9. Data Retention</h2>
-<p>We retain your data for as long as your account is active. After account deletion, we may retain anonymized data for analytics purposes.</p>
-<h2>10. Changes to This Policy</h2>
-<p>We may update this policy from time to time. We will notify you of significant changes through the App.</p>
-<h2>11. Contact Us</h2>
-<p>For privacy-related questions or to exercise your rights, contact us at: <a href="mailto:privacy@bizrealms.com">privacy@bizrealms.com</a></p>
-<div class="footer">&copy; 2025 BizRealms. All rights reserved. | <a href="/legal/terms">Terms of Use</a></div>
+<h1>Política de Privacidade / Privacy Policy</h1>
+<p class="meta">Última atualização: Junho 2025</p>
+
+<h2>1. Informações que Coletamos</h2>
+<p>Coletamos informações fornecidas diretamente por você: nome, endereço de e-mail e dados opcionais de perfil (avatar, cidade). Também coletamos dados de jogabilidade (progresso, transações, rankings), dados do dispositivo (SO, idioma, fuso horário) e documento de identidade (quando necessário para saques via PayPal).</p>
+
+<h2>2. Como Usamos Suas Informações</h2>
+<p>Usamos suas informações para: fornecer e melhorar a experiência do jogo; gerenciar sua conta; processar compras e recompensas no app; manter rankings; enviar notificações sobre eventos do jogo; e prevenir fraudes e abusos.</p>
+
+<h2>3. Compartilhamento de Informações</h2>
+<p>Não vendemos suas informações pessoais. Podemos compartilhar dados limitados com: processadores de pagamento (para compras e recompensas via PayPal/Stripe); provedores de análise (dados agregados e anonimizados); redes de anúncios (identificadores anonimizados); e autoridades legais (quando exigido por lei).</p>
+
+<h2>4. Segurança dos Dados</h2>
+<p>Implementamos medidas de segurança padrão da indústria, incluindo criptografia, autenticação segura (JWT), hash de senhas (bcrypt), autenticação biométrica opcional e auditorias regulares de segurança.</p>
+
+<h2>5. Seus Direitos (LGPD - Lei nº 13.709/2018)</h2>
+<p>De acordo com a Lei Geral de Proteção de Dados, você tem o direito de: acessar seus dados pessoais; corrigir dados incorretos; solicitar a exclusão de sua conta e dados associados (use "Zerar Conta" no perfil); exportar seus dados; revogar consentimento; e optar por não receber comunicações de marketing.</p>
+
+<h2>6. Armazenamento Local</h2>
+<p>O aplicativo utiliza armazenamento local para tokens de autenticação e preferências do usuário (tema, idioma, sons). Não utilizamos cookies de rastreamento de terceiros.</p>
+
+<h2>7. Privacidade de Menores</h2>
+<p>O BizRealms não é destinado a menores de 13 anos (ou a idade mínima em sua jurisdição). Não coletamos intencionalmente dados de crianças.</p>
+
+<h2>8. Transferência Internacional de Dados</h2>
+<p>Seus dados podem ser processados em servidores localizados fora do seu país. Garantimos salvaguardas apropriadas conforme exigido pela LGPD.</p>
+
+<h2>9. Retenção de Dados</h2>
+<p>Mantemos seus dados enquanto sua conta estiver ativa. Após a exclusão, podemos reter dados anonimizados por até 90 dias para fins de análise.</p>
+
+<h2>10. Anúncios e Monetização</h2>
+<p>O BizRealms pode exibir anúncios. Os dados compartilhados com redes de anúncios são limitados a identificadores anonimizados. Uma parcela da receita (5%) é distribuída aos jogadores com melhor ranking.</p>
+
+<h2>11. Alterações nesta Política</h2>
+<p>Podemos atualizar esta política periodicamente. Notificaremos sobre mudanças significativas através do aplicativo.</p>
+
+<h2>12. Contato e Encarregado (DPO)</h2>
+<p>Para questões de privacidade: <a href="mailto:privacy@bizrealms.com">privacy@bizrealms.com</a><br>
+Encarregado de Proteção de Dados (DPO): <a href="mailto:dpo@bizrealms.com">dpo@bizrealms.com</a></p>
+
+<div class="footer">&copy; 2025 BizRealms. Todos os direitos reservados. | <a href="/legal/terms">Termos de Uso</a></div>
 </body></html>""")
 
 # ==================== ROOT ENDPOINT ====================
