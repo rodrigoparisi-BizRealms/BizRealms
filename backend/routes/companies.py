@@ -184,8 +184,10 @@ class MergeCompaniesRequest(BaseModel):
     company_id_2: str
 
 async def seed_companies_for_sale():
-    count = await db.companies_for_sale.count_documents({})
-    if count == 0:
+    # Always re-seed to ensure daily_revenue field exists
+    existing = await db.companies_for_sale.find_one({"daily_revenue": {"$exists": True, "$ne": None}})
+    if not existing:
+        await db.companies_for_sale.delete_many({})
         companies = []
         for seed in COMPANIES_FOR_SALE:
             seg = COMPANY_SEGMENTS.get(seed['segment'], {})
@@ -251,7 +253,7 @@ async def buy_company(request: dict, current_user: dict = Depends(get_current_us
         "segment": company['segment'],
         "icon": company.get('icon', 'business'),
         "color": company.get('color', '#888'),
-        "daily_revenue": company['monthly_revenue'],
+        "daily_revenue": company.get('daily_revenue') or company.get('monthly_revenue', 0),
         "employees": company['employees'],
         "description": company['description'],
         "purchase_price": company['price'],
@@ -263,12 +265,13 @@ async def buy_company(request: dict, current_user: dict = Depends(get_current_us
         "purchased_at": datetime.utcnow(),
     }
     await db.user_companies.insert_one(user_company)
+    revenue = company.get('daily_revenue') or company.get('monthly_revenue', 0)
     return {
         "message": f"Parabéns! Você comprou {company['name']}!",
         "company_name": company['name'],
         "price": company['price'],
-        "daily_revenue": company['monthly_revenue'],
-        "roi_months": round(company['price'] / company['monthly_revenue'], 1) if company['monthly_revenue'] > 0 else 0,
+        "daily_revenue": revenue,
+        "roi_months": round(company['price'] / revenue, 1) if revenue > 0 else 0,
         "new_balance": round(new_money, 2),
     }
 

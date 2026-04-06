@@ -153,7 +153,7 @@ export default function Companies() {
   };
 
   const handleBuy = (company: any) => {
-    const roiMonths = company.daily_revenue > 0 ? (company.price / company.daily_revenue).toFixed(1) : '?';
+    const roiMonths = (company.daily_revenue || 0) > 0 ? ((company.price || 0) / company.daily_revenue).toFixed(1) : '?';
     confirmAction(t('companies.buy') || 'Comprar Empresa', `${t('companies.buyConfirm') || 'Deseja comprar'} ${company.name} ${t('companies.buyFor') || 'por'} ${formatMoney(company.price)}?\n\n💵 ${t('companies.monthlyRevenue') || 'Receita diária'}: ${formatMoney(company.daily_revenue)}\n📊 ${t('companies.roiEstimate') || 'Retorno estimado'}: ${roiMonths} ${t('general.months') || 'meses'}`, async () => {
       setBuying(company.id);
       try {
@@ -518,7 +518,14 @@ export default function Companies() {
         </>)}
 
         {/* BUY VIEW */}
-        {viewMode === 'buy' && available.map(c => {
+        {viewMode === 'buy' && (<>
+          {available.length === 0 ? (
+            <View style={s.empty}>
+              <Ionicons name="cart-outline" size={64} color="#555" />
+              <Text style={s.emptyTitle}>{t('companies.noAvailable') || 'No companies available'}</Text>
+              <Text style={s.emptySub}>{t('companies.checkLater') || 'Check back later for new companies!'}</Text>
+            </View>
+          ) : available.map(c => {
           const canAfford = (user?.money || 0) >= c.price;
           const hasLevel = (user?.level || 1) >= c.level_required;
           return (
@@ -533,10 +540,10 @@ export default function Companies() {
               </View>
               <Text style={s.buyDesc}>{c.description}</Text>
               <View style={s.buyMeta}>
-                <Text style={s.metaText}>💵 {formatMoney(c.daily_revenue)}/day</Text>
-                <Text style={s.metaText}>👥 {c.employees} emp.</Text>
-                <Text style={s.metaText}>📊 ROI: {c.daily_revenue > 0 ? (c.price / c.daily_revenue).toFixed(0) : '?'}d</Text>
-                <Text style={s.metaText}>📊 {t('profile.levelLabel')} {c.level_required}</Text>
+                <Text style={s.metaText}>💵 {formatMoney(c.daily_revenue || 0)}/day</Text>
+                <Text style={s.metaText}>👥 {c.employees || 0} emp.</Text>
+                <Text style={s.metaText}>📊 ROI: {(c.daily_revenue || 0) > 0 ? ((c.price || 0) / c.daily_revenue).toFixed(0) : '?'}d</Text>
+                <Text style={s.metaText}>📊 {t('profile.levelLabel')} {c.level_required || 1}</Text>
               </View>
               {c.already_owned ? (
                 <View style={s.ownedBadge}><Ionicons name="checkmark-circle" size={16} color="#4CAF50" /><Text style={s.ownedText}>Já possui</Text></View>
@@ -550,6 +557,7 @@ export default function Companies() {
             </View>
           );
         })}
+        </>)}
       </ScrollView>
 
       {/* Create Modal */}

@@ -54,11 +54,13 @@ export function usePushNotifications(token: string | null) {
     });
 
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+      if (Platform.OS !== 'web') {
+        if (notificationListener.current) {
+          Notifications.removeNotificationSubscription(notificationListener.current);
+        }
+        if (responseListener.current) {
+          Notifications.removeNotificationSubscription(responseListener.current);
+        }
       }
     };
   }, [token]);
