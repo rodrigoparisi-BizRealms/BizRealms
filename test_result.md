@@ -816,5 +816,56 @@ agent_communication:
         agent: "testing"
         comment: "✅ VERIFIED: Company sell ROI object working correctly. POST /api/companies/sell returns complete roi object with all required fields: purchase_price (18000), total_collected (0), sell_price (14400), total_return (14400), profit (-3600), roi_positive (false), roi_text ('Prejuízo: -R$ 3,600'). ROI calculation and reporting system fully functional."
 
+  - task: "Public Profile Endpoint"
+    implemented: true
+    working: false
+    file: "/app/backend/routes/user.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL BUG FOUND: GET /api/user/profile/{user_id} endpoint has a database query bug. The endpoint tries to query users by MongoDB ObjectId using db.users.find_one({'_id': ObjectId(user_id)}) but the user system uses UUID strings stored in the 'id' field. All other endpoints correctly use {'id': user_id} for user queries. This causes 404 'Jogador não encontrado' errors for all valid user IDs. The endpoint should query by {'id': user_id} instead of {'_id': ObjectId(user_id)}. This prevents the public profile feature from working entirely."
+
+  - task: "Companies Offers Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: GET /api/companies/offers endpoint working correctly. Returns proper response structure with 'offers' array (currently empty with 0 offers). Note: Backend logs showed previous 500 errors due to 'NameError: name _random is not defined' but this appears to have been resolved after backend restart. Endpoint now returns 200 status consistently."
+
+  - task: "User Stats Work Experience Count"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/user.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: GET /api/user/stats endpoint correctly returns work_experience_count field as a number (value: 0). Field is properly calculated and included in response. User stats endpoint working correctly with all required fields present."
+
+  - task: "Companies Owned ROI Fields"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: GET /api/companies/owned endpoint correctly returns all ROI fields for owned companies. Tested with user owning 'Bazar Popular' company - all required ROI fields present: roi_months (5.0), roi_progress (0.0), roi_recovered (false). ROI calculation system working correctly with proper field inclusion in API responses."
+
+  - agent: "testing"
+    message: "🎉 NEW FEATURES TESTING COMPLETE! ✅ Comprehensive testing of BizRealms new features completed. RESULTS: 4/5 tests passed. ✅ LOGIN: Authentication working correctly (POST /api/auth/login) ✅ COMPANIES OFFERS: GET /api/companies/offers returns proper 'offers' array structure (200 status, was previously 500 due to _random error) ✅ USER STATS: work_experience_count field present and is a number (0) in GET /api/user/stats ✅ COMPANIES OWNED ROI: All ROI fields present (roi_months: 5.0, roi_progress: 0.0, roi_recovered: false) in GET /api/companies/owned ❌ PUBLIC PROFILE: CRITICAL BUG - GET /api/user/profile/{user_id} has database query bug, uses ObjectId instead of UUID string, causing 404 errors for all valid user IDs. URGENT FIX NEEDED: Change query from {'_id': ObjectId(user_id)} to {'id': user_id} in /app/backend/routes/user.py line 187."
+
   - agent: "testing"
     message: "🎉 ROI FEATURES & JOB COUNTER TESTING COMPLETE! ✅ Comprehensive testing of new ROI (Return on Investment) features and job counter fix completed successfully. ALL 5 TESTS PASSED: ✅ LOGIN: Authentication working correctly with JWT token generation ✅ USER STATS JOB COUNTER: work_experience_count field present in GET /api/user/stats response (value: 0) ✅ COMPANIES OWNED ROI FIELDS: All ROI fields present in GET /api/companies/owned response - roi_months (5.6), roi_progress (0.0), roi_recovered (false) ✅ COMPANY PURCHASE ROI: POST /api/companies/buy returns roi_months field (5.0) in response, successfully purchased 'Bazar Popular' for R$ 10,000 ✅ COMPANY SELL ROI OBJECT: POST /api/companies/sell returns complete roi object with all required fields - purchase_price (18000), total_collected (0), sell_price (14400), total_return (14400), profit (-3600), roi_positive (false), roi_text ('Prejuízo: -R$ 3,600'). ROI calculation system fully functional with proper profit/loss tracking and text generation. Job counter fix verified. All new ROI features are production-ready."

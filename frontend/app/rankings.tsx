@@ -283,7 +283,7 @@ export default function Rankings() {
         {(data?.rankings || []).slice(3).map((r: any) => {
           const isMe = r.user_id === user?.id;
           return (
-            <View key={r.user_id} style={[s.rankRow, isMe && s.rankRowMe]}>
+            <TouchableOpacity key={r.user_id} style={[s.rankRow, isMe && s.rankRowMe]} onPress={() => !isMe && router.push(`/player-profile?id=${r.user_id}`)}>
               <Text style={[s.rankPos, isMe && { color: '#FFD700' }]}>#{r.position}</Text>
               <View style={[s.rankAvatar, { backgroundColor: AVATAR_COLORS[r.avatar_color] || '#4CAF50' }]}>
                 <Ionicons name={(r.avatar_icon || 'person') as any} size={16} color="#fff" />
@@ -312,7 +312,7 @@ export default function Rankings() {
                   <Text style={s.newBadge}>NOVO</Text>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
 

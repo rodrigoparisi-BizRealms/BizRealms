@@ -6,7 +6,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from bson import ObjectId
 import uuid
-import random
+import random as _random
 import math
 
 from database import db
@@ -549,7 +549,8 @@ async def get_company_offers(current_user: dict = Depends(get_current_user)):
     # Generate new offers for companies without recent ones (30% chance per company)
     new_offers = []
     for company in user_companies:
-        if company['id'] in companies_with_recent_offer:
+        cid = str(company.get('_id', company.get('id', '')))
+        if cid in companies_with_recent_offer:
             continue
         if _random.random() > 0.35:
             continue
@@ -572,7 +573,7 @@ async def get_company_offers(current_user: dict = Depends(get_current_user)):
         offer = {
             "id": str(uuid.uuid4()),
             "user_id": user_id,
-            "company_id": company['id'],
+            "company_id": cid,
             "company_name": company.get('name', 'Empresa'),
             "company_segment": company.get('segment', ''),
             "buyer_name": _generate_buyer_name(),

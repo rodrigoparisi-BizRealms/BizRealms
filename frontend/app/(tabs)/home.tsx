@@ -19,6 +19,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import TutorialOverlay from '../../components/TutorialOverlay';
 import { SkeletonStats, SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { CacheService } from '../../services/CacheService';
+import { useNetwork } from '../../context/NetworkContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -69,26 +71,42 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const { isOffline } = useNetwork();
+
   const loadAllData = useCallback(async () => {
     if (!token) return;
     const h = { Authorization: `Bearer ${token}` };
+
+    // First, load from cache for instant display
+    const [cachedStats, cachedPortfolio, cachedCompanies, cachedAssets] = await Promise.all([
+      CacheService.get('home_stats'),
+      CacheService.get('home_portfolio'),
+      CacheService.get('home_companies'),
+      CacheService.get('home_assets'),
+    ]);
+    if (cachedStats) setStats(cachedStats);
+    if (cachedPortfolio) setPortfolio(cachedPortfolio);
+    if (cachedCompanies) setCompanies(cachedCompanies);
+    if (cachedAssets) setAssets(cachedAssets);
+
+    // Then fetch fresh data from server
     try {
       const [statsRes, portfolioRes, companiesRes, assetsRes, rankingsRes, notifsRes] = await Promise.all([
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/user/stats`, { headers: h }).catch(() => null),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/portfolio`, { headers: h }).catch(() => null),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/owned`, { headers: h }).catch(() => null),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/owned`, { headers: h }).catch(() => null),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/rankings?period=weekly`, { headers: h }).catch(() => null),
-        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/notifications`, { headers: h }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/user/stats`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/investments/portfolio`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/owned`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/owned`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/rankings?period=weekly`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/notifications`, { headers: h, timeout: 10000 }).catch(() => null),
       ]);
-      if (statsRes) setStats(statsRes.data);
-      if (portfolioRes) setPortfolio(portfolioRes.data);
-      if (companiesRes) setCompanies(companiesRes.data);
-      if (assetsRes) setAssets(assetsRes.data);
+      if (statsRes) { setStats(statsRes.data); CacheService.set('home_stats', statsRes.data); }
+      if (portfolioRes) { setPortfolio(portfolioRes.data); CacheService.set('home_portfolio', portfolioRes.data); }
+      if (companiesRes) { setCompanies(companiesRes.data); CacheService.set('home_companies', companiesRes.data); }
+      if (assetsRes) { setAssets(assetsRes.data); CacheService.set('home_assets', assetsRes.data); }
       if (rankingsRes) setRankings(rankingsRes.data);
       if (notifsRes) setUnreadNotifs(notifsRes.data.unread_count || 0);
     } catch (e) {
-      console.error('Error loading dashboard:', e);
+      console.log('Error loading dashboard (using cached data):', e);
     }
   }, [token]);
 

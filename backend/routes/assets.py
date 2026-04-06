@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from bson import ObjectId
 import uuid
-import random
+import random as _random
 import math
 
 from database import db

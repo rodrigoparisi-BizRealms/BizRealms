@@ -180,7 +180,47 @@ async def get_user_stats(current_user: dict = Depends(get_current_user)):
         "skills": current_user.get('skills', {})
     }
 
-# CHARACTER CREATION ROUTES
+@router.get("/user/profile/{user_id}")
+async def get_public_profile(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a public player profile for comparison"""
+    try:
+        target_user = await db.users.find_one({"_id": ObjectId(user_id)})
+    except Exception:
+        raise HTTPException(status_code=404, detail="Jogador não encontrado")
+    
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Jogador não encontrado")
+    
+    # Count companies
+    companies = await db.companies.count_documents({"user_id": str(target_user["_id"])})
+    # Count assets
+    assets = await db.assets.count_documents({"user_id": str(target_user["_id"])})
+    # Count investments
+    investments = await db.investments.count_documents({"user_id": str(target_user["_id"])})
+    
+    # Build public profile (no sensitive data)
+    return {
+        "id": str(target_user["_id"]),
+        "name": target_user.get("name", "Jogador"),
+        "avatar_color": target_user.get("avatar_color", "#4CAF50"),
+        "level": target_user.get("level", 1),
+        "experience_points": target_user.get("experience_points", 0),
+        "money": target_user.get("money", 0),
+        "companies_count": companies,
+        "assets_count": assets,
+        "investments_count": investments,
+        "background": target_user.get("background", ""),
+        "dream": target_user.get("dream", ""),
+        "education_count": len(target_user.get("education", [])),
+        "certification_count": len(target_user.get("certifications", [])),
+        "work_experience_count": len(set(exp.get('job_title', exp.get('title', '')) for exp in target_user.get('work_experience', []))),
+        "created_at": target_user.get("created_at", "").isoformat() if hasattr(target_user.get("created_at", ""), 'isoformat') else str(target_user.get("created_at", "")),
+        # Comparison with current user
+        "comparison": {
+            "my_level": current_user.get("level", 1),
+            "my_money": current_user.get("money", 0),
+        }
+    }
 @router.get("/character/backgrounds")
 async def get_backgrounds():
     """Get available character backgrounds"""
