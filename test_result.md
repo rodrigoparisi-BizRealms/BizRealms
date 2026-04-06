@@ -621,6 +621,66 @@ metadata:
         agent: "testing"
         comment: "✅ VERIFIED: Real Money Rewards System fully functional. Comprehensive testing completed successfully. ALL 4 ENDPOINTS WORKING PERFECTLY: ✅ GET /api/rewards/prize-pool (returns current_month, prize_pool_total R$ 260.00, distribution 60%/30%/10%, top3 players, user_position 1st, total_players 4, has_pix_key status, days_remaining 28, has_unclaimed_reward status, history) ✅ POST /api/rewards/update-pix (successfully updates PIX key 12345678901 with type cpf, proper validation and confirmation message) ✅ POST /api/rewards/distribute-monthly (distributes monthly prizes to top 3 players, creates records in real_money_rewards collection, prevents duplicate distribution with proper error message) ✅ POST /api/rewards/claim-real (claims real money reward R$ 156.00 for 1st place, requires PIX key validation, marks reward as claimed, provides payment confirmation message with 5-day processing timeline) ✅ Complete test flow verified: login → get prize pool (user in 1st position) → update PIX key → verify PIX key saved → distribute monthly rewards → verify unclaimed reward available → claim reward successfully → verify reward claimed and no longer available ✅ Edge cases tested: duplicate distribution prevention working, duplicate claim prevention working, PIX key requirement enforced ✅ Prize pool calculation working: base revenue R$ 5000 + (4 players × R$ 50) = R$ 5200, 5% = R$ 260 prize pool ✅ Authentication required and working correctly. Real Money Rewards system is production-ready with complete end-to-end functionality."
 
+  - task: "Account Reset Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/user.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/user/reset-account endpoint implemented. Resets all game data (money, level, XP, education, certifications, work_experience, skills, companies, assets, investments, loans, credit cards, notifications, achievements). Keeps auth info (email, password, name)."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Account Reset endpoint fully functional. Comprehensive testing completed successfully. ✅ POST /api/user/reset-account successfully resets all game data while preserving authentication info ✅ Complete test flow: created temp user → added test data → performed reset → verified all game data cleared ✅ Reset verification: money reset to R$ 1,000, level reset to 1, XP reset to 0, education array cleared, certifications cleared, work experience cleared ✅ Authentication preserved: user can still login after reset, email/password/name unchanged ✅ Database cleanup verified: all related collections (companies, assets, investments, loans, credit cards, notifications, achievements) properly cleared ✅ Safety tested with temporary user only (NOT main test user) ✅ Authentication required and working correctly. Account reset system is production-ready with complete game data reset functionality."
+
+  - task: "Double Daily Reward Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/store.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/store/double-daily endpoint implemented. After claiming daily reward, user can watch an ad to double it. Checks if daily reward was claimed and not already doubled."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Double Daily Reward endpoint fully functional. Comprehensive testing completed successfully. ✅ Complete daily reward flow tested: GET /api/store/daily-reward-status → POST /api/store/daily-reward → POST /api/store/double-daily ✅ Daily reward claiming: successfully claimed R$ 7,600 reward (level 71 user: 500 + 71*100) ✅ Double reward functionality: successfully doubled reward for additional R$ 7,600 bonus ✅ Status tracking: daily-reward-status correctly shows available/claimed/doubled states ✅ Validation working: prevents doubling if not claimed first, prevents double-doubling same day ✅ Money balance updates: correctly added R$ 15,200 total (R$ 7,600 + R$ 7,600 double) ✅ Error handling: proper 400 errors for invalid states with descriptive messages ✅ Authentication required and working correctly. Double daily reward system is production-ready with complete flow validation."
+
+  - task: "Watch Ad Tracking Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/user.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/user/watch-ad endpoint implemented. Tracks ads watched per day for the user."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Watch Ad Tracking endpoint fully functional. ✅ POST /api/user/watch-ad successfully tracks daily ad views ✅ Counter functionality: correctly increments ads_watched_today from 1 to 2 ✅ Daily reset logic: ads counter resets properly for new days (tracked via last_ad_date field) ✅ Response data: returns success message and current ads_watched_today count ✅ Database persistence: ads_watched_today and last_ad_date fields properly updated in users collection ✅ Authentication required and working correctly. Ad tracking system is production-ready with accurate daily counting and reset functionality."
+
+  - task: "Company Creation Bug Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/companies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed random import bug in companies.py - random was imported as _random but used as bare random in seed_map_companies, create_company, and other places. Also added missing logger import."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Company Creation Bug Fix successful. ✅ POST /api/companies/create working correctly after random import fix ✅ Company creation test: successfully created 'Test Company API' in restaurante segment ✅ Cost validation: properly deducted R$ 5,000 creation cost from user balance ✅ Company data: generated realistic monthly revenue (R$ 844), proper segment assignment, correct icon/color ✅ Balance verification: user balance correctly decreased from R$ 54,740.48 to R$ 49,740.48 ✅ No import errors: random module properly imported as _random and used consistently ✅ Logger import: missing logger import added successfully ✅ Authentication required and working correctly. Company creation system is production-ready with bug fix applied."
+
 test_plan:
   current_focus: []
   stuck_tasks: []
@@ -884,3 +944,6 @@ agent_communication:
 
   - agent: "testing"
     message: "🎉 PUBLIC PROFILE ENDPOINT FIX TESTING COMPLETE! ✅ Quick test of public profile endpoint fix completed successfully. ALL 3 TESTS PASSED: ✅ POST /api/auth/login (JWT authentication working correctly, token received and validated) ✅ GET /api/user/me (user profile retrieval working, user ID obtained: 052845c9-a2d2-4fe0-a217-ef61db3f2765) ✅ GET /api/user/profile/{user_id} (public profile endpoint working perfectly, returns 200 status with all required fields). Public profile response includes: name='Jogador Teste', level=71, money=44540.48, companies_count=1, comparison={'my_level': 71, 'my_money': 44540.48}. Complete profile data returned: id, name, avatar_color, level, experience_points, money, companies_count, assets_count, investments_count, education_count, certification_count, work_experience_count, created_at, comparison object. Public profile endpoint fix is production-ready and working correctly."
+
+  - agent: "testing"
+    message: "🎉 NEW BACKEND ENDPOINTS TESTING COMPLETE! ✅ Comprehensive testing of 4 new backend endpoints completed successfully. ALL 4 TESTS PASSED: ✅ DAILY REWARD FLOW: Complete flow tested (check status → claim → double) - claimed R$ 7,600 daily reward, successfully doubled for additional R$ 7,600 bonus, total R$ 15,200 added to balance. Status tracking and validation working correctly. ✅ WATCH AD TRACKING: POST /api/user/watch-ad correctly increments ads_watched_today counter (1→2), daily reset logic working, authentication required. ✅ COMPANY CREATION BUG FIX: POST /api/companies/create working after random import fix - successfully created 'Test Company API' for R$ 5,000, balance correctly decreased, no import errors. ✅ ACCOUNT RESET: POST /api/user/reset-account fully functional - tested with temporary user, all game data reset (money→R$1,000, level→1, XP→0, education cleared), authentication preserved. All endpoints production-ready with proper validation, error handling, and authentication. Backend testing complete - no critical issues found."

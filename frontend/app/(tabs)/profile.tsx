@@ -1569,6 +1569,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  inputLabel: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 // Music player styles

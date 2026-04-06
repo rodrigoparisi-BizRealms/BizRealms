@@ -8,6 +8,9 @@ from bson import ObjectId
 import uuid
 import random as _random
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 from database import db
 from utils import get_current_user, hash_password, verify_password, create_token, decode_token, calculate_level, security
@@ -81,9 +84,9 @@ async def seed_map_companies():
                 **seed,
                 "icon": cat_info['icon'],
                 "color": cat_info['color'],
-                "open_positions": random.randint(0, 5),
-                "investment_available": random.choice([True, False]),
-                "min_investment": random.choice([5000, 10000, 25000, 50000, 100000]),
+                "open_positions": _random.randint(0, 5),
+                "investment_available": _random.choice([True, False]),
+                "min_investment": _random.choice([5000, 10000, 25000, 50000, 100000]),
                 "created_at": datetime.utcnow(),
             }
             companies.append(company)
@@ -280,7 +283,7 @@ async def create_company(request: CreateCompanyRequest, current_user: dict = Dep
     new_money = user['money'] - creation_cost
     await db.users.update_one({"id": current_user['id']}, {"$set": {"money": new_money}})
     seg = COMPANY_SEGMENTS[request.segment]
-    base_revenue = random.randint(800, 2500)
+    base_revenue = _random.randint(800, 2500)
     user_company = {
         "id": str(uuid.uuid4()),
         "user_id": current_user['id'],
@@ -290,7 +293,7 @@ async def create_company(request: CreateCompanyRequest, current_user: dict = Dep
         "icon": seg['icon'],
         "color": seg['color'],
         "monthly_revenue": base_revenue,
-        "employees": random.randint(1, 5),
+        "employees": _random.randint(1, 5),
         "description": f"Empresa criada pelo jogador no segmento {seg['label']}",
         "purchase_price": creation_cost,
         "level": 1,
