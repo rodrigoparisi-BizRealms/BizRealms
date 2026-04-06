@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
 import { LanguageProvider } from '../context/LanguageContext';
@@ -6,8 +7,12 @@ import { ThemeProvider } from '../context/ThemeContext';
 import { AdProvider } from '../context/AdContext';
 import { SoundProvider } from '../context/SoundContext';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { initSentry, wrapApp } from '../context/sentryService';
 
-export default function RootLayout() {
+// Initialize Sentry as early as possible
+initSentry();
+
+function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
@@ -33,3 +38,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default wrapApp(RootLayout);

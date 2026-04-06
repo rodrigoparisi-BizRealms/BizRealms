@@ -21,16 +21,36 @@
         "NSUserTrackingUsageDescription": "Personalize anúncios para melhorar sua experiência",
         "ITSAppUsesNonExemptEncryption": false,
         "SKAdNetworkItems": [
-          { "SKAdNetworkIdentifier": "cstr6suwn9.skadnetwork" },
-          { "SKAdNetworkIdentifier": "4fzdc2evr5.skadnetwork" },
-          { "SKAdNetworkIdentifier": "2fnua5tdw4.skadnetwork" },
-          { "SKAdNetworkIdentifier": "ydx93a7ass.skadnetwork" },
-          { "SKAdNetworkIdentifier": "5a6flpkh64.skadnetwork" },
-          { "SKAdNetworkIdentifier": "p78ahlhg29.skadnetwork" },
-          { "SKAdNetworkIdentifier": "v72qych5uu.skadnetwork" },
-          { "SKAdNetworkIdentifier": "c6k4g5qg8m.skadnetwork" },
-          { "SKAdNetworkIdentifier": "s39g8k73mm.skadnetwork" },
-          { "SKAdNetworkIdentifier": "3qy4746246.skadnetwork" }
+          {
+            "SKAdNetworkIdentifier": "cstr6suwn9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "4fzdc2evr5.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "2fnua5tdw4.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "ydx93a7ass.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "5a6flpkh64.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "p78ahlhg29.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "v72qych5uu.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "c6k4g5qg8m.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "s39g8k73mm.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "3qy4746246.skadnetwork"
+          }
         ]
       }
     },
@@ -94,6 +114,14 @@
         {
           "androidAppId": "ca-app-pub-4504602138884633~2146134454",
           "iosAppId": "ca-app-pub-4504602138884633~9496139304"
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "bizrealms",
+          "project": "bizrealms"
         }
       ]
     ],

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
+import { setUser as setSentryUser } from './sentryService';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -133,6 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       setToken(newToken);
       setUser(newUser);
+      setSentryUser({ id: newUser.id, email: newUser.email, username: newUser.name });
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erro ao fazer login');
     }
@@ -153,6 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       setToken(newToken);
       setUser(newUser);
+      setSentryUser({ id: newUser.id, email: newUser.email, username: newUser.name });
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erro ao registrar');
     }
@@ -163,6 +166,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await AsyncStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    setSentryUser(null);
   };
 
   const refreshUser = async () => {
