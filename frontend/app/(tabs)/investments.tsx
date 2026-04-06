@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useSound } from '../../context/SoundContext';
 import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -165,6 +166,7 @@ const chartStyles = StyleSheet.create({
 export default function Investments() {
   const { token, refreshUser } = useAuth();
   const { trigger: haptic } = useHaptics();
+  const { playClick, playCoin } = useSound();
   const { t, formatMoney: fmtCurrency } = useLanguage();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);

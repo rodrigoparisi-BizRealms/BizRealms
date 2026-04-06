@@ -14,6 +14,7 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../context/ThemeContext';
 
 import { useAds } from '../../context/AdContext';
+import { useSound } from '../../context/SoundContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -27,6 +28,7 @@ export default function Store() {
   const { token, user, refreshUser } = useAuth();
   const { colors } = useTheme();
   const { showAd } = useAds();
+  const { playClick, playCoin } = useSound();
   const { trigger: haptic } = useHaptics();
   const { t, formatMoney } = useLanguage();
   const [items, setItems] = useState<any[]>([]);
@@ -140,6 +142,7 @@ export default function Store() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       showAlert(t('store.purchaseSuccess') || 'Compra Realizada!', r.data.message);
+      playCoin();
       await loadData();
       await refreshUser();
     } catch (e: any) {
@@ -159,6 +162,7 @@ export default function Store() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       showAlert('Recompensa Diária!', r.data.message);
+      playCoin();
       await loadData();
       await refreshUser();
     } catch (e: any) {

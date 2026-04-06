@@ -19,6 +19,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useSound } from '../../context/SoundContext';
 import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -65,6 +66,7 @@ interface AdBoost {
 export default function Jobs() {
   const { token, refreshUser } = useAuth();
   const { trigger: haptic } = useHaptics();
+  const { playClick, playSuccess } = useSound();
   const { t, formatMoney } = useLanguage();
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);

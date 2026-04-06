@@ -12,6 +12,7 @@ import { useSounds } from '../../hooks/useSounds';
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useSound } from '../../context/SoundContext';
 import { useTheme } from '../../context/ThemeContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -39,6 +40,7 @@ export default function Bank() {
   const router = useRouter();
   const { play } = useSounds();
   const { trigger: haptic } = useHaptics();
+  const { playClick } = useSound();
   const { t, formatMoney } = useLanguage();
   const [bankData, setBankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

@@ -14,6 +14,7 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../context/ThemeContext';
 
 import { useAds } from '../../context/AdContext';
+import { useSound } from '../../context/SoundContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -28,6 +29,7 @@ export default function Companies() {
   const { token, user, refreshUser } = useAuth();
   const { colors } = useTheme();
   const { showAd } = useAds();
+  const { playClick, playSuccess } = useSound();
   const [available, setAvailable] = useState<any[]>([]);
   const [owned, setOwned] = useState<any[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -320,7 +322,7 @@ export default function Companies() {
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
             <TouchableOpacity
               style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FF980020', borderRadius: 12, paddingVertical: 12, borderWidth: 1, borderColor: '#FF980040' }}
-              onPress={() => showAd(() => { onRefresh(); }, 'offer')}
+              onPress={() => { playClick(); showAd(() => { onRefresh(); }, 'offer'); }}
             >
               <Ionicons name="add-circle" size={18} color="#FF9800" />
               <Text style={{ color: '#FF9800', fontSize: 13, fontWeight: '600' }}>{t('companies.newOffersAd') || 'Novas Ofertas'}</Text>

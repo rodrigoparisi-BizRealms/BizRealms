@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { useAds } from '../../context/AdContext';
+import { useSound } from '../../context/SoundContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -30,6 +31,7 @@ export default function Profile() {
   const { locale, setLocale, languages, t, formatMoney } = useLanguage();
   const { isDark, colors, toggleTheme } = useTheme();
   const { showAd } = useAds();
+  const { playClick, playSuccess, soundEnabled, toggleSound } = useSound();
   const router = useRouter();
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -709,7 +711,7 @@ export default function Profile() {
           </View>
           <TouchableOpacity
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }]}
-            onPress={toggleTheme}
+            onPress={() => { playClick(); toggleTheme(); }}
             activeOpacity={0.7}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -727,6 +729,32 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
+        {/* Sound Effects Toggle */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name={soundEnabled ? 'volume-high' : 'volume-mute'} size={22} color={soundEnabled ? '#4CAF50' : '#888'} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.sounds') || 'Sons'}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }]}
+            onPress={() => { playClick(); toggleSound(); }}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: soundEnabled ? '#1a3a1a' : '#2a2a2a', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={soundEnabled ? 'volume-high' : 'volume-mute'} size={22} color={soundEnabled ? '#4CAF50' : '#666'} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{t('profile.soundEffects') || 'Efeitos Sonoros'}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{soundEnabled ? (t('profile.soundOn') || 'Sons de clique ativados') : (t('profile.soundOff') || 'Sons desativados')}</Text>
+              </View>
+            </View>
+            <View style={{ width: 52, height: 30, borderRadius: 15, backgroundColor: soundEnabled ? '#4CAF50' : '#444', justifyContent: 'center', paddingHorizontal: 3 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignSelf: soundEnabled ? 'flex-end' : 'flex-start' }} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* Biometric / Security Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
@@ -735,7 +763,7 @@ export default function Profile() {
           </View>
           <TouchableOpacity
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }]}
-            onPress={biometricAvailable ? toggleBiometric : undefined}
+            onPress={biometricAvailable ? () => { playClick(); toggleBiometric(); } : undefined}
             activeOpacity={biometricAvailable ? 0.7 : 1}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

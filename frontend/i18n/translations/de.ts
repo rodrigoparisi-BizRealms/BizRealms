@@ -100,6 +100,9 @@ export default {
     paypalHint: 'Konfiguriere dein PayPal-Konto für Echtgeldpreise aus monatlichen Rankings.',
     requiredFields: 'Pflichtfelder', fillAllFields: 'Bitte alle Felder ausfüllen',
     paypalRequiresData: 'Persönliche Daten erforderlich', paypalRequiresDataMsg: 'Um dein PayPal-Konto zu registrieren, fülle zuerst deine Persönlichen Daten aus (Name und Ausweis).',
+    sounds: 'Töne', soundEffects: 'Soundeffekte', soundOn: 'Klicktöne aktiviert', soundOff: 'Töne deaktiviert',
+    security: 'Sicherheit', biometric: 'Biometrische Authentifizierung', biometricUnavailable: 'Biometrie nicht verfügbar', biometricEnabled: 'Biometrisches Login aktiviert', biometricDisabled: 'Biometrisches Login deaktiviert',
+    resetAccount: 'Konto zurücksetzen', resetAccountDesc: 'Gesamten Spielfortschritt löschen', resetConfirmTitle: 'Konto zurücksetzen?', resetConfirmMsg: 'Diese Aktion ist unwiderruflich!', resetConfirm: 'Ja, zurücksetzen', resetCancel: 'Abbrechen',
   },
   coaching: {
     title: 'KI-Coach', subtitle: 'Dein virtueller Business-Mentor', welcome: 'Hallo',

@@ -19,6 +19,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import TutorialOverlay from '../../components/TutorialOverlay';
 import { SkeletonStats, SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useSound } from '../../context/SoundContext';
 import { CacheService } from '../../services/CacheService';
 import { useNetwork } from '../../context/NetworkContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -42,6 +43,7 @@ export default function Home() {
   const router = useRouter();
   const { play } = useSounds();
   const { trigger: haptic } = useHaptics();
+  const { playClick } = useSound();
   const { t, formatMoney } = useLanguage();
   const { colors } = useTheme();
   const fm = (v: number) => formatMoney(v, true);
