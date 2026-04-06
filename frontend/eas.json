@@ -1,57 +1,54 @@
 {
   "cli": {
-    "version": ">= 12.0.0",
+    "version": ">= 15.0.0",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": {
-        "simulator": true
-      },
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": true
+      },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://your-staging-api.example.com"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://aed9d5abbb8fd2897cd3ee012f906cdd@o4511175037812736.ingest.us.sentry.io/4511175048757248"
       }
     },
     "preview": {
       "distribution": "internal",
-      "ios": {
-        "simulator": false
-      },
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://your-staging-api.example.com"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://aed9d5abbb8fd2897cd3ee012f906cdd@o4511175037812736.ingest.us.sentry.io/4511175048757248"
       }
     },
     "production": {
-      "ios": {
-        "autoIncrement": true
-      },
       "android": {
         "autoIncrement": true,
         "buildType": "app-bundle"
       },
+      "ios": {
+        "autoIncrement": true
+      },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://api.bizrealms.com"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://aed9d5abbb8fd2897cd3ee012f906cdd@o4511175037812736.ingest.us.sentry.io/4511175048757248"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "YOUR_APPLE_ID@email.com",
-        "ascAppId": "YOUR_ASC_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID"
-      },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
+      },
+      "ios": {
+        "appleId": "",
+        "ascAppId": "",
+        "appleTeamId": ""
       }
     }
   }

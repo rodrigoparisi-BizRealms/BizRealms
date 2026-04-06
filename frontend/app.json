@@ -3,6 +3,7 @@
     "name": "BizRealms",
     "slug": "bizrealms",
     "version": "1.0.0",
+    "owner": "bizrealms",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bizrealms",
