@@ -60,7 +60,7 @@ export default function Companies() {
     const cost = Math.round(company.purchase_price * 0.6);
     const doIt = Platform.OS === 'web'
       ? window.confirm(`Criar franquia de "${company.name}"?\n\nCusto: $ ${cost.toLocaleString('en-US')}\nReceita: 70% da original`)
-      : await new Promise<boolean>(resolve => Alert.alert('Criar Franquia', `Criar franquia de "${company.name}"?\n\nCusto: $ ${cost.toLocaleString('en-US')}\nReceita: 70% da original`, [{ text: 'Cancelar', onPress: () => resolve(false) }, { text: 'Criar', onPress: () => resolve(true) }]));
+      : await new Promise<boolean>(resolve => Alert.alert(t('companies.createFranchise') || 'Create Franchise', `${t('companies.franchiseOf') || 'Create franchise of'} "${company.name}"?\n\n${t('general.cost') || 'Cost'}: $ ${cost.toLocaleString('en-US')}\n${t('companies.revenue') || 'Revenue'}: 70%`, [{ text: t('general.cancel'), onPress: () => resolve(false) }, { text: t('general.confirm'), onPress: () => resolve(true) }]));
     if (!doIt) return;
     setFranchising(company.id);
     try {
@@ -71,7 +71,7 @@ export default function Companies() {
     } catch (e: any) {
       const msg = e.response?.data?.detail || t('general.error');
       if (Platform.OS === 'web') window.alert(msg);
-      else Alert.alert('Erro', msg);
+      else Alert.alert(t('general.error'), msg);
     } finally { setFranchising(null); }
   };
   const handleSellCompany = (company: any) => {
@@ -89,7 +89,7 @@ export default function Companies() {
         play('sell');
         await loadData(); await refreshUser();
       } catch (e: any) {
-        showAlert('Erro', e.response?.data?.detail || 'Erro ao vender');
+        showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       }
     });
   };
@@ -109,7 +109,7 @@ export default function Companies() {
             showAlert('Venda Concluída!', r.data.message);
             play('sell');
             await loadData(); await refreshUser();
-          } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro ao aceitar oferta'); }
+          } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
           finally { setRespondingOffer(null); }
         }
       );
@@ -117,7 +117,7 @@ export default function Companies() {
       setRespondingOffer(offerId);
       axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/offers/respond`, { offer_id: offerId, action: 'decline' }, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => { showAlert('Oferta Recusada', r.data.message); loadData(); })
-        .catch(e => showAlert('Erro', e.response?.data?.detail || 'Erro'))
+        .catch(e => showAlert(t('general.error'), e.response?.data?.detail || t('general.error')))
         .finally(() => setRespondingOffer(null));
     }
   };
@@ -149,7 +149,7 @@ export default function Companies() {
 
   const confirmAction = (title: string, msg: string, onOk: () => void) => {
     if (Platform.OS === 'web') { if (window.confirm(`${title}\n\n${msg}`)) onOk(); }
-    else Alert.alert(title, msg, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: onOk }]);
+    else Alert.alert(title, msg, [{ text: t('general.cancel'), style: 'cancel' }, { text: t('general.confirm'), onPress: onOk }]);
   };
 
   const handleBuy = (company: any) => {
@@ -160,7 +160,7 @@ export default function Companies() {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/buy`, { company_id: company.id }, { headers: { Authorization: `Bearer ${token}` } });
         showAlert('Compra Realizada!', r.data.message);
         await loadData(); await refreshUser();
-      } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
+      } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
       finally { setBuying(null); }
     });
   };
@@ -175,7 +175,7 @@ export default function Companies() {
         showAlert('Receitas Coletadas!', msg);
       } else { showAlert('Aviso', r.data.message); }
       await loadData(); await refreshUser();
-    } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
+    } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
     finally { setCollecting(false); }
   };
 
@@ -193,28 +193,28 @@ export default function Companies() {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/ad-boost`, {}, { headers: { Authorization: `Bearer ${token}` } });
       showAlert('Boost Ativado!', `${r.data.message}\n\n${r.data.companies_boosted} empresas receberam o boost!`);
       await loadData();
-    } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
+    } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
     finally { setWatchingAd(false); setAdProgress(0); }
   };
 
   const handleCreate = async () => {
-    if (!newName.trim()) { showAlert('Erro', 'Digite o nome da empresa'); return; }
+    if (!newName.trim()) { showAlert(t('general.error'), 'Digite o nome da empresa'); return; }
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/create`, { name: newName, segment: newSegment }, { headers: { Authorization: `Bearer ${token}` } });
       showAlert('Empresa Criada!', `${r.data.message}\nReceita estimada: $ ${r.data.company.daily_revenue}/dia`);
       setShowCreate(false); setNewName('');
       await loadData(); await refreshUser();
-    } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
+    } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
   };
 
   const handleMerge = async () => {
-    if (!mergeFrom || !mergeTo) { showAlert('Erro', 'Selecione duas empresas'); return; }
+    if (!mergeFrom || !mergeTo) { showAlert(t('general.error'), 'Selecione duas empresas'); return; }
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/merge`, { company_id_1: mergeFrom, company_id_2: mergeTo }, { headers: { Authorization: `Bearer ${token}` } });
       showAlert('Fusão Concluída!', r.data.message);
       setShowMerge(false); setMergeFrom(null); setMergeTo(null);
       await loadData(); await refreshUser();
-    } catch (e: any) { showAlert('Erro', e.response?.data?.detail || 'Erro'); }
+    } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
   };
 
   const hasBoostActive = owned.some(c => c.ad_boost_active);

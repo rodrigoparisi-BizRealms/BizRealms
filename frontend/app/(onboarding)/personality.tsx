@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -46,6 +47,7 @@ const PERSONALITY_QUESTIONS = [
 export default function PersonalitySelection() {
   const router = useRouter();
   const { token, refreshUser } = useAuth();
+  const { t } = useLanguage();
   const [personality, setPersonality] = useState({
     ambição: 5,
     risco: 5,
@@ -122,7 +124,7 @@ export default function PersonalitySelection() {
     } catch (error: any) {
       console.error('[Personality] Error completing profile:', error);
       console.error('[Personality] Error details:', error.response?.data);
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao criar personagem');
+      Alert.alert(t('general.error'), error.response?.data?.detail || 'Erro ao criar personagem');
       setLoading(false);
     }
   };

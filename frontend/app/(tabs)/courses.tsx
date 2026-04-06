@@ -13,8 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-  const { colors } = useTheme();
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -42,6 +42,8 @@ interface MyCourse {
 
 export default function Courses() {
   const { user, token, refreshUser } = useAuth();
+  const { colors } = useTheme();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [myCourses, setMyCourses] = useState<MyCourse[]>([]);
   const [totalBoost, setTotalBoost] = useState(0);
@@ -113,7 +115,7 @@ export default function Courses() {
         `Fazer Curso: ${course.name}?`,
         `${courseInfo}\n\n${Object.entries(course.skill_boost).map(([skill, boost]) => `+${boost} ${skill.charAt(0).toUpperCase() + skill.slice(1)}`).join('\n')}\n\nEste boost é PERMANENTE!`,
         [
-          { text: 'Cancelar', style: 'cancel' },
+          { text: t('general.cancel'), style: 'cancel' },
           { text: 'Fazer Curso', onPress: () => confirmEnroll(course) },
         ]
       );
@@ -142,7 +144,7 @@ export default function Courses() {
       if (Platform.OS === 'web') {
         window.alert(`Erro\n\n${errMsg}`);
       } else {
-        Alert.alert('Erro', errMsg);
+        Alert.alert(t('general.error'), errMsg);
       }
     }
   };

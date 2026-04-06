@@ -24,7 +24,7 @@ const showAlert = (title: string, msg: string) => {
 
 const confirmAction = (title: string, msg: string, onOk: () => void) => {
   if (Platform.OS === 'web') { if (window.confirm(`${title}\n\n${msg}`)) onOk(); }
-  else Alert.alert(title, msg, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: onOk }]);
+  else Alert.alert(title, msg, [{ text: t('general.cancel'), style: 'cancel' }, { text: t('general.confirm'), onPress: onOk }]);
 };
 
 const TRIP_ICONS: Record<string, string> = {

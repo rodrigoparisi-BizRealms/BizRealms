@@ -79,7 +79,7 @@ export default function Rankings() {
       );
       if (r.data.distributed) await loadRankings();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao distribuir prêmios');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setDistributing(false); }
   };
 
@@ -94,7 +94,7 @@ export default function Rankings() {
       await refreshUser();
       await loadRankings();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar prêmio');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setClaiming(false); }
   };
 
@@ -107,7 +107,7 @@ export default function Rankings() {
       showAlert('Resgate Solicitado!', r.data.message);
       await loadRankings();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao resgatar');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     } finally { setClaimingReal(false); }
   };
 
@@ -119,7 +119,7 @@ export default function Rankings() {
       showAlert(r.data.success ? 'Distribuído!' : 'Info', r.data.message);
       if (r.data.success) await loadRankings();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro');
+      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
     }
   };
 

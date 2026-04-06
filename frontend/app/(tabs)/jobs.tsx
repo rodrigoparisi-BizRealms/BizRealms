@@ -167,7 +167,7 @@ export default function Jobs() {
       await loadData();
     } catch (error: any) {
       const detail = error.response?.data?.detail || 'Erro ao candidatar-se';
-      Alert.alert('Erro', detail);
+      Alert.alert(t('general.error'), detail);
     } finally {
       setApplying(null);
     }
@@ -188,7 +188,7 @@ export default function Jobs() {
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao aceitar vaga');
+      Alert.alert(t('general.error'), error.response?.data?.detail || 'Erro ao aceitar vaga');
     }
   };
 
@@ -224,7 +224,7 @@ export default function Jobs() {
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao coletar ganhos');
+      Alert.alert(t('general.error'), error.response?.data?.detail || 'Erro ao coletar ganhos');
     } finally {
       setWorking(false);
     }
@@ -239,7 +239,7 @@ export default function Jobs() {
         'Pedir Demissão?',
         'Tem certeza que deseja sair deste emprego? Você poderá se candidatar a novas vagas.',
         [
-          { text: 'Cancelar', style: 'cancel' },
+          { text: t('general.cancel'), style: 'cancel' },
           { text: 'Sim, Sair', style: 'destructive', onPress: confirmResign },
         ]
       );
@@ -258,7 +258,7 @@ export default function Jobs() {
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao pedir demissão');
+      Alert.alert(t('general.error'), error.response?.data?.detail || 'Erro ao pedir demissão');
     }
   };
 
@@ -309,7 +309,7 @@ export default function Jobs() {
 
       await loadData();
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao assistir propaganda');
+      Alert.alert(t('general.error'), error.response?.data?.detail || 'Erro ao assistir propaganda');
     } finally {
       setWatchingAd(false);
       setAdProgress(0);

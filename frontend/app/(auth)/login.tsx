@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
@@ -165,7 +166,7 @@ export default function Login() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Ionicons name="business" size={80} color="#4CAF50" />
+          <Image source={require('../../assets/images/bizrealms-logo.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>BizRealms</Text>
           <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
         </View>
@@ -272,6 +273,11 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 48,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    borderRadius: 24,
   },
   title: {
     fontSize: 32,

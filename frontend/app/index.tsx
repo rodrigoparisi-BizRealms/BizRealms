@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -10,7 +10,6 @@ export default function Index() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // Check if onboarding is completed
         if (user.onboarding_completed) {
           router.replace('/(tabs)/home');
         } else {
@@ -24,8 +23,8 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#4CAF50" />
-      <Text style={styles.text}>BizRealms</Text>
+      <Image source={require('../assets/images/bizrealms-logo.png')} style={styles.logo} resizeMode="contain" />
+      <ActivityIndicator size="large" color="#4CAF50" style={{ marginTop: 24 }} />
     </View>
   );
 }
@@ -37,10 +36,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
-    marginTop: 16,
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4CAF50',
+  logo: {
+    width: 180,
+    height: 180,
   },
 });

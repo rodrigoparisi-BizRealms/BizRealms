@@ -147,7 +147,7 @@ export default function Store() {
       await loadData();
       await refreshUser();
     } catch (e: any) {
-      showAlert('Erro', e.response?.data?.detail || 'Erro ao processar compra');
+      showAlert(t('general.error'), e.response?.data?.detail || 'Erro ao processar compra');
     } finally {
       setPurchasing(null);
       setSelectedItem(null);
@@ -281,7 +281,7 @@ export default function Store() {
                     await loadData();
                     await refreshUser();
                   } catch (e: any) {
-                    showAlert('Erro', e.response?.data?.detail || 'Erro');
+                    showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
                   }
                 }, 'double')}
               >

@@ -260,13 +260,13 @@ export default function Investments() {
       showAlert('Evento!', r.data.message);
       await loadData();
     } catch (e: any) {
-      showAlert('Aguarde', e.response?.data?.detail || 'Erro');
+      showAlert(t('general.wait') || 'Wait', e.response?.data?.detail || t('general.error'));
     } finally { setTriggeringEvent(false); }
   };
 
   const handleTrade = async () => {
     if (!selectedAsset || !quantity || parseFloat(quantity) <= 0) {
-      showAlert('Erro', 'Informe uma quantidade válida');
+      showAlert(t('general.error'), 'Informe uma quantidade válida');
       return;
     }
 
@@ -288,7 +288,7 @@ export default function Investments() {
       await loadData();
       await refreshUser();
     } catch (error: any) {
-      showAlert('Erro', error.response?.data?.detail || 'Erro ao realizar operação');
+      showAlert(t('general.error'), error.response?.data?.detail || 'Erro ao realizar operação');
     } finally {
       setTrading(false);
     }
