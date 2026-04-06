@@ -196,6 +196,8 @@ from routes.market import router as market_router
 from routes.notifications import router as notifications_router
 from routes.events import router as events_router
 from routes.phases import router as phases_router
+from routes.prestige import router as prestige_router
+from routes.competitions import router as competitions_router
 
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
@@ -210,6 +212,8 @@ api_router.include_router(market_router)
 api_router.include_router(notifications_router)
 api_router.include_router(events_router)
 api_router.include_router(phases_router)
+api_router.include_router(prestige_router)
+api_router.include_router(competitions_router)
 
 # Include the api_router in the main app
 app.include_router(api_router)

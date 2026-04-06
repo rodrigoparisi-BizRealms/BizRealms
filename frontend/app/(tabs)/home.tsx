@@ -64,6 +64,8 @@ export default function Home() {
   const [phaseData, setPhaseData] = useState<any>(null);
   const [activeCrisis, setActiveCrisis] = useState<any>(null);
   const [crisisModalVisible, setCrisisModalVisible] = useState(false);
+  const [competitions, setCompetitions] = useState<any[]>([]);
+  const [prestigeData, setPrestigeData] = useState<any>(null);
 
   const GAME_TIPS = [
     { icon: 'briefcase', color: '#4CAF50', tip: 'Invista em cursos para desbloquear vagas com salários maiores!' },
@@ -240,6 +242,36 @@ export default function Home() {
 
   useEffect(() => { loadPhaseData(); checkCrises(); }, [loadPhaseData, checkCrises]);
 
+  const loadCompetitions = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/competitions/active`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 15000,
+      });
+      if (res.data?.competitions) {
+        setCompetitions(res.data.competitions);
+      }
+    } catch (e) {
+      console.log('Competitions load error:', e);
+    }
+  }, [token]);
+
+  const loadPrestige = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/prestige/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      setPrestigeData(res.data);
+    } catch (e) {
+      console.log('Prestige load error:', e);
+    }
+  }, [token]);
+
+  useEffect(() => { loadCompetitions(); loadPrestige(); }, [loadCompetitions, loadPrestige]);
+
   const handleCrisisResolve = async (crisisId: string, optionId: string) => {
     if (!token) return null;
     try {
@@ -277,6 +309,8 @@ export default function Home() {
     await checkActiveEvent();
     await loadPhaseData();
     await checkCrises();
+    await loadCompetitions();
+    await loadPrestige();
     setRefreshing(false);
   };
 
@@ -596,6 +630,110 @@ export default function Home() {
           onResolve={handleCrisisResolve}
           onClose={handleCrisisClose}
         />
+
+        {/* Weekly Competitions */}
+        {competitions.length > 0 && (
+          <View style={styles.competitionsSection}>
+            <Text style={styles.sectionTitle}>🏆 Competições da Semana</Text>
+            {competitions.map((comp: any) => (
+              <View key={comp.id} style={[styles.compCard, { borderColor: comp.color + '40' }]}>
+                <View style={styles.compHeader}>
+                  <View style={[styles.compIconBg, { backgroundColor: comp.color + '20' }]}>
+                    <Text style={{ fontSize: 20 }}>{comp.emoji}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.compTitle, { color: comp.color }]}>{comp.title}</Text>
+                    <Text style={styles.compDesc} numberOfLines={1}>{comp.description}</Text>
+                  </View>
+                  <View style={styles.compTimeBadge}>
+                    <Text style={styles.compTimeText}>{comp.days_remaining?.toFixed(0)}d</Text>
+                  </View>
+                </View>
+                {/* Mini leaderboard */}
+                <View style={styles.compLeaderboard}>
+                  {(comp.leaderboard || []).slice(0, 3).map((entry: any, idx: number) => (
+                    <View key={entry.user_id} style={[styles.compLeaderRow, entry.is_you && styles.compLeaderRowYou]}>
+                      <Text style={styles.compLeaderPos}>
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      </Text>
+                      <Text style={[styles.compLeaderName, entry.is_you && { color: comp.color, fontWeight: '700' }]} numberOfLines={1}>
+                        {entry.is_you ? 'Você' : entry.name}
+                      </Text>
+                      <Text style={styles.compLeaderScore}>
+                        {comp.metric === 'money_gained' || comp.metric === 'investment_profit' || comp.metric === 'net_worth_growth'
+                          ? fm(entry.score)
+                          : entry.score}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {comp.my_position > 3 && (
+                  <View style={[styles.compLeaderRow, styles.compLeaderRowYou, { marginTop: 4 }]}>
+                    <Text style={styles.compLeaderPos}>{comp.my_position}o</Text>
+                    <Text style={[styles.compLeaderName, { color: comp.color, fontWeight: '700' }]}>Você</Text>
+                    <Text style={styles.compLeaderScore}>
+                      {comp.metric === 'money_gained' || comp.metric === 'investment_profit' || comp.metric === 'net_worth_growth'
+                        ? fm(comp.my_score)
+                        : comp.my_score}
+                    </Text>
+                  </View>
+                )}
+                {/* Rewards preview */}
+                <View style={styles.compRewards}>
+                  {(comp.rewards || []).map((r: any, idx: number) => (
+                    <View key={idx} style={[styles.compRewardPill, { backgroundColor: comp.color + '15' }]}>
+                      <Text style={{ fontSize: 10, color: comp.color, fontWeight: '700' }}>
+                        {r.label}: R${r.money}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Prestige Badge */}
+        {prestigeData && (
+          <TouchableOpacity
+            style={[styles.prestigeCard, { borderColor: prestigeData.tier.color + '40' }]}
+            onPress={() => router.push('/prestige')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.prestigeHeader}>
+              <Text style={{ fontSize: 24 }}>{prestigeData.tier.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.prestigeLabel}>Prestígio</Text>
+                <Text style={[styles.prestigeName, { color: prestigeData.tier.color }]}>
+                  {prestigeData.tier.name}
+                </Text>
+              </View>
+              <View style={styles.prestigePointsBadge}>
+                <Text style={styles.prestigePointsText}>{prestigeData.available_points} pts</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#666" />
+            </View>
+            {prestigeData.resets_count > 0 && (
+              <View style={styles.prestigeStats}>
+                <View style={[styles.phaseBonusPill, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFD700' }}>
+                    {prestigeData.resets_count}x reset
+                  </Text>
+                </View>
+                <View style={[styles.phaseBonusPill, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#4CAF50' }}>
+                    {prestigeData.perk_count} perks
+                  </Text>
+                </View>
+              </View>
+            )}
+            {prestigeData.potential_points > 0 && (
+              <Text style={styles.prestigePotential}>
+                Reset agora = +{prestigeData.potential_points} pontos de prestígio
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Rankings Panel */}
         <TouchableOpacity
@@ -1512,5 +1650,142 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 4,
     marginTop: 8,
+  },
+  // Competitions
+  competitionsSection: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  compCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  compHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  compIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  compTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  compDesc: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 1,
+  },
+  compTimeBadge: {
+    backgroundColor: '#3a3a3a',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  compTimeText: {
+    fontSize: 11,
+    color: '#aaa',
+    fontWeight: '700',
+  },
+  compLeaderboard: {
+    marginTop: 10,
+    gap: 4,
+  },
+  compLeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  compLeaderRowYou: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  compLeaderPos: {
+    fontSize: 14,
+    width: 24,
+  },
+  compLeaderName: {
+    fontSize: 13,
+    color: '#ccc',
+    flex: 1,
+  },
+  compLeaderScore: {
+    fontSize: 12,
+    color: '#aaa',
+    fontWeight: '600',
+  },
+  compRewards: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
+  compRewardPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  // Prestige
+  prestigeCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  prestigeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  prestigeLabel: {
+    fontSize: 11,
+    color: '#888',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  prestigeName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  prestigePointsBadge: {
+    backgroundColor: 'rgba(255,215,0,0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  prestigePointsText: {
+    fontSize: 12,
+    color: '#FFD700',
+    fontWeight: '700',
+  },
+  prestigeStats: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+    marginLeft: 34,
+  },
+  prestigePotential: {
+    fontSize: 11,
+    color: '#4CAF50',
+    marginTop: 6,
+    marginLeft: 34,
+    fontStyle: 'italic',
   },
 });

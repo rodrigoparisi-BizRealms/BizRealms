@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-BizRealms Backend Testing - AI Dynamic Events System
-Comprehensive testing of the new AI Dynamic Events System endpoints.
+BizRealms Backend Testing - Prestige System and Weekly Competitions System
+Testing the NEW Prestige System and Weekly Competitions System endpoints.
 """
 
 import requests
 import json
-import time
+import sys
 from datetime import datetime
 
 # Configuration
@@ -14,409 +14,402 @@ BASE_URL = "https://career-mogul-1.preview.emergentagent.com/api"
 TEST_EMAIL = "teste@businessempire.com"
 TEST_PASSWORD = "teste123"
 
-class BizRealmsEventsTester:
+class BizRealmsAPITester:
     def __init__(self):
         self.session = requests.Session()
         self.jwt_token = None
         self.user_data = None
-        self.test_results = []
         
-    def log_test(self, test_name, success, details="", response_data=None):
-        """Log test results"""
-        result = {
-            "test": test_name,
-            "success": success,
-            "details": details,
-            "timestamp": datetime.now().isoformat(),
-            "response_data": response_data
-        }
-        self.test_results.append(result)
-        status = "✅ PASS" if success else "❌ FAIL"
-        print(f"{status} {test_name}: {details}")
-        if response_data and not success:
-            print(f"   Response: {json.dumps(response_data, indent=2)}")
-    
+    def log(self, message, level="INFO"):
+        """Log test messages with timestamp."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+        
     def login(self):
-        """Login and get JWT token"""
-        print(f"\n🔐 Logging in as {TEST_EMAIL}...")
+        """Login and get JWT token."""
+        self.log("🔐 Testing login...")
         
-        try:
-            response = self.session.post(f"{BASE_URL}/auth/login", json={
-                "email": TEST_EMAIL,
-                "password": TEST_PASSWORD
+        response = self.session.post(f"{BASE_URL}/auth/login", json={
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        })
+        
+        if response.status_code != 200:
+            self.log(f"❌ Login failed: {response.status_code} - {response.text}", "ERROR")
+            return False
+            
+        data = response.json()
+        self.jwt_token = data.get('token')  # Fixed: API returns 'token' not 'access_token'
+        self.user_data = data.get('user', {})
+        
+        if not self.jwt_token:
+            self.log("❌ No JWT token received", "ERROR")
+            return False
+            
+        # Set authorization header for all future requests
+        self.session.headers.update({
+            'Authorization': f'Bearer {self.jwt_token}',
+            'Content-Type': 'application/json'
+        })
+        
+        self.log(f"✅ Login successful! User: {self.user_data.get('name', 'Unknown')}")
+        return True
+        
+    def test_prestige_status(self):
+        """Test GET /api/prestige/status endpoint."""
+        self.log("🏆 Testing prestige status...")
+        
+        response = self.session.get(f"{BASE_URL}/prestige/status")
+        
+        if response.status_code != 200:
+            self.log(f"❌ Prestige status failed: {response.status_code} - {response.text}", "ERROR")
+            return False
+            
+        data = response.json()
+        
+        # Validate response structure
+        required_fields = [
+            'tier', 'total_points_earned', 'available_points', 'resets_count',
+            'active_perks', 'potential_points', 'current_net_worth'
+        ]
+        
+        for field in required_fields:
+            if field not in data:
+                self.log(f"❌ Missing field in prestige status: {field}", "ERROR")
+                return False
+                
+        # Validate tier structure
+        tier = data['tier']
+        tier_fields = ['level', 'name', 'emoji', 'color', 'min_points']
+        for field in tier_fields:
+            if field not in tier:
+                self.log(f"❌ Missing tier field: {field}", "ERROR")
+                return False
+                
+        self.log(f"✅ Prestige status working! Tier: {tier['emoji']} {tier['name']}")
+        self.log(f"   📊 Total points: {data['total_points_earned']}, Available: {data['available_points']}")
+        self.log(f"   💰 Net worth: R$ {data['current_net_worth']:,.2f}, Potential points: {data['potential_points']}")
+        self.log(f"   🔄 Resets: {data['resets_count']}, Active perks: {len(data['active_perks'])}")
+        
+        return True
+        
+    def test_prestige_perks(self):
+        """Test GET /api/prestige/perks endpoint."""
+        self.log("🎁 Testing prestige perks...")
+        
+        response = self.session.get(f"{BASE_URL}/prestige/perks")
+        
+        if response.status_code != 200:
+            self.log(f"❌ Prestige perks failed: {response.status_code} - {response.text}", "ERROR")
+            return False
+            
+        data = response.json()
+        
+        # Validate response structure
+        if 'perks' not in data or 'available_points' not in data or 'tier' not in data:
+            self.log("❌ Missing fields in prestige perks response", "ERROR")
+            return False
+            
+        perks = data['perks']
+        if not isinstance(perks, list):
+            self.log("❌ Perks should be a list", "ERROR")
+            return False
+            
+        if len(perks) == 0:
+            self.log("❌ No perks returned", "ERROR")
+            return False
+            
+        # Validate perk structure
+        perk_fields = [
+            'id', 'name', 'cost', 'owned', 'can_afford', 'tier_unlocked',
+            'prerequisite_met', 'available'
+        ]
+        
+        for perk in perks[:3]:  # Check first 3 perks
+            for field in perk_fields:
+                if field not in perk:
+                    self.log(f"❌ Missing perk field: {field} in perk {perk.get('id', 'unknown')}", "ERROR")
+                    return False
+                    
+        self.log(f"✅ Prestige perks working! Found {len(perks)} perks")
+        self.log(f"   💎 Available points: {data['available_points']}")
+        
+        # Show some example perks
+        for perk in perks[:3]:
+            status = "✅ Available" if perk['available'] else "❌ Not available"
+            self.log(f"   🎁 {perk['name']} - Cost: {perk['cost']} - {status}")
+            
+        return True
+        
+    def test_prestige_buy_perk(self):
+        """Test POST /api/prestige/buy-perk endpoint."""
+        self.log("💳 Testing prestige perk purchase...")
+        
+        # First get available perks to find one we can potentially buy
+        response = self.session.get(f"{BASE_URL}/prestige/perks")
+        if response.status_code != 200:
+            self.log("❌ Could not get perks for purchase test", "ERROR")
+            return False
+            
+        data = response.json()
+        available_perks = [p for p in data['perks'] if p['available']]
+        
+        if not available_perks:
+            self.log("ℹ️ No available perks to purchase (expected if user has no points)")
+            # Test with insufficient points - should fail gracefully
+            response = self.session.post(f"{BASE_URL}/prestige/buy-perk", json={
+                "perk_id": "starting_money_1"
             })
             
-            if response.status_code == 200:
-                data = response.json()
-                self.jwt_token = data.get("token")
-                self.user_data = data.get("user", {})
-                
-                # Set authorization header for all future requests
-                self.session.headers.update({
-                    "Authorization": f"Bearer {self.jwt_token}"
-                })
-                
-                self.log_test("Login", True, f"Successfully logged in. User ID: {self.user_data.get('id', 'N/A')}")
-                return True
-            else:
-                self.log_test("Login", False, f"Login failed with status {response.status_code}", response.json())
-                return False
-                
-        except Exception as e:
-            self.log_test("Login", False, f"Login exception: {str(e)}")
-            return False
-    
-    def test_get_active_event_empty(self):
-        """Test GET /api/events/active when no event exists"""
-        print("\n📋 Testing GET /api/events/active (empty state)...")
-        
-        try:
-            response = self.session.get(f"{BASE_URL}/events/active")
-            
-            if response.status_code == 200:
-                data = response.json()
-                expected_fields = ["event", "has_event", "cooldown_remaining"]
-                
-                if all(field in data for field in expected_fields):
-                    if data["event"] is None and data["has_event"] is False:
-                        self.log_test("GET /api/events/active (empty)", True, 
-                                    f"Correct empty state: event=null, has_event=false, cooldown={data['cooldown_remaining']}")
-                        return True
-                    else:
-                        self.log_test("GET /api/events/active (empty)", False, 
-                                    f"Unexpected state: event={data['event']}, has_event={data['has_event']}", data)
-                        return False
-                else:
-                    self.log_test("GET /api/events/active (empty)", False, 
-                                f"Missing required fields. Expected: {expected_fields}", data)
-                    return False
-            else:
-                self.log_test("GET /api/events/active (empty)", False, 
-                            f"HTTP {response.status_code}", response.json())
-                return False
-                
-        except Exception as e:
-            self.log_test("GET /api/events/active (empty)", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_generate_event(self):
-        """Test POST /api/events/generate"""
-        print("\n🎲 Testing POST /api/events/generate...")
-        
-        try:
-            response = self.session.post(f"{BASE_URL}/events/generate")
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Check if event was generated or if there's a cooldown/existing event
-                if data.get("generated") is True and "event" in data:
-                    event = data["event"]
-                    required_fields = ["id", "type", "title", "description", "choices", "emoji", "color"]
-                    
-                    if all(field in event for field in required_fields):
-                        choices = event.get("choices", [])
-                        if len(choices) >= 2:  # Should have at least 2 choices
-                            # Validate choice structure
-                            choice_valid = True
-                            for choice in choices:
-                                if not all(field in choice for field in ["id", "text", "consequences"]):
-                                    choice_valid = False
-                                    break
-                                consequences = choice.get("consequences", {})
-                                if not isinstance(consequences, dict):
-                                    choice_valid = False
-                                    break
-                            
-                            if choice_valid:
-                                self.log_test("POST /api/events/generate", True, 
-                                            f"Event generated successfully. Type: {event['type']}, Title: {event['title']}, Choices: {len(choices)}")
-                                self.generated_event = event  # Store for later tests
-                                return True
-                            else:
-                                self.log_test("POST /api/events/generate", False, 
-                                            "Invalid choice structure", data)
-                                return False
-                        else:
-                            self.log_test("POST /api/events/generate", False, 
-                                        f"Insufficient choices: {len(choices)}", data)
-                            return False
-                    else:
-                        self.log_test("POST /api/events/generate", False, 
-                                    f"Missing required event fields. Expected: {required_fields}", data)
-                        return False
-                elif data.get("generated") is False:
-                    # Event not generated due to cooldown or existing event
-                    message = data.get("message", "Unknown reason")
-                    self.log_test("POST /api/events/generate", True, 
-                                f"Event not generated (expected): {message}")
+            if response.status_code == 400:
+                error_data = response.json()
+                if "insuficientes" in error_data.get('detail', '').lower():
+                    self.log("✅ Perk purchase correctly rejected - insufficient points")
                     return True
                 else:
-                    self.log_test("POST /api/events/generate", False, 
-                                "Unexpected response structure", data)
-                    return False
+                    self.log(f"✅ Perk purchase correctly rejected: {error_data.get('detail', 'Unknown error')}")
+                    return True
             else:
-                self.log_test("POST /api/events/generate", False, 
-                            f"HTTP {response.status_code}", response.json())
+                self.log(f"❌ Expected 400 error for insufficient points, got {response.status_code}", "ERROR")
                 return False
-                
-        except Exception as e:
-            self.log_test("POST /api/events/generate", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_get_active_event_with_event(self):
-        """Test GET /api/events/active when event exists"""
-        print("\n📋 Testing GET /api/events/active (with event)...")
-        
-        try:
-            response = self.session.get(f"{BASE_URL}/events/active")
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                if data.get("has_event") is True and data.get("event") is not None:
-                    event = data["event"]
-                    required_fields = ["id", "type", "title", "description", "choices"]
-                    
-                    if all(field in event for field in required_fields):
-                        self.log_test("GET /api/events/active (with event)", True, 
-                                    f"Active event found: {event['title']}")
-                        self.active_event = event  # Store for choice test
-                        return True
-                    else:
-                        self.log_test("GET /api/events/active (with event)", False, 
-                                    f"Missing required fields in event", data)
-                        return False
-                else:
-                    self.log_test("GET /api/events/active (with event)", False, 
-                                f"Expected active event but got: has_event={data.get('has_event')}", data)
-                    return False
-            else:
-                self.log_test("GET /api/events/active (with event)", False, 
-                            f"HTTP {response.status_code}", response.json())
-                return False
-                
-        except Exception as e:
-            self.log_test("GET /api/events/active (with event)", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_choose_event_option(self):
-        """Test POST /api/events/choose"""
-        print("\n🎯 Testing POST /api/events/choose...")
-        
-        if not hasattr(self, 'active_event'):
-            self.log_test("POST /api/events/choose", False, "No active event available for choice test")
-            return False
-        
-        event = self.active_event
-        choices = event.get("choices", [])
-        
-        if not choices:
-            self.log_test("POST /api/events/choose", False, "No choices available in active event")
-            return False
-        
-        # Choose the first available option
-        chosen_choice = choices[0]
-        choice_id = chosen_choice.get("id")
-        event_id = event.get("id")
-        
-        try:
-            response = self.session.post(f"{BASE_URL}/events/choose", json={
-                "event_id": event_id,
-                "choice_id": choice_id
+        else:
+            # Try to buy the first available perk
+            perk = available_perks[0]
+            response = self.session.post(f"{BASE_URL}/prestige/buy-perk", json={
+                "perk_id": perk['id']
             })
             
             if response.status_code == 200:
-                data = response.json()
-                required_fields = ["success", "choice", "consequences"]
-                
-                if all(field in data for field in required_fields):
-                    if data.get("success") is True:
-                        consequences = data.get("consequences", {})
-                        money_change = consequences.get("money", 0)
-                        xp_change = consequences.get("xp", 0)
-                        
-                        self.log_test("POST /api/events/choose", True, 
-                                    f"Choice made successfully. Money: {money_change:+}, XP: {xp_change:+}")
-                        return True
-                    else:
-                        self.log_test("POST /api/events/choose", False, 
-                                    "Success field is False", data)
-                        return False
-                else:
-                    self.log_test("POST /api/events/choose", False, 
-                                f"Missing required fields. Expected: {required_fields}", data)
-                    return False
-            else:
-                self.log_test("POST /api/events/choose", False, 
-                            f"HTTP {response.status_code}", response.json())
-                return False
-                
-        except Exception as e:
-            self.log_test("POST /api/events/choose", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_get_event_history(self):
-        """Test GET /api/events/history"""
-        print("\n📚 Testing GET /api/events/history...")
-        
-        try:
-            response = self.session.get(f"{BASE_URL}/events/history")
-            
-            if response.status_code == 200:
-                data = response.json()
-                required_fields = ["events", "count"]
-                
-                if all(field in data for field in required_fields):
-                    events = data.get("events", [])
-                    count = data.get("count", 0)
-                    
-                    if len(events) == count:
-                        if count > 0:
-                            # Validate event structure in history
-                            first_event = events[0]
-                            history_fields = ["id", "type", "title", "resolved", "chosen_option", "applied_consequences"]
-                            
-                            if all(field in first_event for field in history_fields):
-                                self.log_test("GET /api/events/history", True, 
-                                            f"Event history retrieved: {count} events")
-                                return True
-                            else:
-                                self.log_test("GET /api/events/history", False, 
-                                            f"Invalid event structure in history", data)
-                                return False
-                        else:
-                            self.log_test("GET /api/events/history", True, 
-                                        "Event history retrieved: 0 events (empty)")
-                            return True
-                    else:
-                        self.log_test("GET /api/events/history", False, 
-                                    f"Count mismatch: events length={len(events)}, count={count}", data)
-                        return False
-                else:
-                    self.log_test("GET /api/events/history", False, 
-                                f"Missing required fields. Expected: {required_fields}", data)
-                    return False
-            else:
-                self.log_test("GET /api/events/history", False, 
-                            f"HTTP {response.status_code}", response.json())
-                return False
-                
-        except Exception as e:
-            self.log_test("GET /api/events/history", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_cooldown_mechanism(self):
-        """Test cooldown mechanism by trying to generate another event immediately"""
-        print("\n⏰ Testing cooldown mechanism...")
-        
-        try:
-            response = self.session.post(f"{BASE_URL}/events/generate")
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                if data.get("generated") is False:
-                    message = data.get("message", "")
-                    if "cooldown" in message.lower() or "aguarde" in message.lower():
-                        self.log_test("Cooldown mechanism", True, 
-                                    f"Cooldown working correctly: {message}")
-                        return True
-                    else:
-                        self.log_test("Cooldown mechanism", False, 
-                                    f"Unexpected message: {message}", data)
-                        return False
-                else:
-                    self.log_test("Cooldown mechanism", False, 
-                                "Expected cooldown but event was generated", data)
-                    return False
-            else:
-                self.log_test("Cooldown mechanism", False, 
-                            f"HTTP {response.status_code}", response.json())
-                return False
-                
-        except Exception as e:
-            self.log_test("Cooldown mechanism", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_invalid_event_choice(self):
-        """Test error handling with invalid event_id"""
-        print("\n🚫 Testing error handling (invalid event_id)...")
-        
-        try:
-            response = self.session.post(f"{BASE_URL}/events/choose", json={
-                "event_id": "invalid-event-id-12345",
-                "choice_id": "any_choice"
-            })
-            
-            if response.status_code == 404:
-                data = response.json()
-                self.log_test("Error handling (invalid event_id)", True, 
-                            f"Correctly returned 404 for invalid event_id")
+                result = response.json()
+                self.log(f"✅ Perk purchase successful! Bought: {result['perk']['name']}")
+                self.log(f"   💰 Remaining points: {result['remaining_points']}")
+                return True
+            elif response.status_code == 400:
+                error_data = response.json()
+                self.log(f"✅ Perk purchase correctly rejected: {error_data.get('detail', 'Unknown error')}")
                 return True
             else:
-                self.log_test("Error handling (invalid event_id)", False, 
-                            f"Expected 404 but got {response.status_code}", response.json())
+                self.log(f"❌ Unexpected response for perk purchase: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
-        except Exception as e:
-            self.log_test("Error handling (invalid event_id)", False, f"Exception: {str(e)}")
+    def test_prestige_reset_validation(self):
+        """Test POST /api/prestige/reset endpoint validation (without actually resetting)."""
+        self.log("🔄 Testing prestige reset validation...")
+        
+        response = self.session.post(f"{BASE_URL}/prestige/reset")
+        
+        if response.status_code == 400:
+            error_data = response.json()
+            if "insuficiente" in error_data.get('detail', '').lower():
+                self.log("✅ Prestige reset correctly rejected - insufficient net worth")
+                return True
+            else:
+                self.log(f"✅ Prestige reset correctly rejected: {error_data.get('detail', 'Unknown error')}")
+                return True
+        elif response.status_code == 200:
+            self.log("⚠️ WARNING: Prestige reset succeeded! This will reset all game data!")
+            result = response.json()
+            self.log(f"   🏆 Points earned: {result.get('points_earned', 0)}")
+            self.log(f"   💰 Starting money: R$ {result.get('starting_money', 0)}")
+            return True
+        else:
+            self.log(f"❌ Unexpected response for prestige reset: {response.status_code} - {response.text}", "ERROR")
             return False
-    
+            
+    def test_competitions_active(self):
+        """Test GET /api/competitions/active endpoint."""
+        self.log("🏁 Testing active competitions...")
+        
+        response = self.session.get(f"{BASE_URL}/competitions/active")
+        
+        if response.status_code != 200:
+            self.log(f"❌ Active competitions failed: {response.status_code} - {response.text}", "ERROR")
+            return False
+            
+        data = response.json()
+        
+        # Validate response structure
+        if 'competitions' not in data or 'count' not in data:
+            self.log("❌ Missing fields in competitions response", "ERROR")
+            return False
+            
+        competitions = data['competitions']
+        if not isinstance(competitions, list):
+            self.log("❌ Competitions should be a list", "ERROR")
+            return False
+            
+        self.log(f"✅ Active competitions working! Found {data['count']} competitions")
+        
+        if len(competitions) == 0:
+            self.log("ℹ️ No active competitions (this might be expected)")
+            return True
+            
+        # Validate competition structure
+        comp_fields = [
+            'id', 'title', 'emoji', 'description', 'metric', 'leaderboard',
+            'my_position', 'my_score', 'rewards', 'days_remaining'
+        ]
+        
+        for comp in competitions:
+            for field in comp_fields:
+                if field not in comp:
+                    self.log(f"❌ Missing competition field: {field}", "ERROR")
+                    return False
+                    
+            self.log(f"   🏆 {comp['emoji']} {comp['title']}")
+            self.log(f"      📊 Your position: #{comp['my_position']}, Score: {comp['my_score']}")
+            self.log(f"      ⏰ Days remaining: {comp['days_remaining']}")
+            self.log(f"      🎁 Rewards: {len(comp['rewards'])} positions")
+            
+        return True
+        
+    def test_competitions_leaderboard(self):
+        """Test GET /api/competitions/leaderboard/{id} endpoint."""
+        self.log("📊 Testing competition leaderboard...")
+        
+        # First get active competitions to get an ID
+        response = self.session.get(f"{BASE_URL}/competitions/active")
+        if response.status_code != 200:
+            self.log("❌ Could not get competitions for leaderboard test", "ERROR")
+            return False
+            
+        data = response.json()
+        competitions = data['competitions']
+        
+        if len(competitions) == 0:
+            self.log("ℹ️ No competitions available for leaderboard test")
+            return True
+            
+        comp_id = competitions[0]['id']
+        response = self.session.get(f"{BASE_URL}/competitions/leaderboard/{comp_id}")
+        
+        if response.status_code != 200:
+            self.log(f"❌ Competition leaderboard failed: {response.status_code} - {response.text}", "ERROR")
+            return False
+            
+        data = response.json()
+        
+        # Validate response structure
+        if 'competition' not in data or 'leaderboard' not in data:
+            self.log("❌ Missing fields in leaderboard response", "ERROR")
+            return False
+            
+        leaderboard = data['leaderboard']
+        if not isinstance(leaderboard, list):
+            self.log("❌ Leaderboard should be a list", "ERROR")
+            return False
+            
+        self.log(f"✅ Competition leaderboard working! {len(leaderboard)} participants")
+        
+        # Show top 3 entries
+        for i, entry in enumerate(leaderboard[:3]):
+            you_marker = " (YOU)" if entry.get('is_you') else ""
+            self.log(f"   #{entry['position']} {entry['name']}{you_marker} - Score: {entry['score']}")
+            
+        return True
+        
+    def test_competitions_history(self):
+        """Test GET /api/competitions/history endpoint."""
+        self.log("📚 Testing competition history...")
+        
+        response = self.session.get(f"{BASE_URL}/competitions/history")
+        
+        if response.status_code != 200:
+            self.log(f"❌ Competition history failed: {response.status_code} - {response.text}", "ERROR")
+            return False
+            
+        data = response.json()
+        
+        # Validate response structure
+        if 'competitions' not in data or 'count' not in data:
+            self.log("❌ Missing fields in history response", "ERROR")
+            return False
+            
+        competitions = data['competitions']
+        if not isinstance(competitions, list):
+            self.log("❌ History competitions should be a list", "ERROR")
+            return False
+            
+        self.log(f"✅ Competition history working! Found {data['count']} past competitions")
+        
+        if len(competitions) == 0:
+            self.log("ℹ️ No past competitions (expected for new system)")
+        else:
+            for comp in competitions[:3]:  # Show first 3
+                self.log(f"   🏆 {comp.get('emoji', '')} {comp.get('title', 'Unknown')}")
+                
+        return True
+        
+    def test_error_handling(self):
+        """Test error handling for invalid requests."""
+        self.log("🚫 Testing error handling...")
+        
+        # Test invalid perk ID
+        response = self.session.post(f"{BASE_URL}/prestige/buy-perk", json={
+            "perk_id": "invalid_perk_id"
+        })
+        
+        if response.status_code == 404:
+            self.log("✅ Invalid perk ID correctly rejected with 404")
+        else:
+            self.log(f"❌ Expected 404 for invalid perk, got {response.status_code}", "ERROR")
+            return False
+            
+        # Test invalid competition ID
+        response = self.session.get(f"{BASE_URL}/competitions/leaderboard/invalid_id")
+        
+        if response.status_code == 404:
+            self.log("✅ Invalid competition ID correctly rejected with 404")
+        else:
+            self.log(f"❌ Expected 404 for invalid competition, got {response.status_code}", "ERROR")
+            return False
+            
+        return True
+        
     def run_all_tests(self):
-        """Run the complete test suite"""
-        print("🚀 Starting AI Dynamic Events System Testing...")
-        print(f"🌐 Backend URL: {BASE_URL}")
-        print(f"👤 Test User: {TEST_EMAIL}")
+        """Run all tests in sequence."""
+        self.log("🚀 Starting BizRealms Prestige & Competitions System Tests")
+        self.log("=" * 60)
         
-        # Login first
-        if not self.login():
-            print("❌ Login failed. Cannot proceed with tests.")
-            return False
-        
-        # Test sequence as specified in the review request
         tests = [
-            self.test_get_active_event_empty,      # 1. Check for active event (should be empty)
-            self.test_generate_event,              # 2. Generate new event
-            self.test_get_active_event_with_event, # 3. Check for active event (should have event)
-            self.test_choose_event_option,         # 4. Make a choice
-            self.test_get_event_history,           # 5. Check history
-            self.test_cooldown_mechanism,          # 6. Test cooldown
-            self.test_invalid_event_choice,        # 7. Test error handling
+            ("Login", self.login),
+            ("Prestige Status", self.test_prestige_status),
+            ("Prestige Perks", self.test_prestige_perks),
+            ("Prestige Buy Perk", self.test_prestige_buy_perk),
+            ("Prestige Reset Validation", self.test_prestige_reset_validation),
+            ("Active Competitions", self.test_competitions_active),
+            ("Competition Leaderboard", self.test_competitions_leaderboard),
+            ("Competition History", self.test_competitions_history),
+            ("Error Handling", self.test_error_handling),
         ]
         
         passed = 0
-        total = len(tests)
+        failed = 0
         
-        for test in tests:
-            if test():
-                passed += 1
-            time.sleep(0.5)  # Small delay between tests
+        for test_name, test_func in tests:
+            self.log(f"\n🧪 Running test: {test_name}")
+            try:
+                if test_func():
+                    passed += 1
+                    self.log(f"✅ {test_name} PASSED")
+                else:
+                    failed += 1
+                    self.log(f"❌ {test_name} FAILED")
+            except Exception as e:
+                failed += 1
+                self.log(f"❌ {test_name} FAILED with exception: {str(e)}", "ERROR")
+                
+        self.log("\n" + "=" * 60)
+        self.log(f"🏁 Test Results: {passed} passed, {failed} failed")
         
-        # Summary
-        print(f"\n📊 TEST SUMMARY")
-        print(f"{'='*50}")
-        print(f"Total Tests: {total}")
-        print(f"Passed: {passed}")
-        print(f"Failed: {total - passed}")
-        print(f"Success Rate: {(passed/total)*100:.1f}%")
-        
-        if passed == total:
-            print("🎉 ALL TESTS PASSED! AI Dynamic Events System is working correctly.")
+        if failed == 0:
+            self.log("🎉 ALL TESTS PASSED! Prestige & Competitions systems are working correctly.")
             return True
         else:
-            print("⚠️  Some tests failed. Check the details above.")
+            self.log(f"⚠️ {failed} tests failed. Please check the issues above.")
             return False
 
 if __name__ == "__main__":
-    tester = BizRealmsEventsTester()
+    tester = BizRealmsAPITester()
     success = tester.run_all_tests()
-    
-    # Print detailed results for debugging
-    print(f"\n📋 DETAILED TEST RESULTS")
-    print(f"{'='*50}")
-    for result in tester.test_results:
-        status = "✅" if result["success"] else "❌"
-        print(f"{status} {result['test']}: {result['details']}")
-    
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)
