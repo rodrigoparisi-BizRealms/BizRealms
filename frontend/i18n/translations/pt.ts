@@ -364,6 +364,10 @@ export default {
     permissionGallery: 'Precisamos de permissão para acessar sua galeria',
     paypalHint: 'Configure sua conta PayPal para receber premiações em dinheiro real dos rankings mensais.',
     languageAutoHint: 'Idioma detectado automaticamente pelo seu dispositivo. Selecione para alterar:',
+    selectLanguage: 'Toque para alterar idioma',
+    publicProfile: 'Perfil Público',
+    playerNotFound: 'Jogador não encontrado',
+    comparison: 'Comparação',
     theme: 'Tema',
     darkMode: 'Modo Escuro',
     lightMode: 'Modo Claro',
@@ -544,6 +548,7 @@ export default {
     delete: 'Remover',
     add: 'Adicionar',
     month: 'mês',
+    months: 'meses',
     skills: 'Habilidades',
   },
   legal: {

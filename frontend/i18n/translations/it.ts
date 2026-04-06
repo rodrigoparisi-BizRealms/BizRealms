@@ -103,6 +103,7 @@ export default {
     paypalHint: 'Configura il tuo conto PayPal per ricevere premi reali dalle classifiche mensili.',
     requiredFields: 'Campi obbligatori', fillAllFields: 'Compila tutti i campi',
     paypalRequiresData: 'Dati Personali Obbligatori', paypalRequiresDataMsg: "Per registrare il tuo conto PayPal, compila prima i tuoi Dati Personali (Nome Completo e Documento d'Identità).",
+    selectLanguage: 'Tocca per cambiare lingua',
     sounds: 'Suoni', soundEffects: 'Effetti Sonori', soundOn: 'Suoni dei clic attivati', soundOff: 'Suoni disattivati',
     security: 'Sicurezza', biometric: 'Autenticazione Biometrica', biometricUnavailable: 'Biometria non disponibile', biometricEnabled: 'Login biometrico attivato', biometricDisabled: 'Login biometrico disattivato',
     resetAccount: 'Azzera Account', resetAccountDesc: 'Cancella tutti i progressi e ricomincia', resetConfirmTitle: 'Azzerare Account?', resetConfirmMsg: 'Questa azione è irreversibile!', resetConfirm: 'Sì, Azzera', resetCancel: 'Annulla',

@@ -103,6 +103,7 @@ export default {
     paypalHint: 'Configurez votre compte PayPal pour recevoir des prix réels des classements mensuels.',
     requiredFields: 'Champs obligatoires', fillAllFields: 'Remplissez tous les champs',
     paypalRequiresData: 'Données Personnelles Obligatoires', paypalRequiresDataMsg: "Pour enregistrer votre PayPal, remplissez d'abord vos Données Personnelles (Nom Complet et Pièce d'Identité).",
+    selectLanguage: 'Touchez pour changer la langue',
     sounds: 'Sons', soundEffects: 'Effets Sonores', soundOn: 'Sons de clic activés', soundOff: 'Sons désactivés',
     security: 'Sécurité', biometric: 'Authentification Biométrique', biometricUnavailable: 'Biométrie non disponible', biometricEnabled: 'Login biométrique activé', biometricDisabled: 'Login biométrique désactivé',
     resetAccount: 'Réinitialiser le Compte', resetAccountDesc: 'Effacer toute la progression et recommencer', resetConfirmTitle: 'Réinitialiser ?', resetConfirmMsg: 'Cette action est irréversible !', resetConfirm: 'Oui, Réinitialiser', resetCancel: 'Annuler',

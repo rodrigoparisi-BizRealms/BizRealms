@@ -695,7 +695,15 @@ export default function Profile() {
             <Ionicons name={showLangPicker ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           {showLangPicker && (
-            <View style={[styles.card, { padding: 0, overflow: 'hidden', marginTop: 8, backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1 }]}>
+            <View style={{
+              marginTop: 8,
+              backgroundColor: colors.card,
+              borderColor: colors.cardBorder,
+              borderWidth: 1,
+              borderRadius: 12,
+              overflow: 'hidden',
+              flexDirection: 'column',
+            }}>
               {languages.map((lang, idx) => (
                 <TouchableOpacity
                   key={lang.code}
