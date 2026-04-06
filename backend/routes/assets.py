@@ -1,4 +1,5 @@
 """BizRealms - Assets Routes."""
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
@@ -21,45 +22,47 @@ from models import (
 
 router = APIRouter()
 
+logger = logging.getLogger(__name__)
+
 # ==================== ASSETS / PATRIMÔNIO SYSTEM ====================
 
 ASSETS_FOR_SALE = [
-    # Veículos
-    {"name": "Moto CG 160", "category": "veiculo", "subcategory": "Motos", "price": 15000, "description": "Moto econômica para o dia a dia", "appreciation": -0.05, "status_boost": 5, "level_required": 1, "icon": "bicycle"},
-    {"name": "Fiat Uno", "category": "veiculo", "subcategory": "Carros", "price": 35000, "description": "Carro popular e econômico", "appreciation": -0.08, "status_boost": 10, "level_required": 1, "icon": "car"},
-    {"name": "Toyota Corolla", "category": "veiculo", "subcategory": "Carros", "price": 120000, "description": "Sedan executivo confortável", "appreciation": -0.06, "status_boost": 25, "level_required": 3, "icon": "car"},
-    {"name": "BMW X5", "category": "veiculo", "subcategory": "SUVs", "price": 450000, "description": "SUV premium de luxo", "appreciation": -0.04, "status_boost": 50, "level_required": 6, "icon": "car-sport"},
-    {"name": "Porsche 911", "category": "veiculo", "subcategory": "Esportivos", "price": 900000, "description": "Esportivo icônico alemão", "appreciation": 0.02, "status_boost": 80, "level_required": 10, "icon": "car-sport"},
-    {"name": "Ferrari F8 Tributo", "category": "veiculo", "subcategory": "Esportivos", "price": 3500000, "description": "Superesportivo italiano", "appreciation": 0.05, "status_boost": 150, "level_required": 15, "icon": "car-sport"},
-    {"name": "Lancha 32 pés", "category": "veiculo", "subcategory": "Náuticos", "price": 600000, "description": "Lancha para passeios no litoral", "appreciation": -0.03, "status_boost": 60, "level_required": 8, "icon": "boat"},
-    {"name": "Iate de Luxo", "category": "veiculo", "subcategory": "Náuticos", "price": 5000000, "description": "Iate com 3 cabines e jacuzzi", "appreciation": 0.01, "status_boost": 200, "level_required": 18, "icon": "boat"},
-    {"name": "Helicóptero Robinson R44", "category": "veiculo", "subcategory": "Aéreos", "price": 2500000, "description": "Helicóptero para deslocamento urbano", "appreciation": -0.02, "status_boost": 120, "level_required": 12, "icon": "airplane"},
-    {"name": "Jato Executivo Phenom 300", "category": "veiculo", "subcategory": "Aéreos", "price": 25000000, "description": "Jato particular para viagens internacionais", "appreciation": 0.01, "status_boost": 500, "level_required": 20, "icon": "airplane"},
-    # Imóveis
-    {"name": "Kitnet Centro", "category": "imovel", "subcategory": "Apartamentos", "price": 80000, "description": "Kitnet de 25m² no centro da cidade", "appreciation": 0.03, "status_boost": 15, "level_required": 1, "icon": "home"},
-    {"name": "Apartamento 2 Quartos", "category": "imovel", "subcategory": "Apartamentos", "price": 250000, "description": "Apartamento de 65m² em bairro residencial", "appreciation": 0.04, "status_boost": 30, "level_required": 3, "icon": "home"},
-    {"name": "Casa 3 Quartos", "category": "imovel", "subcategory": "Casas", "price": 450000, "description": "Casa com quintal em condomínio fechado", "appreciation": 0.05, "status_boost": 50, "level_required": 5, "icon": "home"},
-    {"name": "Cobertura Duplex", "category": "imovel", "subcategory": "Apartamentos", "price": 1200000, "description": "Cobertura de 180m² com terraço e piscina", "appreciation": 0.06, "status_boost": 100, "level_required": 8, "icon": "home"},
-    {"name": "Mansão Alphaville", "category": "imovel", "subcategory": "Casas", "price": 5000000, "description": "Mansão de 500m² com 6 suítes e piscina", "appreciation": 0.07, "status_boost": 250, "level_required": 15, "icon": "home"},
-    {"name": "Penthouse Faria Lima", "category": "imovel", "subcategory": "Apartamentos", "price": 12000000, "description": "Penthouse de 400m² na Faria Lima, SP", "appreciation": 0.08, "status_boost": 400, "level_required": 20, "icon": "home"},
-    {"name": "Ilha Privada", "category": "imovel", "subcategory": "Especiais", "price": 50000000, "description": "Ilha particular com infraestrutura completa", "appreciation": 0.10, "status_boost": 1000, "level_required": 25, "icon": "globe"},
-    # Luxo
-    {"name": "Relógio Rolex Submariner", "category": "luxo", "subcategory": "Relógios", "price": 80000, "description": "Relógio suíço icônico de mergulho", "appreciation": 0.08, "status_boost": 20, "level_required": 5, "icon": "watch"},
-    {"name": "Relógio Patek Philippe", "category": "luxo", "subcategory": "Relógios", "price": 500000, "description": "Alta relojoaria suíça, peça de colecionador", "appreciation": 0.12, "status_boost": 80, "level_required": 12, "icon": "watch"},
-    {"name": "Bolsa Hermès Birkin", "category": "luxo", "subcategory": "Acessórios", "price": 120000, "description": "Bolsa de luxo mais desejada do mundo", "appreciation": 0.15, "status_boost": 35, "level_required": 8, "icon": "bag"},
-    {"name": "Coleção de Arte", "category": "luxo", "subcategory": "Arte", "price": 2000000, "description": "Coleção de pinturas de artistas brasileiros", "appreciation": 0.10, "status_boost": 150, "level_required": 15, "icon": "color-palette"},
-    {"name": "Diamante 5 Quilates", "category": "luxo", "subcategory": "Joias", "price": 800000, "description": "Diamante lapidado com certificação GIA", "appreciation": 0.06, "status_boost": 100, "level_required": 10, "icon": "diamond"},
+    # Vehicles
+    {"name": "Rider 160 Moto", "category": "veiculo", "subcategory": "Motos", "price": 3500, "description": "Economic motorcycle for daily commute", "appreciation": -0.05, "status_boost": 5, "level_required": 1, "icon": "bicycle"},
+    {"name": "Compact City Car", "category": "veiculo", "subcategory": "Carros", "price": 8000, "description": "Affordable and fuel-efficient car", "appreciation": -0.08, "status_boost": 10, "level_required": 1, "icon": "car"},
+    {"name": "Executive Sedan", "category": "veiculo", "subcategory": "Carros", "price": 28000, "description": "Comfortable executive sedan", "appreciation": -0.06, "status_boost": 25, "level_required": 3, "icon": "car"},
+    {"name": "Luxor Premium SUV", "category": "veiculo", "subcategory": "SUVs", "price": 65000, "description": "Premium luxury SUV", "appreciation": -0.04, "status_boost": 50, "level_required": 6, "icon": "car-sport"},
+    {"name": "Veloce GT Sport", "category": "veiculo", "subcategory": "Esportivos", "price": 120000, "description": "Iconic sports car", "appreciation": 0.02, "status_boost": 80, "level_required": 10, "icon": "car-sport"},
+    {"name": "Presto Supercar", "category": "veiculo", "subcategory": "Esportivos", "price": 450000, "description": "Italian-style supercar", "appreciation": 0.05, "status_boost": 150, "level_required": 15, "icon": "car-sport"},
+    {"name": "Coastal 32ft Yacht", "category": "veiculo", "subcategory": "Náuticos", "price": 95000, "description": "Yacht for coastal cruises", "appreciation": -0.03, "status_boost": 60, "level_required": 8, "icon": "boat"},
+    {"name": "Grand Luxury Yacht", "category": "veiculo", "subcategory": "Náuticos", "price": 800000, "description": "Luxury yacht with 3 cabins and jacuzzi", "appreciation": 0.01, "status_boost": 200, "level_required": 18, "icon": "boat"},
+    {"name": "SkyBird Helicopter", "category": "veiculo", "subcategory": "Aéreos", "price": 400000, "description": "Helicopter for urban transport", "appreciation": -0.02, "status_boost": 120, "level_required": 12, "icon": "airplane"},
+    {"name": "AeroJet Executive 300", "category": "veiculo", "subcategory": "Aéreos", "price": 4000000, "description": "Private jet for international travel", "appreciation": 0.01, "status_boost": 500, "level_required": 20, "icon": "airplane"},
+    # Real Estate
+    {"name": "Studio Downtown", "category": "imovel", "subcategory": "Apartments", "price": 18000, "description": "25sqm studio in the city center", "appreciation": 0.03, "status_boost": 15, "level_required": 1, "icon": "home"},
+    {"name": "2-Bed Apartment", "category": "imovel", "subcategory": "Apartments", "price": 55000, "description": "65sqm apartment in residential area", "appreciation": 0.04, "status_boost": 30, "level_required": 3, "icon": "home"},
+    {"name": "3-Bed Family House", "category": "imovel", "subcategory": "Houses", "price": 95000, "description": "House with garden in gated community", "appreciation": 0.05, "status_boost": 50, "level_required": 5, "icon": "home"},
+    {"name": "Duplex Penthouse", "category": "imovel", "subcategory": "Apartments", "price": 250000, "description": "180sqm penthouse with terrace and pool", "appreciation": 0.06, "status_boost": 100, "level_required": 8, "icon": "home"},
+    {"name": "Hilltop Mansion", "category": "imovel", "subcategory": "Houses", "price": 900000, "description": "500sqm mansion with 6 suites and pool", "appreciation": 0.07, "status_boost": 250, "level_required": 15, "icon": "home"},
+    {"name": "Skyline Penthouse", "category": "imovel", "subcategory": "Apartments", "price": 2000000, "description": "400sqm penthouse in the financial district", "appreciation": 0.08, "status_boost": 400, "level_required": 20, "icon": "home"},
+    {"name": "Private Island", "category": "imovel", "subcategory": "Special", "price": 8000000, "description": "Private island with full infrastructure", "appreciation": 0.10, "status_boost": 1000, "level_required": 25, "icon": "globe"},
+    # Luxury
+    {"name": "Classic Diver Watch", "category": "luxo", "subcategory": "Watches", "price": 15000, "description": "Iconic Swiss diving timepiece", "appreciation": 0.08, "status_boost": 20, "level_required": 5, "icon": "watch"},
+    {"name": "Grand Complication Watch", "category": "luxo", "subcategory": "Watches", "price": 90000, "description": "Ultra-luxury Swiss collector's piece", "appreciation": 0.12, "status_boost": 80, "level_required": 12, "icon": "watch"},
+    {"name": "Prestige Handbag", "category": "luxo", "subcategory": "Accessories", "price": 25000, "description": "World's most desired luxury handbag", "appreciation": 0.15, "status_boost": 35, "level_required": 8, "icon": "bag"},
+    {"name": "Fine Art Collection", "category": "luxo", "subcategory": "Art", "price": 350000, "description": "Collection of paintings from renowned artists", "appreciation": 0.10, "status_boost": 150, "level_required": 15, "icon": "color-palette"},
+    {"name": "5-Carat Diamond", "category": "luxo", "subcategory": "Jewelry", "price": 150000, "description": "GIA-certified cut diamond", "appreciation": 0.06, "status_boost": 100, "level_required": 10, "icon": "diamond"},
 ]
 
 async def seed_assets_for_sale():
-    count = await db.assets_store.count_documents({})
-    if count == 0:
-        assets = []
-        for seed in ASSETS_FOR_SALE:
-            asset = {"id": str(uuid.uuid4()), **seed, "created_at": datetime.utcnow()}
-            assets.append(asset)
-        await db.assets_store.insert_many(assets)
-        logger.info(f"Seeded {len(assets)} assets for sale")
+    # Always reseed to update names/prices
+    await db.assets_store.delete_many({})
+    assets = []
+    for seed in ASSETS_FOR_SALE:
+        asset = {"id": str(uuid.uuid4()), **seed, "created_at": datetime.utcnow()}
+        assets.append(asset)
+    await db.assets_store.insert_many(assets)
+    logger.info(f"Seeded {len(assets)} assets for sale")
 
 
 async def startup_assets():

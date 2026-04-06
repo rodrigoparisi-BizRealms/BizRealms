@@ -75,14 +75,14 @@ interface AssetHistory {
   volume: number;
 }
 
-type CategoryType = 'all' | 'acoes' | 'crypto' | 'fundos' | 'commodities';
+type CategoryType = 'all' | 'stocks' | 'crypto' | 'funds' | 'commodities';
 type ViewMode = 'market' | 'portfolio';
 
 const CATEGORIES: { key: CategoryType; labelKey: string; icon: string }[] = [
   { key: 'all', labelKey: 'investments.categories.all', icon: 'grid' },
-  { key: 'acoes', labelKey: 'investments.categories.acoes', icon: 'trending-up' },
+  { key: 'stocks', labelKey: 'investments.categories.acoes', icon: 'trending-up' },
   { key: 'crypto', labelKey: 'investments.categories.crypto', icon: 'logo-bitcoin' },
-  { key: 'fundos', labelKey: 'investments.categories.fundos', icon: 'business' },
+  { key: 'funds', labelKey: 'investments.categories.fundos', icon: 'business' },
   { key: 'commodities', labelKey: 'investments.categories.commodities', icon: 'diamond' },
 ];
 
@@ -681,9 +681,9 @@ export default function Investments() {
                   <View style={styles.detailInfoItem}>
                     <Text style={styles.detailInfoLabel}>Categoria</Text>
                     <Text style={styles.detailInfoValue}>
-                      {detailAsset.category === 'acoes' ? 'Ações' :
-                       detailAsset.category === 'crypto' ? 'Cripto' :
-                       detailAsset.category === 'fundos' ? 'Fundos' : 'Commodities'}
+                      {detailAsset.category === 'stocks' ? 'Stocks' :
+                       detailAsset.category === 'crypto' ? 'Crypto' :
+                       detailAsset.category === 'funds' ? 'Funds' : 'Commodities'}
                     </Text>
                   </View>
                 </View>

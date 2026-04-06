@@ -327,19 +327,21 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     if isinstance(last_collection, str):
         last_collection = datetime.fromisoformat(last_collection.replace('Z', '+00:00'))
     
+    # Game time: 30 game days = 24 real hours => 1 game day = 2880 real seconds
+    GAME_DAY_SECONDS = 2880
     now = datetime.utcnow()
-    days_elapsed = (now - last_collection).total_seconds() / 86400  # Convert to days
+    game_days_elapsed = (now - last_collection).total_seconds() / GAME_DAY_SECONDS
     
-    if days_elapsed < 0.001:  # Less than ~1.4 minutes
+    if game_days_elapsed < 0.01:
         return {
             "message": "Você já coletou seus ganhos recentemente. Aguarde pelo menos 1 minuto!",
             "earnings": 0,
             "days_elapsed": 0
         }
     
-    # Calculate earnings (can accumulate multiple days)
+    # Calculate earnings based on game days (salary is per 30 game days)
     daily_salary = current_job['salary'] / 30
-    total_earnings = daily_salary * days_elapsed
+    total_earnings = daily_salary * game_days_elapsed
     
     # Apply ad boost multiplier if active
     boost_multiplier = 1.0
@@ -357,7 +359,7 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
         total_earnings *= (1 + courses_boost)
     
     # Calculate XP gain
-    xp_gain = int(80 * days_elapsed)
+    xp_gain = int(80 * game_days_elapsed)
     
     # Update user money and XP
     new_money = current_user.get('money', 0) + total_earnings
@@ -376,7 +378,7 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     )
     
     # Update job tracking
-    new_days_worked = current_job.get('days_worked', 0) + int(days_elapsed)
+    new_days_worked = current_job.get('days_worked', 0) + int(game_days_elapsed)
     await db.work_experiences.update_one(
         {'_id': current_job['_id']},
         {
@@ -398,12 +400,12 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
         promotion_message = f"Promoção! Seu salário aumentou para $ {new_salary:.2f}/mês!"
     
     return {
-        "message": f"Você coletou seus ganhos de {days_elapsed:.1f} dias de trabalho!",
+        "message": f"Você coletou seus ganhos de {game_days_elapsed:.1f} dias de trabalho!",
         "earnings": round(total_earnings, 2),
         "xp_gained": xp_gain,
         "new_level": new_level,
         "new_money": round(new_money, 2),
-        "days_elapsed": round(days_elapsed, 2),
+        "days_elapsed": round(game_days_elapsed, 2),
         "days_worked": new_days_worked,
         "boost_multiplier": boost_multiplier,
         "courses_boost": round(courses_boost, 2),

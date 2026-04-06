@@ -289,7 +289,7 @@ export default function Patrimonio() {
           return (
             <View key={a.id} style={[s.storeCard, a.already_owned && { opacity: 0.5 }]}>
               <View style={s.aHeader}>
-                <View style={[s.aIcon, { backgroundColor: catCfg.color }]}><Ionicons name={a.icon as any || catCfg.icon as any} size={22} color="#fff" /></View>
+                <View style={[s.aIcon, { backgroundColor: catCfg.color, width: 52, height: 52, borderRadius: 14 }]}><Ionicons name={a.icon as any || catCfg.icon as any} size={28} color="#fff" /></View>
                 <View style={s.aInfo}>
                   <Text style={s.aName}>{a.name}</Text>
                   <Text style={s.aSub}>{a.subcategory} • Nível {a.level_required}</Text>
@@ -297,13 +297,9 @@ export default function Patrimonio() {
                 <Text style={s.storePrice}>$ {a.price.toLocaleString('en-US')}</Text>
               </View>
               <Text style={s.aDesc}>{a.description}</Text>
-              <TouchableOpacity style={s.photoBtn} onPress={() => openGallery(a)}>
-                <Ionicons name="images" size={16} color="#9C27B0" />
-                <Text style={s.photoBtnText}>Ver Fotos</Text>
-              </TouchableOpacity>
               <View style={s.storeMeta}>
                 <Text style={[s.metaChip, { color: appreciation >= 0 ? '#4CAF50' : '#F44336' }]}>
-                  {appreciation >= 0 ? '📈' : '📉'} {appreciation > 0 ? '+' : ''}{(appreciation * 100).toFixed(0)}%/mês
+                  {appreciation >= 0 ? '📈' : '📉'} {appreciation > 0 ? '+' : ''}{(appreciation * 100).toFixed(0)}%/yr
                 </Text>
                 <Text style={s.metaChip}>⭐ +{a.status_boost} status</Text>
               </View>

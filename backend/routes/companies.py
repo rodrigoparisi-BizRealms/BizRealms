@@ -324,7 +324,9 @@ async def get_owned_companies(current_user: dict = Depends(get_current_user)):
             boost_active = True
         c['ad_boost_active'] = boost_active
         effective_mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
-        c['effective_revenue'] = round(c['monthly_revenue'] * effective_mult)
+        base_rev = c.get('daily_revenue', c.get('monthly_revenue', 0) / 30 if c.get('monthly_revenue') else 0)
+        c['daily_revenue'] = base_rev
+        c['effective_revenue'] = round(base_rev * effective_mult)
         c['effective_multiplier'] = effective_mult
         if c.get('ad_boost_expires'):
             c['ad_boost_remaining'] = max(0, int((c['ad_boost_expires'] - now).total_seconds()))
@@ -338,8 +340,8 @@ async def get_owned_companies(current_user: dict = Depends(get_current_user)):
         # ROI calculation
         purchase_price = c.get('purchase_price', 0)
         total_collected = c.get('total_collected', 0)
-        monthly_rev = c.get('monthly_revenue', 1)
-        c['roi_months'] = round(purchase_price / monthly_rev, 1) if monthly_rev > 0 else 0
+        daily_rev_val = c.get('daily_revenue', c.get('monthly_revenue', 1) / 30 if c.get('monthly_revenue') else 1)
+        c['roi_months'] = round(purchase_price / (daily_rev_val * 30), 1) if daily_rev_val > 0 else 0
         c['roi_progress'] = round((total_collected / purchase_price) * 100, 1) if purchase_price > 0 else 0
         c['roi_recovered'] = total_collected >= purchase_price
         total_monthly += c['effective_revenue']
@@ -353,23 +355,25 @@ async def collect_company_revenue(current_user: dict = Depends(get_current_user)
     now = datetime.utcnow()
     total_revenue = 0
     details = []
+    # Game time: 30 game days = 24 real hours => 1 game day = 2880 real seconds
+    GAME_DAY_SECONDS = 2880
     for c in companies:
         last = c.get('last_collection', now)
         if isinstance(last, str):
             last = datetime.fromisoformat(last.replace('Z', '+00:00'))
-        days = (now - last).total_seconds() / 86400
-        if days < 0.001:
+        game_days = (now - last).total_seconds() / GAME_DAY_SECONDS
+        if game_days < 0.001:
             continue
-        daily_rev = c['daily_revenue']
+        daily_rev = c.get('daily_revenue', c.get('monthly_revenue', 0) / 30 if c.get('monthly_revenue') else 0)
         boost_active = c.get('ad_boost_expires') and c['ad_boost_expires'] > now
         mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
-        rev = daily_rev * days * mult
+        rev = daily_rev * game_days * mult
         total_revenue += rev
         await db.user_companies.update_one(
             {"id": c['id']},
             {"$set": {"last_collection": now}, "$inc": {"total_collected": rev}}
         )
-        details.append({"name": c['name'], "revenue": round(rev, 2), "days": round(days, 2)})
+        details.append({"name": c['name'], "revenue": round(rev, 2), "days": round(game_days, 2)})
     if total_revenue > 0:
         user = await db.users.find_one({"id": current_user['id']})
         new_money = user['money'] + total_revenue

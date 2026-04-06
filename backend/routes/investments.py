@@ -1,4 +1,5 @@
 """BizRealms - Investments Routes."""
+import logging
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -22,6 +23,7 @@ from models import (
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # ==================== INVESTMENT SYSTEM ====================
 
@@ -36,7 +38,7 @@ class InvestmentAsset(BaseModel):
     volatility: float  # Daily volatility as percentage (e.g., 2.0 = 2%)
     trend: float  # Drift: positive = bullish, negative = bearish
     description: str
-    currency: str = "BRL"
+    currency: str = "USD"
     market_cap: Optional[str] = None
     sector: Optional[str] = None
 
@@ -50,32 +52,36 @@ class SellRequest(BaseModel):
 
 # Seed Investment Assets
 INVESTMENT_SEEDS = [
-    # Ações B3
-    {"ticker": "PETR4", "name": "Petrobras PN", "category": "acoes", "base_price": 38.50, "volatility": 2.5, "trend": 0.05, "description": "Petróleo Brasileiro S.A. - Ação preferencial", "sector": "Petróleo & Gás", "market_cap": "$ 500B"},
-    {"ticker": "VALE3", "name": "Vale ON", "category": "acoes", "base_price": 62.00, "volatility": 2.8, "trend": 0.03, "description": "Vale S.A. - Mineração e metais", "sector": "Mineração", "market_cap": "$ 280B"},
-    {"ticker": "ITUB4", "name": "Itaú Unibanco PN", "category": "acoes", "base_price": 32.00, "volatility": 1.8, "trend": 0.04, "description": "Itaú Unibanco - Maior banco privado do Brasil", "sector": "Financeiro", "market_cap": "$ 300B"},
-    {"ticker": "BBDC4", "name": "Bradesco PN", "category": "acoes", "base_price": 14.50, "volatility": 2.2, "trend": -0.02, "description": "Banco Bradesco S.A.", "sector": "Financeiro", "market_cap": "$ 150B"},
-    {"ticker": "WEGE3", "name": "WEG ON", "category": "acoes", "base_price": 44.00, "volatility": 2.0, "trend": 0.06, "description": "WEG S.A. - Motores e equipamentos elétricos", "sector": "Industrial", "market_cap": "$ 185B"},
-    {"ticker": "MGLU3", "name": "Magazine Luiza ON", "category": "acoes", "base_price": 2.80, "volatility": 5.0, "trend": -0.08, "description": "Magazine Luiza - E-commerce e varejo", "sector": "Varejo", "market_cap": "$ 18B"},
-    {"ticker": "ABEV3", "name": "Ambev ON", "category": "acoes", "base_price": 13.20, "volatility": 1.5, "trend": 0.02, "description": "Ambev S.A. - Maior cervejaria da América Latina", "sector": "Bebidas", "market_cap": "$ 210B"},
-    {"ticker": "B3SA3", "name": "B3 ON", "category": "acoes", "base_price": 12.50, "volatility": 2.3, "trend": 0.01, "description": "B3 S.A. - Bolsa de Valores do Brasil", "sector": "Financeiro", "market_cap": "$ 70B"},
+    # World Stocks (fictional names inspired by real companies)
+    {"ticker": "TVST", "name": "TechVista Inc.", "category": "stocks", "base_price": 195.00, "volatility": 2.0, "trend": 0.06, "description": "Global tech leader in smartphones and software", "sector": "Technology", "market_cap": "$ 3T"},
+    {"ticker": "NVCP", "name": "NovaCorp", "category": "stocks", "base_price": 178.00, "volatility": 2.2, "trend": 0.05, "description": "Search engine and cloud computing giant", "sector": "Technology", "market_cap": "$ 2T"},
+    {"ticker": "BSHL", "name": "BlueShield Systems", "category": "stocks", "base_price": 430.00, "volatility": 1.8, "trend": 0.04, "description": "Enterprise software and cloud platforms", "sector": "Technology", "market_cap": "$ 2.8T"},
+    {"ticker": "AMZX", "name": "AmazoTech", "category": "stocks", "base_price": 185.00, "volatility": 2.5, "trend": 0.05, "description": "E-commerce and cloud infrastructure", "sector": "E-Commerce", "market_cap": "$ 1.9T"},
+    {"ticker": "TSLE", "name": "TeslaWave Motors", "category": "stocks", "base_price": 250.00, "volatility": 4.0, "trend": 0.08, "description": "Electric vehicles and clean energy", "sector": "Automotive", "market_cap": "$ 800B"},
+    {"ticker": "NVDX", "name": "NeuraVida Chips", "category": "stocks", "base_price": 130.00, "volatility": 3.5, "trend": 0.10, "description": "AI chips and GPU computing leader", "sector": "Semiconductors", "market_cap": "$ 3.2T"},
+    {"ticker": "METV", "name": "MetaVerse Platforms", "category": "stocks", "base_price": 510.00, "volatility": 2.8, "trend": 0.04, "description": "Social media and virtual reality", "sector": "Social Media", "market_cap": "$ 1.3T"},
+    {"ticker": "JPFN", "name": "JP Financial Group", "category": "stocks", "base_price": 205.00, "volatility": 1.5, "trend": 0.03, "description": "Investment banking and financial services", "sector": "Finance", "market_cap": "$ 600B"},
+    {"ticker": "WDIS", "name": "WonderLand Entertainment", "category": "stocks", "base_price": 112.00, "volatility": 2.0, "trend": 0.02, "description": "Global entertainment and streaming", "sector": "Entertainment", "market_cap": "$ 200B"},
+    {"ticker": "JNJH", "name": "JNJ HealthCorp", "category": "stocks", "base_price": 155.00, "volatility": 1.2, "trend": 0.02, "description": "Pharmaceutical and healthcare giant", "sector": "Healthcare", "market_cap": "$ 400B"},
+    {"ticker": "COCA", "name": "CocaBrew International", "category": "stocks", "base_price": 62.00, "volatility": 1.0, "trend": 0.01, "description": "World's largest beverage company", "sector": "Beverages", "market_cap": "$ 260B"},
+    {"ticker": "NKSP", "name": "NikeSport Global", "category": "stocks", "base_price": 78.00, "volatility": 2.0, "trend": 0.03, "description": "Athletic footwear and apparel", "sector": "Consumer Goods", "market_cap": "$ 120B"},
     # Crypto
-    {"ticker": "BTC", "name": "Bitcoin", "category": "crypto", "base_price": 350000.00, "volatility": 4.0, "trend": 0.08, "description": "A maior criptomoeda do mundo por capitalização", "currency": "BRL", "market_cap": "US$ 1.3T"},
-    {"ticker": "ETH", "name": "Ethereum", "category": "crypto", "base_price": 18500.00, "volatility": 5.0, "trend": 0.06, "description": "Plataforma de contratos inteligentes", "currency": "BRL", "market_cap": "US$ 400B"},
-    {"ticker": "SOL", "name": "Solana", "category": "crypto", "base_price": 850.00, "volatility": 6.5, "trend": 0.10, "description": "Blockchain de alta performance", "currency": "BRL", "market_cap": "US$ 80B"},
-    {"ticker": "BNB", "name": "Binance Coin", "category": "crypto", "base_price": 3200.00, "volatility": 4.5, "trend": 0.04, "description": "Token nativo da Binance", "currency": "BRL", "market_cap": "US$ 90B"},
-    {"ticker": "ADA", "name": "Cardano", "category": "crypto", "base_price": 3.80, "volatility": 7.0, "trend": -0.03, "description": "Blockchain proof-of-stake", "currency": "BRL", "market_cap": "US$ 25B"},
-    # Fundos
-    {"ticker": "KNRI11", "name": "Kinea Renda Imobiliária", "category": "fundos", "base_price": 136.00, "volatility": 0.8, "trend": 0.03, "description": "Fundo imobiliário focado em renda de aluguéis", "sector": "FII - Tijolo"},
-    {"ticker": "HGLG11", "name": "CSHG Logística", "category": "fundos", "base_price": 160.00, "volatility": 1.0, "trend": 0.04, "description": "FII de galpões logísticos", "sector": "FII - Logística"},
-    {"ticker": "XPML11", "name": "XP Malls", "category": "fundos", "base_price": 96.00, "volatility": 1.2, "trend": 0.02, "description": "FII de shoppings centers", "sector": "FII - Shopping"},
-    {"ticker": "MXRF11", "name": "Maxi Renda", "category": "fundos", "base_price": 10.50, "volatility": 0.5, "trend": 0.01, "description": "Fundo de papel - CRIs e CRAs", "sector": "FII - Papel"},
+    {"ticker": "BTC", "name": "Bitcoin", "category": "crypto", "base_price": 67500.00, "volatility": 4.0, "trend": 0.08, "description": "The largest cryptocurrency by market cap", "market_cap": "$ 1.3T"},
+    {"ticker": "ETH", "name": "Ethereum", "category": "crypto", "base_price": 3500.00, "volatility": 5.0, "trend": 0.06, "description": "Smart contract platform", "market_cap": "$ 400B"},
+    {"ticker": "SOL", "name": "Solana", "category": "crypto", "base_price": 175.00, "volatility": 6.5, "trend": 0.10, "description": "High performance blockchain", "market_cap": "$ 80B"},
+    {"ticker": "BNB", "name": "Binance Coin", "category": "crypto", "base_price": 620.00, "volatility": 4.5, "trend": 0.04, "description": "Binance native token", "market_cap": "$ 90B"},
+    {"ticker": "ADA", "name": "Cardano", "category": "crypto", "base_price": 0.75, "volatility": 7.0, "trend": -0.03, "description": "Proof-of-stake blockchain", "market_cap": "$ 25B"},
+    # ETFs / Funds
+    {"ticker": "SPYF", "name": "S&P 500 Fund", "category": "funds", "base_price": 520.00, "volatility": 1.0, "trend": 0.04, "description": "Tracks the S&P 500 index", "sector": "Index Fund"},
+    {"ticker": "QQFN", "name": "Nasdaq Tech Fund", "category": "funds", "base_price": 430.00, "volatility": 1.5, "trend": 0.05, "description": "Tracks top 100 tech companies", "sector": "Tech Fund"},
+    {"ticker": "REIT", "name": "Global REIT Fund", "category": "funds", "base_price": 85.00, "volatility": 0.8, "trend": 0.03, "description": "Real estate investment trust fund", "sector": "Real Estate"},
+    {"ticker": "BOND", "name": "US Treasury Bond Fund", "category": "funds", "base_price": 100.00, "volatility": 0.3, "trend": 0.01, "description": "Safe government bond fund", "sector": "Fixed Income"},
     # Commodities
-    {"ticker": "OURO", "name": "Ouro", "category": "commodities", "base_price": 320.00, "volatility": 1.5, "trend": 0.05, "description": "Onça troy de ouro (g)", "currency": "BRL"},
-    {"ticker": "PRATA", "name": "Prata", "category": "commodities", "base_price": 5.20, "volatility": 2.0, "trend": 0.03, "description": "Onça troy de prata (g)", "currency": "BRL"},
-    {"ticker": "PETROL", "name": "Petróleo Brent", "category": "commodities", "base_price": 420.00, "volatility": 3.0, "trend": -0.02, "description": "Barril de petróleo Brent em reais", "currency": "BRL"},
-    {"ticker": "SOJA", "name": "Soja", "category": "commodities", "base_price": 135.00, "volatility": 2.5, "trend": 0.01, "description": "Saca de 60kg de soja", "currency": "BRL"},
-    {"ticker": "CAFE", "name": "Café Arábica", "category": "commodities", "base_price": 1420.00, "volatility": 3.5, "trend": 0.04, "description": "Saca de 60kg de café arábica", "currency": "BRL"},
+    {"ticker": "GOLD", "name": "Gold", "category": "commodities", "base_price": 2350.00, "volatility": 1.5, "trend": 0.05, "description": "Troy ounce of gold", "currency": "USD"},
+    {"ticker": "SLVR", "name": "Silver", "category": "commodities", "base_price": 29.50, "volatility": 2.0, "trend": 0.03, "description": "Troy ounce of silver", "currency": "USD"},
+    {"ticker": "OIL", "name": "Crude Oil (Brent)", "category": "commodities", "base_price": 82.00, "volatility": 3.0, "trend": -0.02, "description": "Barrel of Brent crude oil", "currency": "USD"},
+    {"ticker": "CORN", "name": "Corn", "category": "commodities", "base_price": 4.50, "volatility": 2.5, "trend": 0.01, "description": "Bushel of corn", "currency": "USD"},
+    {"ticker": "COFE", "name": "Coffee Arabica", "category": "commodities", "base_price": 2.40, "volatility": 3.5, "trend": 0.04, "description": "Pound of arabica coffee", "currency": "USD"},
 ]
 
 def generate_price(base_price: float, volatility: float, trend: float, seed_val: int) -> float:
@@ -119,21 +125,20 @@ def get_current_price(asset: dict, event_multiplier: float = 1.0) -> float:
     return round(base * event_multiplier, 2)
 
 async def seed_investments():
-    """Seed investment assets if not exists"""
-    count = await db.investment_assets.count_documents({})
-    if count == 0:
-        assets = []
-        for seed in INVESTMENT_SEEDS:
-            asset = {
-                "id": str(uuid.uuid4()),
-                **seed,
-                "current_price": seed['base_price'],
-                "created_at": datetime.utcnow()
-            }
-            asset['current_price'] = get_current_price(seed)
-            assets.append(asset)
-        await db.investment_assets.insert_many(assets)
-        logger.info(f"Seeded {len(assets)} investment assets")
+    """Seed investment assets - reseed to update"""
+    await db.investment_assets.delete_many({})
+    assets = []
+    for seed in INVESTMENT_SEEDS:
+        asset = {
+            "id": str(uuid.uuid4()),
+            **seed,
+            "current_price": seed['base_price'],
+            "created_at": datetime.utcnow()
+        }
+        asset['current_price'] = get_current_price(seed)
+        assets.append(asset)
+    await db.investment_assets.insert_many(assets)
+    logger.info(f"Seeded {len(assets)} investment assets")
 
 
 async def startup_investments():
