@@ -44,6 +44,8 @@ export default {
     sellConfirm: 'Möchtest du verkaufen', createCompany: 'Firma gründen', companyName: 'Firmenname', segment: 'Segment',
     segments: { restaurante: 'Restaurant', loja: 'Einzelhandel', tecnologia: 'Technologie', fabrica: 'Fabrik', saude: 'Gesundheit', educacao: 'Bildung', entretenimento: 'Unterhaltung', imobiliaria: 'Immobilien', logistica: 'Logistik', agronegocio: 'Agrarwirtschaft' },
     boostAd: 'Werbe-Boost', watchAd: 'Werbung ansehen', price: 'Preis', monthlyRev: 'Monatl. Einnahmen',
+    monthlyRevenue: 'Monatl. Einnahmen', betterOfferAd: 'Besseres Angebot via Werbung', newOffersAd: 'Neue Angebote via Werbung',
+    buyConfirm: 'Kauf bestätigen?', buyFor: 'Kaufen für', roiEstimate: 'Geschätzter Ertrag', sellFor: 'Verkaufen für',
   },
   investments: {
     title: 'Investitionen', market: 'Markt', portfolio: 'Portfolio', history: 'Verlauf',
@@ -73,6 +75,7 @@ export default {
     buyNow: 'Kaufen', payment: 'Zahlung', paymentMethod: 'Zahlungsart', creditCard: 'Kreditkarte', paypal: 'PayPal',
     confirm: 'Kauf bestätigen', purchaseHistory: 'Kaufhistorie', noPurchases: 'Keine Käufe',
     dailyReward: 'Tägliche Belohnung', dailyClaimed: 'Bereits eingelöst heute', dailyClaim: 'Täglich einlösen', free: 'GRATIS',
+    comeBackTomorrow: 'Komm morgen für neue Belohnung zurück!', doubleReward: 'Belohnung verdoppeln', purchaseSuccess: 'Kauf abgeschlossen!', watchAdForReward: 'Werbung ansehen zum Verdoppeln',
   },
   profile: {
     title: 'Profil', language: 'Sprache', personalData: 'Persönliche Daten', paypalAccount: 'PayPal-Konto (Echtgeldpreise)',
@@ -103,6 +106,7 @@ export default {
     sounds: 'Töne', soundEffects: 'Soundeffekte', soundOn: 'Klicktöne aktiviert', soundOff: 'Töne deaktiviert',
     security: 'Sicherheit', biometric: 'Biometrische Authentifizierung', biometricUnavailable: 'Biometrie nicht verfügbar', biometricEnabled: 'Biometrisches Login aktiviert', biometricDisabled: 'Biometrisches Login deaktiviert',
     resetAccount: 'Konto zurücksetzen', resetAccountDesc: 'Gesamten Spielfortschritt löschen', resetConfirmTitle: 'Konto zurücksetzen?', resetConfirmMsg: 'Diese Aktion ist unwiderruflich!', resetConfirm: 'Ja, zurücksetzen', resetCancel: 'Abbrechen',
+    accountResetSuccess: 'Ihr Konto wurde zurückgesetzt!', biometricHint: 'Zugang zum Spiel schützen',
   },
   coaching: {
     title: 'KI-Coach', subtitle: 'Dein virtueller Business-Mentor', welcome: 'Hallo',

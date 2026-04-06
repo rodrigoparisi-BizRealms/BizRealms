@@ -44,6 +44,8 @@ export default {
     sellConfirm: 'Voulez-vous vendre', createCompany: 'Créer Entreprise', companyName: 'Nom', segment: 'Segment',
     segments: { restaurante: 'Restaurant', loja: 'Commerce', tecnologia: 'Technologie', fabrica: 'Usine', saude: 'Santé', educacao: 'Éducation', entretenimento: 'Divertissement', imobiliaria: 'Immobilier', logistica: 'Logistique', agronegocio: 'Agro-industrie' },
     boostAd: 'Boost Pub', watchAd: 'Voir Pub', price: 'Prix', monthlyRev: 'Revenu Mensuel',
+    monthlyRevenue: 'Revenu Mensuel', betterOfferAd: 'Meilleure Offre via Pub', newOffersAd: 'Nouvelles Offres via Pub',
+    buyConfirm: 'Confirmer l\'achat ?', buyFor: 'Acheter pour', roiEstimate: 'Retour estimé', sellFor: 'Vendre pour',
   },
   investments: {
     title: 'Investissements', market: 'Marché', portfolio: 'Portefeuille', history: 'Historique',
@@ -73,6 +75,7 @@ export default {
     buyNow: 'Acheter', payment: 'Paiement', paymentMethod: 'Mode de Paiement', creditCard: 'Carte de Crédit', paypal: 'PayPal',
     confirm: 'Confirmer Achat', purchaseHistory: 'Historique d\'Achats', noPurchases: 'Aucun achat',
     dailyReward: 'Récompense Quotidienne', dailyClaimed: 'Déjà réclamé aujourd\'hui', dailyClaim: 'Réclamer Quotidien', free: 'GRATUIT',
+    comeBackTomorrow: 'Revenez demain pour une nouvelle récompense !', doubleReward: 'Doubler la Récompense', purchaseSuccess: 'Achat Réalisé !', watchAdForReward: 'Voir une pub pour doubler',
   },
   profile: {
     title: 'Profil', language: 'Langue', personalData: 'Données Personnelles', paypalAccount: 'Compte PayPal (Prix Réels)',
@@ -103,6 +106,7 @@ export default {
     sounds: 'Sons', soundEffects: 'Effets Sonores', soundOn: 'Sons de clic activés', soundOff: 'Sons désactivés',
     security: 'Sécurité', biometric: 'Authentification Biométrique', biometricUnavailable: 'Biométrie non disponible', biometricEnabled: 'Login biométrique activé', biometricDisabled: 'Login biométrique désactivé',
     resetAccount: 'Réinitialiser le Compte', resetAccountDesc: 'Effacer toute la progression et recommencer', resetConfirmTitle: 'Réinitialiser ?', resetConfirmMsg: 'Cette action est irréversible !', resetConfirm: 'Oui, Réinitialiser', resetCancel: 'Annuler',
+    accountResetSuccess: 'Votre compte a été réinitialisé !', biometricHint: "Protéger l'accès au jeu",
   },
   coaching: {
     title: 'Coach IA', subtitle: 'Votre mentor business virtuel', welcome: 'Bonjour',

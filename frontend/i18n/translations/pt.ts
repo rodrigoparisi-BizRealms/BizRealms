@@ -174,6 +174,13 @@ export default {
     watchAd: 'Assistir Anúncio',
     price: 'Preço',
     monthlyRev: 'Receita Mensal',
+    monthlyRevenue: 'Receita Mensal',
+    betterOfferAd: 'Melhor Oferta via Anúncio',
+    newOffersAd: 'Novas Ofertas via Anúncio',
+    buyConfirm: 'Confirmar compra?',
+    buyFor: 'Comprar por',
+    roiEstimate: 'Retorno estimado',
+    sellFor: 'Vender por',
   },
   // Investments
   investments: {
@@ -277,6 +284,10 @@ export default {
     dailyClaimed: 'Já resgatado hoje',
     dailyClaim: 'Resgatar Diário',
     free: 'GRÁTIS',
+    comeBackTomorrow: 'Volte amanhã para nova recompensa!',
+    doubleReward: 'Dobrar Recompensa',
+    purchaseSuccess: 'Compra Realizada!',
+    watchAdForReward: 'Assistir anúncio para dobrar',
   },
   // Profile
   profile: {
@@ -369,6 +380,8 @@ export default {
     resetConfirmMsg: 'Esta ação é irreversível! Todo seu progresso será perdido.',
     resetConfirm: 'Sim, Zerar',
     resetCancel: 'Cancelar',
+    accountResetSuccess: 'Sua conta foi zerada com sucesso!',
+    biometricHint: 'Proteja o acesso ao jogo',
     requiredFields: 'Campos obrigatórios',
     fillAllFields: 'Preencha todos os campos',
     paypalRequiresData: 'Dados Pessoais Obrigatórios',

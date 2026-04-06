@@ -44,6 +44,8 @@ export default {
     sellConfirm: 'Vuoi vendere', createCompany: 'Crea Azienda', companyName: 'Nome', segment: 'Segmento',
     segments: { restaurante: 'Ristorante', loja: 'Negozio', tecnologia: 'Tecnologia', fabrica: 'Fabbrica', saude: 'Sanità', educacao: 'Istruzione', entretenimento: 'Intrattenimento', imobiliaria: 'Immobiliare', logistica: 'Logistica', agronegocio: 'Agroalimentare' },
     boostAd: 'Boost Pubblicità', watchAd: 'Guarda Pubblicità', price: 'Prezzo', monthlyRev: 'Entrate Mensili',
+    monthlyRevenue: 'Entrate Mensili', betterOfferAd: 'Migliore Offerta via Pubblicità', newOffersAd: 'Nuove Offerte via Pubblicità',
+    buyConfirm: 'Confermare acquisto?', buyFor: 'Comprare per', roiEstimate: 'Ritorno stimato', sellFor: 'Vendere per',
   },
   investments: {
     title: 'Investimenti', market: 'Mercato', portfolio: 'Portafoglio', history: 'Storico',
@@ -73,6 +75,7 @@ export default {
     buyNow: 'Compra', payment: 'Pagamento', paymentMethod: 'Metodo di Pagamento', creditCard: 'Carta di Credito', paypal: 'PayPal',
     confirm: 'Conferma Acquisto', purchaseHistory: 'Storico Acquisti', noPurchases: 'Nessun acquisto',
     dailyReward: 'Ricompensa Giornaliera', dailyClaimed: 'Già riscattato oggi', dailyClaim: 'Riscatta Giornaliero', free: 'GRATIS',
+    comeBackTomorrow: 'Torna domani per una nuova ricompensa!', doubleReward: 'Raddoppia Ricompensa', purchaseSuccess: 'Acquisto Completato!', watchAdForReward: 'Guarda pubblicità per raddoppiare',
   },
   profile: {
     title: 'Profilo', language: 'Lingua', personalData: 'Dati Personali', paypalAccount: 'Conto PayPal (Premi Reali)',
@@ -103,6 +106,7 @@ export default {
     sounds: 'Suoni', soundEffects: 'Effetti Sonori', soundOn: 'Suoni dei clic attivati', soundOff: 'Suoni disattivati',
     security: 'Sicurezza', biometric: 'Autenticazione Biometrica', biometricUnavailable: 'Biometria non disponibile', biometricEnabled: 'Login biometrico attivato', biometricDisabled: 'Login biometrico disattivato',
     resetAccount: 'Azzera Account', resetAccountDesc: 'Cancella tutti i progressi e ricomincia', resetConfirmTitle: 'Azzerare Account?', resetConfirmMsg: 'Questa azione è irreversibile!', resetConfirm: 'Sì, Azzera', resetCancel: 'Annulla',
+    accountResetSuccess: 'Il tuo account è stato azzerato!', biometricHint: "Proteggi l'accesso al gioco",
   },
   coaching: {
     title: 'Coach IA', subtitle: 'Il tuo mentor virtuale di business', welcome: 'Ciao',
