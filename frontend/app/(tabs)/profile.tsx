@@ -778,6 +778,79 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
+        {/* Music & Entertainment Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="musical-notes" size={22} color="#1DB954" />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.musicEntertainment') || 'Música & Entretenimento'}</Text>
+          </View>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12, paddingHorizontal: 4 }}>
+            {t('profile.musicDesc') || 'Ouça suas músicas favoritas enquanto joga!'}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              style={{
+                flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
+                backgroundColor: '#1DB954', borderRadius: 14, padding: 14,
+              }}
+              onPress={async () => {
+                const { Linking } = require('react-native');
+                try {
+                  const canOpen = await Linking.canOpenURL('spotify://');
+                  if (canOpen) {
+                    await Linking.openURL('spotify://');
+                  } else {
+                    await Linking.openURL('https://open.spotify.com');
+                  }
+                } catch {
+                  await Linking.openURL('https://open.spotify.com');
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="logo-tux" size={22} color="#fff" />
+                <Text style={{ position: 'absolute', color: '#fff', fontSize: 18, fontWeight: 'bold' }}>♫</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Spotify</Text>
+                <Text style={{ color: '#ffffffaa', fontSize: 11 }}>{t('profile.openApp') || 'Abrir app'}</Text>
+              </View>
+              <Ionicons name="open-outline" size={18} color="#ffffffaa" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
+                backgroundColor: '#FF0000', borderRadius: 14, padding: 14,
+              }}
+              onPress={async () => {
+                const { Linking } = require('react-native');
+                try {
+                  const canOpen = await Linking.canOpenURL('youtubemusic://');
+                  if (canOpen) {
+                    await Linking.openURL('youtubemusic://');
+                  } else {
+                    await Linking.openURL('https://music.youtube.com');
+                  }
+                } catch {
+                  await Linking.openURL('https://music.youtube.com');
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#cc0000', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="play" size={22} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>YT Music</Text>
+                <Text style={{ color: '#ffffffaa', fontSize: 11 }}>{t('profile.openApp') || 'Abrir app'}</Text>
+              </View>
+              <Ionicons name="open-outline" size={18} color="#ffffffaa" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Biometric / Security Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
