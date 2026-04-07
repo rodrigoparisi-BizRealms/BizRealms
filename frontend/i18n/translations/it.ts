@@ -154,4 +154,5 @@ export default {
   notifications: { title: 'Notifiche', markAllRead: 'Segna tutto come letto', empty: 'Nessuna notifica', unread: 'non lette' },
   payments: { processing: 'Elaborazione pagamento...', success: 'Pagamento confermato!', cancelled: 'Pagamento annullato', error: 'Errore di pagamento', openCheckout: 'Paga con Stripe', realPayment: 'Pagamento reale via Stripe', securePayment: 'Pagamento sicuro elaborato da Stripe', checkingPayment: 'Verifica pagamento...' },
   currency: { symbol: '€', code: 'EUR' },
+  events: { tapToDecide: 'Tocca per decidere il tuo destino' },
 };

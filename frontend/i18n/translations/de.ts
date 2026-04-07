@@ -154,4 +154,5 @@ export default {
   notifications: { title: 'Benachrichtigungen', markAllRead: 'Alle als gelesen markieren', empty: 'Keine Benachrichtigungen', unread: 'ungelesen' },
   payments: { processing: 'Zahlung wird verarbeitet...', success: 'Zahlung bestätigt!', cancelled: 'Zahlung abgebrochen', error: 'Zahlungsfehler', openCheckout: 'Mit Stripe bezahlen', realPayment: 'Echte Zahlung über Stripe', securePayment: 'Sichere Zahlung über Stripe', checkingPayment: 'Zahlung wird überprüft...' },
   currency: { symbol: '€', code: 'EUR' },
+  events: { tapToDecide: 'Tippe, um dein Schicksal zu entscheiden' },
 };

@@ -158,4 +158,5 @@ export default {
   payments: { processing: '支付处理中...', success: '支付成功！', cancelled: '支付已取消', error: '支付错误', openCheckout: '使用Stripe支付', realPayment: '通过Stripe真实支付', securePayment: 'Stripe安全支付', checkingPayment: '验证支付中...' },
   currency: { symbol: '¥', code: 'CNY' },
   legal: { terms: '使用条款', privacy: '隐私政策' },
+  events: { tapToDecide: '点击决定你的命运' },
 };

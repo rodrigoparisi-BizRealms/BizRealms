@@ -669,4 +669,7 @@ export default {
     symbol: '$',
     code: 'BRL',
   },
+  events: {
+    tapToDecide: 'Toque para decidir seu destino',
+  },
 };

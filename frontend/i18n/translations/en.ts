@@ -652,4 +652,7 @@ export default {
     symbol: '$',
     code: 'USD',
   },
+  events: {
+    tapToDecide: 'Tap to decide your fate',
+  },
 };
