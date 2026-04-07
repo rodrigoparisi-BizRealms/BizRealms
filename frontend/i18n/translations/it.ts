@@ -153,6 +153,8 @@ export default {
     loading: 'Caricamento...', error: 'Errore', success: 'Successo', confirm: 'Conferma', cancel: 'Annulla',
     save: 'Salva', saving: 'Salvataggio...', back: 'Indietro', close: 'Chiudi', yes: 'Sì', no: 'No',
     description: 'Descrizione', amount: 'Importo', remove: 'Rimuovi', delete: 'Rimuovi', add: 'Aggiungi',
+    companies: 'Aziende', investments: 'Investimenti', assets: 'Beni', education: 'Istruzione',
+    certifications: 'Certificazioni', jobs: 'Lavori', money: 'Denaro',
   },
   achievements: { title: 'Traguardi', subtitle: 'Sblocca traguardi e guadagna ricompense', unlocked: 'Sbloccato', locked: 'Bloccato', progress: 'Progresso' },
   notifications: { title: 'Notifiche', markAllRead: 'Segna tutto come letto', empty: 'Nessuna notifica', unread: 'non lette' },

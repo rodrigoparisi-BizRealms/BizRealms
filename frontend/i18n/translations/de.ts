@@ -153,6 +153,8 @@ export default {
     loading: 'Laden...', error: 'Fehler', success: 'Erfolg', confirm: 'Bestätigen', cancel: 'Abbrechen',
     save: 'Speichern', saving: 'Speichern...', back: 'Zurück', close: 'Schließen', yes: 'Ja', no: 'Nein',
     description: 'Beschreibung', amount: 'Betrag', remove: 'Entfernen', delete: 'Entfernen', add: 'Hinzufügen',
+    companies: 'Unternehmen', investments: 'Investitionen', assets: 'Vermögenswerte', education: 'Bildung',
+    certifications: 'Zertifizierungen', jobs: 'Jobs', money: 'Geld',
   },
   achievements: { title: 'Erfolge', subtitle: 'Schalte Erfolge frei und verdiene Belohnungen', unlocked: 'Freigeschaltet', locked: 'Gesperrt', progress: 'Fortschritt' },
   notifications: { title: 'Benachrichtigungen', markAllRead: 'Alle als gelesen markieren', empty: 'Keine Benachrichtigungen', unread: 'ungelesen' },

@@ -153,6 +153,8 @@ export default {
     loading: 'Cargando...', error: 'Error', success: 'Éxito', confirm: 'Confirmar', cancel: 'Cancelar',
     save: 'Guardar', saving: 'Guardando...', back: 'Volver', close: 'Cerrar', yes: 'Sí', no: 'No',
     description: 'Descripción', amount: 'Monto', remove: 'Eliminar', delete: 'Eliminar', add: 'Agregar',
+    companies: 'Empresas', investments: 'Inversiones', assets: 'Activos', education: 'Educación',
+    certifications: 'Certificaciones', jobs: 'Empleos', money: 'Dinero',
   },
   achievements: { title: 'Logros', subtitle: 'Desbloquea logros y gana recompensas', unlocked: 'Desbloqueado', locked: 'Bloqueado', progress: 'Progreso' },
   notifications: { title: 'Notificaciones', markAllRead: 'Marcar todo como leído', empty: 'Sin notificaciones', unread: 'no leídas' },

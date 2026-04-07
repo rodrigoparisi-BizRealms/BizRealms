@@ -592,6 +592,13 @@ export default {
     month: 'mo',
     months: 'months',
     skills: 'Skills',
+    companies: 'Companies',
+    investments: 'Investments',
+    assets: 'Assets',
+    education: 'Education',
+    certifications: 'Certifications',
+    jobs: 'Jobs',
+    money: 'Money',
   },
   legal: {
     terms: 'Terms of Use',

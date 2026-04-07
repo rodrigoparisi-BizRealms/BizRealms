@@ -608,6 +608,13 @@ export default {
     month: 'mês',
     months: 'meses',
     skills: 'Habilidades',
+    companies: 'Empresas',
+    investments: 'Investimentos',
+    assets: 'Ativos',
+    education: 'Educação',
+    certifications: 'Certificações',
+    jobs: 'Empregos',
+    money: 'Dinheiro',
   },
   legal: {
     terms: 'Termos de Uso',

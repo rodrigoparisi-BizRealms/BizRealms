@@ -153,6 +153,8 @@ export default {
     loading: 'Chargement...', error: 'Erreur', success: 'Succès', confirm: 'Confirmer', cancel: 'Annuler',
     save: 'Enregistrer', saving: 'Enregistrement...', back: 'Retour', close: 'Fermer', yes: 'Oui', no: 'Non',
     description: 'Description', amount: 'Montant', remove: 'Supprimer', delete: 'Supprimer', add: 'Ajouter',
+    companies: 'Entreprises', investments: 'Investissements', assets: 'Actifs', education: 'Éducation',
+    certifications: 'Certifications', jobs: 'Emplois', money: 'Argent',
   },
   achievements: { title: 'Succès', subtitle: 'Débloquez des succès et gagnez des récompenses', unlocked: 'Débloqué', locked: 'Verrouillé', progress: 'Progrès' },
   notifications: { title: 'Notifications', markAllRead: 'Tout marquer comme lu', empty: 'Aucune notification', unread: 'non lues' },

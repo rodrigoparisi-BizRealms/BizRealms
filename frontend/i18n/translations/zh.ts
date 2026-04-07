@@ -156,6 +156,8 @@ export default {
     loading: '加载中...', error: '错误', success: '成功', confirm: '确认', cancel: '取消',
     save: '保存', saving: '保存中...', back: '返回', close: '关闭', yes: '是', no: '否',
     description: '描述', amount: '金额', remove: '移除', delete: '删除', add: '添加',
+    companies: '公司', investments: '投资', assets: '资产', education: '教育',
+    certifications: '认证', jobs: '工作', money: '金钱',
   },
   achievements: { title: '成就', subtitle: '解锁成就赢取奖励', unlocked: '已解锁', locked: '未解锁', progress: '进度' },
   notifications: { title: '通知', markAllRead: '全部标为已读', empty: '暂无通知', unread: '未读' },
