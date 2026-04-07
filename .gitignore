@@ -31,3 +31,4 @@ test_result.md
 # IDE
 .vscode/
 .idea/
+frontend/.metro-cache/
