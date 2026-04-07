@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -101,26 +100,11 @@ export default function PersonalitySelection() {
       // Refresh user data - this will update onboarding_completed
       console.log('[Personality] Refreshing user data...');
       await refreshUser();
-      console.log('[Personality] User data refreshed');
+      console.log('[Personality] User data refreshed, navigating to home...');
 
-      // Don't navigate here - let index.tsx handle it based on onboarding_completed
-      // The refreshUser above will trigger the useEffect in index.tsx
-      
-      // Show success
-      Alert.alert(
-        'Personagem Criado! 🎉',
-        `Bem-vindo ao BizRealms!\n\nDinheiro inicial: $ ${response.data.money.toLocaleString('en-US')}`,
-        [
-          {
-            text: 'Começar!',
-            onPress: () => {
-              // Force navigation after user confirms
-              router.replace('/(tabs)/home');
-            }
-          }
-        ]
-      );
+      // Navigate directly to home - don't rely on Alert callback
       setLoading(false);
+      router.replace('/(tabs)/home');
     } catch (error: any) {
       console.error('[Personality] Error completing profile:', error);
       console.error('[Personality] Error details:', error.response?.data);
