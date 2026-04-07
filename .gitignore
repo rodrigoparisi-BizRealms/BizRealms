@@ -1,82 +1,33 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# IDE and editors
-.idea/
-.vscode/
-
-# Dependencies
+# Node modules
 node_modules/
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+frontend/node_modules/
 
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Production builds
-/build
-dist/
-dist
-
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
-
-# Logs and debug files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-dump.rdb
-
-# System files
-.DS_Store
-*.pem
+# Environment files (will be configured on Railway)
+backend/.env
+frontend/.env
 
 # Python
 __pycache__/
-*pyc*
-venv/
+*.pyc
+*.pyo
 .venv/
 
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
+# Expo
+frontend/.expo/
+frontend/dist/
+frontend/web-build/
 
-# Deployment
-.vercel
+# OS
+.DS_Store
+Thumbs.db
 
-# Data and databases
-agenthub/agents/youtube/db
+# Logs
+*.log
 
-# Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
+# Memory/test files (internal)
+memory/
+test_result.md
 
-# Build caches
-.cache/
-
-memory/test_credentials.md
-
-# Mobile development
-android-sdk/
+# IDE
+.vscode/
+.idea/
