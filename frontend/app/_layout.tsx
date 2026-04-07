@@ -22,14 +22,16 @@ function RootLayout() {
             <LanguageProvider>
               <AuthProvider>
                 <AdProvider>
-                  <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="index" />
-                    <Stack.Screen name="(auth)" />
-                    <Stack.Screen name="(onboarding)" />
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="legal" />
-                    <Stack.Screen name="player-profile" />
-                  </Stack>
+                  <MusicProvider>
+                    <Stack screenOptions={{ headerShown: false }}>
+                      <Stack.Screen name="index" />
+                      <Stack.Screen name="(auth)" />
+                      <Stack.Screen name="(onboarding)" />
+                      <Stack.Screen name="(tabs)" />
+                      <Stack.Screen name="legal" />
+                      <Stack.Screen name="player-profile" />
+                    </Stack>
+                  </MusicProvider>
                 </AdProvider>
               </AuthProvider>
             </LanguageProvider>
