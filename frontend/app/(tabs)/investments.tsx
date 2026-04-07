@@ -25,6 +25,12 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { useSound } from '../../context/SoundContext';
 import { useTheme } from '../../context/ThemeContext';
 
+// Safe number formatting helper to prevent crashes on undefined/NaN values
+const safeFixed = (val: any, digits: number = 2): string => {
+  const num = Number(val);
+  return isNaN(num) ? '0' : num.toFixed(digits);
+};
+
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -168,12 +174,6 @@ export default function Investments() {
   const { playClick, playCoin } = useSound();
   const { t, formatMoney: fmtCurrency } = useLanguage();
   const { colors } = useTheme();
-  
-  // Safe number formatting helper to prevent crashes
-  const safeFixed = (val: any, digits: number = 2): string => {
-    const num = Number(val);
-    return isNaN(num) ? '0' : num.toFixed(digits);
-  };
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
