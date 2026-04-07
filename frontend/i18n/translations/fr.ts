@@ -31,6 +31,10 @@ export default {
     payBillTitle: 'Payer Facture', payAmount: 'Montant (vide = total)', loanType: 'Type de Prêt',
     loanAmount: 'Montant', loanMonths: 'Mensualités (mois)', simulation: 'Simulation', installment: 'Mensualité estimée',
     totalToPay: 'Total à payer', trips: 'Voyages Disponibles',
+    noCollateral: 'Sans Garantie', withCollateral: 'Avec Garantie', month: 'mois', upTo: "jusqu'à",
+    selectCollateral: 'Sélectionnez la garantie', noAssetsForCollateral: "Vous n'avez pas de biens à utiliser comme garantie. Achetez d'abord des biens immobiliers !",
+    alreadyPledged: 'Déjà utilisé comme garantie', maxLoan: 'Prêt max.', value: 'Valeur', maximum: 'Maximum',
+    amount: 'Montant', installments: 'Mensualités (mois)', estimatedPayment: 'Mensualité estimée',
   },
   companies: {
     title: 'Entreprises', mine: 'Miennes', offers: 'Offres', buy: 'Acheter', create: 'Créer', sell: 'Vendre pour',

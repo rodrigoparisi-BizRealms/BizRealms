@@ -19,7 +19,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polyline } from 'react-native-svg';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-  const { colors } = useTheme();
 import { useLanguage } from '../../context/LanguageContext';
 import { SkeletonList } from '../../components/SkeletonLoader';
 import { useHaptics } from '../../hooks/useHaptics';
@@ -168,6 +167,7 @@ export default function Investments() {
   const { trigger: haptic } = useHaptics();
   const { playClick, playCoin } = useSound();
   const { t, formatMoney: fmtCurrency } = useLanguage();
+  const { colors } = useTheme();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);

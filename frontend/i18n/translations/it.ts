@@ -31,6 +31,10 @@ export default {
     payBillTitle: 'Paga Fattura', payAmount: 'Importo (vuoto = totale)', loanType: 'Tipo di Prestito',
     loanAmount: 'Importo', loanMonths: 'Rate (mesi)', simulation: 'Simulazione', installment: 'Rata stimata',
     totalToPay: 'Totale da pagare', trips: 'Viaggi Disponibili',
+    noCollateral: 'Senza Garanzia', withCollateral: 'Con Garanzia', month: 'mese', upTo: 'fino a',
+    selectCollateral: 'Seleziona la garanzia', noAssetsForCollateral: 'Non hai beni da usare come garanzia. Compra prima immobili o articoli di lusso!',
+    alreadyPledged: 'Già utilizzato come garanzia', maxLoan: 'Prestito max.', value: 'Valore', maximum: 'Massimo',
+    amount: 'Importo', installments: 'Rate (mesi)', estimatedPayment: 'Rata stimata',
   },
   companies: {
     title: 'Aziende', mine: 'Mie', offers: 'Offerte', buy: 'Compra', create: 'Crea', sell: 'Vendi per',

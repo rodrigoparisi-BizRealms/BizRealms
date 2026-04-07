@@ -31,6 +31,10 @@ export default {
     payBillTitle: '支付账单', payAmount: '支付金额（空=全额）', loanType: '贷款类型',
     loanAmount: '金额', loanMonths: '分期（月）', simulation: '模拟', installment: '预估分期',
     totalToPay: '总还款', trips: '可用旅行',
+    noCollateral: '无担保', withCollateral: '有担保', month: '月', upTo: '最多',
+    selectCollateral: '选择担保资产', noAssetsForCollateral: '你没有可用作担保的资产。先购买房产或奢侈品！',
+    alreadyPledged: '已用作担保', maxLoan: '最大贷款', value: '价值', maximum: '最大值',
+    amount: '金额', installments: '分期（月）', estimatedPayment: '预估分期付款',
   },
   companies: {
     title: '企业', mine: '我的', offers: '报价', buy: '购买', create: '创建', sell: '出售',

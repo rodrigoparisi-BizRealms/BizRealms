@@ -51,6 +51,18 @@ async def get_bank_account(current_user: dict = Depends(get_current_user)):
 
     total_debt = sum(l.get('remaining_balance', 0) for l in loans)
     
+    # Get user assets available as collateral
+    user_assets = await db.user_assets.find({"user_id": current_user['id']}).to_list(200)
+    # Filter out assets already pledged as collateral
+    pledged_ids = {l.get('guarantee_asset_id') for l in loans if l.get('guarantee_asset_id')}
+    collateral_assets = []
+    for a in user_assets:
+        if '_id' in a: del a['_id']
+        if isinstance(a.get('purchased_at'), datetime): a['purchased_at'] = a['purchased_at'].isoformat()
+        a['is_pledged'] = a['id'] in pledged_ids
+        a['max_loan_value'] = round(a.get('current_value', a.get('purchase_price', 0)) * 0.8, 2)
+        collateral_assets.append(a)
+    
     # Miles redemption catalog
     trips = [
         {"id": "trip_nacional", "name": "Viagem Nacional", "description": "Passagem aérea ida e volta", "miles_cost": 5000, "xp_reward": 2000, "icon": "airplane"},
@@ -69,6 +81,7 @@ async def get_bank_account(current_user: dict = Depends(get_current_user)):
         "loans": loans,
         "total_debt": round(total_debt, 2),
         "available_trips": trips,
+        "collateral_assets": collateral_assets,
         "loan_limits": {
             "small_no_guarantee": min(50000, 5000 + user.get('level', 1) * 2000),
             "large_with_guarantee": 500000,

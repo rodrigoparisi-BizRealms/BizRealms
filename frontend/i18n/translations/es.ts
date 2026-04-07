@@ -31,6 +31,10 @@ export default {
     payBillTitle: 'Pagar Factura', payAmount: 'Monto a pagar (vacío = total)', loanType: 'Tipo de Préstamo',
     loanAmount: 'Monto', loanMonths: 'Cuotas (meses)', simulation: 'Simulación', installment: 'Cuota estimada',
     totalToPay: 'Total a pagar', trips: 'Viajes Disponibles',
+    noCollateral: 'Sin Garantía', withCollateral: 'Con Garantía', month: 'mes', upTo: 'hasta',
+    selectCollateral: 'Seleccione el bien como garantía', noAssetsForCollateral: 'No tienes bienes para usar como garantía. ¡Compra inmuebles o artículos de lujo primero!',
+    alreadyPledged: 'Ya usado como garantía', maxLoan: 'Préstamo máx.', value: 'Valor', maximum: 'Máximo',
+    amount: 'Monto', installments: 'Cuotas (meses)', estimatedPayment: 'Cuota estimada',
   },
   companies: {
     title: 'Empresas', mine: 'Mías', offers: 'Ofertas', buy: 'Comprar', create: 'Crear', sell: 'Vender por',

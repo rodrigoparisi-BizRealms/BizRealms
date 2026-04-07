@@ -31,6 +31,10 @@ export default {
     payBillTitle: 'Rechnung zahlen', payAmount: 'Betrag (leer = gesamt)', loanType: 'Kreditart',
     loanAmount: 'Betrag', loanMonths: 'Raten (Monate)', simulation: 'Simulation', installment: 'Gesch. Rate',
     totalToPay: 'Gesamtzahlung', trips: 'Verfügbare Reisen',
+    noCollateral: 'Ohne Sicherheit', withCollateral: 'Mit Sicherheit', month: 'Mo', upTo: 'bis zu',
+    selectCollateral: 'Sicherheit auswählen', noAssetsForCollateral: 'Du hast keine Vermögenswerte als Sicherheit. Kaufe zuerst Immobilien oder Luxusartikel!',
+    alreadyPledged: 'Bereits verpfändet', maxLoan: 'Max. Kredit', value: 'Wert', maximum: 'Maximum',
+    amount: 'Betrag', installments: 'Raten (Monate)', estimatedPayment: 'Geschätzte Rate',
   },
   companies: {
     title: 'Firmen', mine: 'Meine', offers: 'Angebote', buy: 'Kaufen', create: 'Gründen', sell: 'Verkaufen für',

@@ -60,6 +60,7 @@ export default function Bank() {
   const [loanAmount, setLoanAmount] = useState('');
   const [loanType, setLoanType] = useState<'small' | 'large'>('small');
   const [loanMonths, setLoanMonths] = useState('12');
+  const [selectedCollateral, setSelectedCollateral] = useState<string | null>(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -143,15 +144,21 @@ export default function Bank() {
     const amount = parseFloat(loanAmount);
     const months = parseInt(loanMonths) || 12;
     if (!amount || amount <= 0) { showAlert(t('general.error'), t('bank.invalidValue')); return; }
+    if (loanType === 'large' && !selectedCollateral) {
+      showAlert(t('general.error'), t('bank.selectCollateral'));
+      return;
+    }
     setActionLoading(true);
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/bank/loan/apply`, {
         amount, type: loanType, months,
+        guarantee_asset_id: loanType === 'large' ? selectedCollateral : undefined,
       }, { headers });
       showAlert(t('bank.loanApproved'), r.data.message);
       play('coin');
       setShowLoanModal(false);
       setLoanAmount('');
+      setSelectedCollateral(null);
       await loadBankData(); await refreshUser();
     } catch (e: any) {
       showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
@@ -651,82 +658,157 @@ export default function Bank() {
       {/* Loan Modal */}
       <Modal visible={showLoanModal} animationType="slide" transparent onRequestClose={() => setShowLoanModal(false)}>
         <View style={s.modalOverlay}>
-          <View style={s.modal}>
+          <View style={[s.modal, { maxHeight: '90%' }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Solicitar Empréstimo</Text>
-              <TouchableOpacity onPress={() => setShowLoanModal(false)}>
+              <Text style={s.modalTitle}>{t('bank.requestLoan')}</Text>
+              <TouchableOpacity onPress={() => { setShowLoanModal(false); setSelectedCollateral(null); }}>
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
             </View>
 
-            <Text style={s.inputLabel}>{t('bank.loanType')}</Text>
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-              <TouchableOpacity
-                style={[s.typeBtn, loanType === 'small' && s.typeBtnActive]}
-                onPress={() => setLoanType('small')}
-              >
-                <Ionicons name="document-text" size={20} color={loanType === 'small' ? '#fff' : '#FF9800'} />
-                <Text style={[s.typeBtnText, loanType === 'small' && { color: '#fff' }]}>Sem Garantia</Text>
-                <Text style={[s.typeBtnSub, loanType === 'small' && { color: '#ffffffaa' }]}>3.5%/mês • até 24x</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.typeBtn, loanType === 'large' && s.typeBtnActiveLarge]}
-                onPress={() => setLoanType('large')}
-              >
-                <Ionicons name="shield-checkmark" size={20} color={loanType === 'large' ? '#fff' : '#4CAF50'} />
-                <Text style={[s.typeBtnText, loanType === 'large' && { color: '#fff' }]}>Com Garantia</Text>
-                <Text style={[s.typeBtnSub, loanType === 'large' && { color: '#ffffffaa' }]}>2%/mês • até 60x</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={s.modalInfo}>
-              Máximo: {formatMoney(loanType === 'small' ? (loanLimits.small_no_guarantee || 0) : (loanLimits.large_with_guarantee || 0))}
-            </Text>
-
-            <Text style={s.inputLabel}>Valor ($)</Text>
-            <TextInput
-              style={s.input}
-              placeholder="Ex: 20000"
-              placeholderTextColor="#555"
-              keyboardType="numeric"
-              value={loanAmount}
-              onChangeText={setLoanAmount}
-            />
-            <Text style={s.inputLabel}>Parcelas (meses)</Text>
-            <TextInput
-              style={s.input}
-              placeholder="Ex: 12"
-              placeholderTextColor="#555"
-              keyboardType="numeric"
-              value={loanMonths}
-              onChangeText={setLoanMonths}
-            />
-
-            {loanAmount ? (
-              <View style={s.loanPreview}>
-                <Text style={s.loanPreviewTitle}>{t('bank.simulation')}:</Text>
-                <Text style={s.loanPreviewText}>
-                  Parcela estimada: {formatMoney(
-                    (parseFloat(loanAmount) * Math.pow(1 + (loanType === 'small' ? 0.035 : 0.02), parseInt(loanMonths) || 12)) / (parseInt(loanMonths) || 12)
-                  )}
-                </Text>
-                <Text style={s.loanPreviewText}>
-                  Total a pagar: {formatMoney(
-                    parseFloat(loanAmount) * Math.pow(1 + (loanType === 'small' ? 0.035 : 0.02), parseInt(loanMonths) || 12)
-                  )}
-                </Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={s.inputLabel}>{t('bank.loanType')}</Text>
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                <TouchableOpacity
+                  style={[s.typeBtn, loanType === 'small' && s.typeBtnActive]}
+                  onPress={() => { setLoanType('small'); setSelectedCollateral(null); }}
+                >
+                  <Ionicons name="document-text" size={20} color={loanType === 'small' ? '#fff' : '#FF9800'} />
+                  <Text style={[s.typeBtnText, loanType === 'small' && { color: '#fff' }]}>{t('bank.noCollateral')}</Text>
+                  <Text style={[s.typeBtnSub, loanType === 'small' && { color: '#ffffffaa' }]}>3.5%/{t('bank.month')} • {t('bank.upTo')} 24x</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.typeBtn, loanType === 'large' && s.typeBtnActiveLarge]}
+                  onPress={() => setLoanType('large')}
+                >
+                  <Ionicons name="shield-checkmark" size={20} color={loanType === 'large' ? '#fff' : '#4CAF50'} />
+                  <Text style={[s.typeBtnText, loanType === 'large' && { color: '#fff' }]}>{t('bank.withCollateral')}</Text>
+                  <Text style={[s.typeBtnSub, loanType === 'large' && { color: '#ffffffaa' }]}>2%/{t('bank.month')} • {t('bank.upTo')} 60x</Text>
+                </TouchableOpacity>
               </View>
-            ) : null}
 
-            <TouchableOpacity
-              style={[s.modalBtn, { backgroundColor: '#FF9800' }, actionLoading && s.disabledBtn]}
-              onPress={handleApplyLoan}
-              disabled={actionLoading}
-            >
-              {actionLoading ? <ActivityIndicator color="#fff" /> : (
-                <Text style={s.modalBtnText}>Solicitar Empréstimo</Text>
+              {/* Collateral selection for large loans */}
+              {loanType === 'large' && (
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={[s.inputLabel, { marginBottom: 8 }]}>
+                    <Ionicons name="shield-checkmark" size={14} color="#4CAF50" /> {t('bank.selectCollateral')}
+                  </Text>
+                  {(bankData?.collateral_assets || []).length === 0 ? (
+                    <View style={{ backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16, alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="alert-circle" size={32} color="#FF9800" />
+                      <Text style={{ color: '#aaa', textAlign: 'center', fontSize: 13 }}>
+                        {t('bank.noAssetsForCollateral')}
+                      </Text>
+                    </View>
+                  ) : (
+                    (bankData?.collateral_assets || []).map((asset: any) => {
+                      const isSelected = selectedCollateral === asset.id;
+                      const isPledged = asset.is_pledged;
+                      return (
+                        <TouchableOpacity
+                          key={asset.id}
+                          style={[
+                            {
+                              flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
+                              backgroundColor: isSelected ? '#1B5E20' : '#2a2a2a', marginBottom: 8,
+                              borderWidth: isSelected ? 2 : 1,
+                              borderColor: isSelected ? '#4CAF50' : '#3a3a3a',
+                              opacity: isPledged ? 0.4 : 1,
+                            },
+                          ]}
+                          onPress={() => {
+                            if (!isPledged) {
+                              setSelectedCollateral(isSelected ? null : asset.id);
+                            }
+                          }}
+                          disabled={isPledged}
+                        >
+                          <View style={{
+                            width: 24, height: 24, borderRadius: 12,
+                            borderWidth: 2, borderColor: isSelected ? '#4CAF50' : '#666',
+                            backgroundColor: isSelected ? '#4CAF50' : 'transparent',
+                            justifyContent: 'center', alignItems: 'center', marginRight: 12,
+                          }}>
+                            {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
+                          </View>
+                          <Ionicons name={(asset.icon || 'cube') as any} size={24} color={isSelected ? '#81C784' : '#FF9800'} style={{ marginRight: 10 }} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{asset.name}</Text>
+                            <Text style={{ color: '#aaa', fontSize: 11, marginTop: 2 }}>
+                              {asset.category} • {t('bank.value')}: {formatMoney(asset.current_value || asset.purchase_price)}
+                            </Text>
+                            {isPledged ? (
+                              <Text style={{ color: '#f44336', fontSize: 11, marginTop: 2, fontWeight: 'bold' }}>
+                                {t('bank.alreadyPledged')}
+                              </Text>
+                            ) : (
+                              <Text style={{ color: '#4CAF50', fontSize: 11, marginTop: 2 }}>
+                                {t('bank.maxLoan')}: {formatMoney(asset.max_loan_value)}
+                              </Text>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
+                </View>
               )}
-            </TouchableOpacity>
+
+              <Text style={s.modalInfo}>
+                {t('bank.maximum')}: {formatMoney(
+                  loanType === 'small' 
+                    ? (loanLimits.small_no_guarantee || 0) 
+                    : selectedCollateral 
+                      ? (bankData?.collateral_assets?.find((a: any) => a.id === selectedCollateral)?.max_loan_value || 0)
+                      : 0
+                )}
+              </Text>
+
+              <Text style={s.inputLabel}>{t('bank.amount')} ($)</Text>
+              <TextInput
+                style={s.input}
+                placeholder="Ex: 20000"
+                placeholderTextColor="#555"
+                keyboardType="numeric"
+                value={loanAmount}
+                onChangeText={setLoanAmount}
+              />
+              <Text style={s.inputLabel}>{t('bank.installments')}</Text>
+              <TextInput
+                style={s.input}
+                placeholder="Ex: 12"
+                placeholderTextColor="#555"
+                keyboardType="numeric"
+                value={loanMonths}
+                onChangeText={setLoanMonths}
+              />
+
+              {loanAmount ? (
+                <View style={s.loanPreview}>
+                  <Text style={s.loanPreviewTitle}>{t('bank.simulation')}:</Text>
+                  <Text style={s.loanPreviewText}>
+                    {t('bank.estimatedPayment')}: {formatMoney(
+                      (parseFloat(loanAmount) * Math.pow(1 + (loanType === 'small' ? 0.035 : 0.02), parseInt(loanMonths) || 12)) / (parseInt(loanMonths) || 12)
+                    )}
+                  </Text>
+                  <Text style={s.loanPreviewText}>
+                    {t('bank.totalToPay')}: {formatMoney(
+                      parseFloat(loanAmount) * Math.pow(1 + (loanType === 'small' ? 0.035 : 0.02), parseInt(loanMonths) || 12)
+                    )}
+                  </Text>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                style={[s.modalBtn, { backgroundColor: loanType === 'large' && !selectedCollateral ? '#555' : '#FF9800' }, actionLoading && s.disabledBtn]}
+                onPress={handleApplyLoan}
+                disabled={actionLoading || (loanType === 'large' && !selectedCollateral)}
+              >
+                {actionLoading ? <ActivityIndicator color="#fff" /> : (
+                  <Text style={s.modalBtnText}>{t('bank.requestLoan')}</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
