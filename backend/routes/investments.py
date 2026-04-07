@@ -386,19 +386,23 @@ async def get_portfolio(current_user: dict = Depends(get_current_user)):
         asset = await db.investment_assets.find_one({"id": h['asset_id']})
         if asset:
             current_price = get_current_price(asset)
-            invested = h['quantity'] * h['avg_price']
-            current_value = h['quantity'] * current_price
-            profit = current_value - invested
-            profit_pct = (profit / invested * 100) if invested > 0 else 0
-            
-            h['current_price'] = round(current_price, 2)
-            h['invested'] = round(invested, 2)
-            h['current_value'] = round(current_value, 2)
-            h['profit'] = round(profit, 2)
-            h['profit_pct'] = round(profit_pct, 2)
-            
-            total_invested += invested
-            total_current += current_value
+        else:
+            # Fallback: use avg_price if asset not found
+            current_price = h.get('avg_price', 0)
+        
+        invested = h.get('quantity', 0) * h.get('avg_price', 0)
+        current_value = h.get('quantity', 0) * current_price
+        profit = current_value - invested
+        profit_pct = (profit / invested * 100) if invested > 0 else 0
+        
+        h['current_price'] = round(current_price, 2)
+        h['invested'] = round(invested, 2)
+        h['current_value'] = round(current_value, 2)
+        h['profit'] = round(profit, 2)
+        h['profit_pct'] = round(profit_pct, 2)
+        
+        total_invested += invested
+        total_current += current_value
         
         portfolio.append(h)
     
