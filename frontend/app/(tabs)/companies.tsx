@@ -282,7 +282,7 @@ export default function Companies() {
             <View style={s.revenueCard}>
               <Text style={s.revenueLabel}>{t('companies.revenue')}</Text>
               <Text style={s.revenueValue}>{formatMoney(totalRevenue)}/{t('general.month')}</Text>
-              {hasBoostActive && <View style={s.boostBadge}><Ionicons name="flash" size={14} color="#000" /><Text style={s.boostText}>2x BOOST ATIVO</Text></View>}
+              {hasBoostActive && <View style={s.boostBadge}><Ionicons name="flash" size={14} color="#000" /><Text style={s.boostText}>10x MEGA BOOST</Text></View>}
               <View style={s.actionRow}>
                 <TouchableOpacity style={[s.collectBtn, collecting && s.disabled]} onPress={handleCollect} disabled={collecting}>
                   <Ionicons name="cash" size={18} color="#fff" />
@@ -292,7 +292,7 @@ export default function Companies() {
               {!watchingAd ? (
                 <TouchableOpacity style={s.adBtn} onPress={handleAdBoost}>
                   <Ionicons name="play-circle" size={18} color="#fff" />
-                  <Text style={s.adText}>{t('companies.watchAd')} (2x/6h)</Text>
+                  <Text style={s.adText}>{t('companies.watchAd')} (10x/3h)</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={s.adWatching}>
@@ -332,7 +332,7 @@ export default function Companies() {
                 <View style={s.companyRevenue}>
                   <Text style={s.revText}>{formatMoney(c._totalRevenue)}</Text>
                   <Text style={s.revLabel}>/dia</Text>
-                  {c.ad_boost_active && <Text style={s.boostMini}>2x!</Text>}
+                  {c.ad_boost_active && <Text style={s.boostMini}>10x!</Text>}
                 </View>
               </View>
               <Text style={s.companyDesc}>{c.description}</Text>

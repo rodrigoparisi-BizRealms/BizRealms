@@ -70,6 +70,7 @@ export default function Profile() {
   const [showPaypalModal, setShowPaypalModal] = useState(false);
   const [paypalEmail, setPaypalEmail] = useState('');
   const [savingPaypal, setSavingPaypal] = useState(false);
+  const [showPaypalInfo, setShowPaypalInfo] = useState(false);
 
   const showAlert = (title: string, msg: string) => {
     if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
@@ -808,11 +809,44 @@ export default function Profile() {
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="logo-paypal" size={22} color="#0070BA" />
             <Text style={styles.sectionTitle}>{t('profile.paypalAccount')}</Text>
+            <TouchableOpacity
+              style={{ marginLeft: 4, padding: 4 }}
+              onPress={() => setShowPaypalInfo(true)}
+            >
+              <Ionicons name="help-circle" size={20} color="#0070BA" />
+            </TouchableOpacity>
             <TouchableOpacity style={[styles.addButton, { backgroundColor: '#0070BA' }]} onPress={openPaypalModal}>
               <Ionicons name="create" size={20} color="#fff" />
               <Text style={[styles.addButtonText, { color: '#fff' }]}>{(user as any)?.paypal_email ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
             </TouchableOpacity>
           </View>
+          
+          {/* PayPal Info Tooltip */}
+          {showPaypalInfo && (
+            <View style={{ backgroundColor: '#0d2137', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#0070BA33' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="information-circle" size={18} color="#0070BA" />
+                  <Text style={{ color: '#0070BA', fontSize: 15, fontWeight: 'bold' }}>{t('profile.howPaymentWorks')}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowPaypalInfo(false)}>
+                  <Ionicons name="close-circle" size={22} color="#666" />
+                </TouchableOpacity>
+              </View>
+              <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
+                {t('profile.paypalInfoText1')}
+              </Text>
+              <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
+                {t('profile.paypalInfoText2')}
+              </Text>
+              <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
+                {t('profile.paypalInfoText3')}
+              </Text>
+              <Text style={{ color: '#FF9800', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>
+                {t('profile.paypalInfoNote')}
+              </Text>
+            </View>
+          )}
           <View style={styles.card}>
             <View style={styles.cardContent}>
               {(user as any)?.paypal_email ? (

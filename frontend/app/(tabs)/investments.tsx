@@ -143,8 +143,8 @@ function PriceChart({ data, width, height }: { data: AssetHistory[]; width: numb
         />
       </Svg>
       <View style={chartStyles.labels}>
-        <Text style={chartStyles.labelText}>$ {min.toFixed(2)}</Text>
-        <Text style={chartStyles.labelText}>$ {max.toFixed(2)}</Text>
+        <Text style={chartStyles.labelText}>$ {safeFixed(min, 2)}</Text>
+        <Text style={chartStyles.labelText}>$ {safeFixed(max, 2)}</Text>
       </View>
     </View>
   );
@@ -168,6 +168,12 @@ export default function Investments() {
   const { playClick, playCoin } = useSound();
   const { t, formatMoney: fmtCurrency } = useLanguage();
   const { colors } = useTheme();
+  
+  // Safe number formatting helper to prevent crashes
+  const safeFixed = (val: any, digits: number = 2): string => {
+    const num = Number(val);
+    return isNaN(num) ? '0' : num.toFixed(digits);
+  };
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -369,7 +375,7 @@ export default function Investments() {
                     { color: summary.total_profit >= 0 ? '#4CAF50' : '#F44336' }
                   ]}>
                     {summary.total_profit >= 0 ? '+' : ''}{formatCurrency(summary.total_profit)}
-                    {' '}({summary.total_profit_pct >= 0 ? '+' : ''}{summary.total_profit_pct.toFixed(1)}%)
+                    {' '}({summary.total_profit_pct >= 0 ? '+' : ''}{safeFixed(summary?.total_profit_pct, 1)}%)
                   </Text>
                   <Ionicons name="chevron-forward" size={20} color="#888" />
                 </View>
@@ -396,7 +402,7 @@ export default function Investments() {
                         {Object.entries(ev.effect || {}).map(([cat, mult]: [string, any]) => (
                           <View key={cat} style={[styles.effectChip, { backgroundColor: mult > 1 ? '#4CAF5020' : '#F4433620' }]}>
                             <Text style={[styles.effectText, { color: mult > 1 ? '#4CAF50' : '#F44336' }]}>
-                              {cat.toUpperCase()} {mult > 1 ? '+' : ''}{((mult - 1) * 100).toFixed(0)}%
+                              {cat.toUpperCase()} {mult > 1 ? '+' : ''}{safeFixed((Number(mult) - 1) * 100, 0)}%
                             </Text>
                           </View>
                         ))}
@@ -456,7 +462,7 @@ export default function Investments() {
                       <Text style={styles.assetTicker}>{asset.ticker}</Text>
                       {holding && (
                         <View style={styles.holdingBadge}>
-                          <Text style={styles.holdingBadgeText}>{holding.quantity.toFixed(holding.quantity >= 1 ? 0 : 4)}</Text>
+                          <Text style={styles.holdingBadgeText}>{safeFixed(holding.quantity, holding.quantity >= 1 ? 0 : 4)}</Text>
                         </View>
                       )}
                     </View>
@@ -484,7 +490,7 @@ export default function Investments() {
                         color={isPositive ? '#4CAF50' : '#F44336'}
                       />
                       <Text style={[styles.changeText, { color: isPositive ? '#4CAF50' : '#F44336' }]}>
-                        {isPositive ? '+' : ''}{asset.daily_change_pct.toFixed(2)}%
+                        {isPositive ? '+' : ''}{safeFixed(asset?.daily_change_pct, 2)}%
                       </Text>
                     </View>
                   </View>
@@ -500,7 +506,7 @@ export default function Investments() {
             {/* Summary Card */}
             {summary && (
               <View style={styles.summaryCard}>
-                <Text style={styles.summaryLabel}>Valor Total do Portfólio</Text>
+                <Text style={styles.summaryLabel}>{t('investments.totalPortfolioValue')}</Text>
                 <Text style={styles.summaryValue}>{formatCurrency(summary.total_current_value)}</Text>
                 <View style={styles.summaryRow}>
                   <View style={styles.summaryItem}>
@@ -508,13 +514,13 @@ export default function Investments() {
                     <Text style={styles.summaryItemValue}>{formatCurrency(summary.total_invested)}</Text>
                   </View>
                   <View style={styles.summaryItem}>
-                    <Text style={styles.summaryItemLabel}>Lucro/Prejuízo</Text>
+                    <Text style={styles.summaryItemLabel}>{t('investments.profitLoss')}</Text>
                     <Text style={[
                       styles.summaryItemValue,
                       { color: summary.total_profit >= 0 ? '#4CAF50' : '#F44336' }
                     ]}>
                       {summary.total_profit >= 0 ? '+' : ''}{formatCurrency(summary.total_profit)}
-                      {' '}({summary.total_profit_pct >= 0 ? '+' : ''}{summary.total_profit_pct.toFixed(1)}%)
+                      {' '}({summary.total_profit_pct >= 0 ? '+' : ''}{safeFixed(summary?.total_profit_pct, 1)}%)
                     </Text>
                   </View>
                 </View>
@@ -525,9 +531,9 @@ export default function Investments() {
             {holdings.length === 0 ? (
               <View style={styles.emptyPortfolio}>
                 <Ionicons name="pie-chart-outline" size={64} color="#555" />
-                <Text style={styles.emptyTitle}>Portfólio Vazio</Text>
+                <Text style={styles.emptyTitle}>{t('investments.emptyPortfolio')}</Text>
                 <Text style={styles.emptySubtext}>
-                  Comece a investir comprando ações, cripto ou fundos no mercado
+                  {t('investments.emptyPortfolioDesc')}
                 </Text>
                 <TouchableOpacity style={styles.goToMarket} onPress={() => setViewMode('market')}>
                   <Text style={styles.goToMarketText}>{t('investments.goToMarket')}</Text>
@@ -535,7 +541,7 @@ export default function Investments() {
               </View>
             ) : (
               <>
-                <Text style={styles.holdingsTitle}>Minhas Posições ({holdings.length})</Text>
+                <Text style={styles.holdingsTitle}>{t('investments.myPositions')} ({holdings.length})</Text>
                 {holdings.map(holding => {
                   const isProfit = holding.profit >= 0;
                   const asset = assets.find(a => a.id === holding.asset_id);
@@ -556,16 +562,16 @@ export default function Investments() {
                             { color: isProfit ? '#4CAF50' : '#F44336' }
                           ]}>
                             {isProfit ? '+' : ''}{formatCurrency(holding.profit)}
-                            {' '}({isProfit ? '+' : ''}{holding.profit_pct.toFixed(1)}%)
+                            {' '}({isProfit ? '+' : ''}{safeFixed(holding?.profit_pct, 1)}%)
                           </Text>
                         </View>
                       </View>
 
                       <View style={styles.holdingDetails}>
                         <View style={styles.holdingDetail}>
-                          <Text style={styles.detailLabel}>Quantidade</Text>
+                          <Text style={styles.detailLabel}{t('investments.quantity')}</Text>
                           <Text style={styles.detailValue}>
-                            {holding.quantity >= 1 ? holding.quantity.toFixed(0) : holding.quantity.toFixed(4)}
+                            {safeFixed(holding?.quantity, (holding?.quantity ?? 0) >= 1 ? 0 : 4)}
                           </Text>
                         </View>
                         <View style={styles.holdingDetail}>
@@ -641,7 +647,7 @@ export default function Investments() {
                       styles.changeTextLarge,
                       { color: detailAsset.daily_change_pct >= 0 ? '#4CAF50' : '#F44336' }
                     ]}>
-                      {detailAsset.daily_change_pct >= 0 ? '+' : ''}{detailAsset.daily_change_pct.toFixed(2)}%
+                      {detailAsset.daily_change_pct >= 0 ? '+' : ''}{safeFixed(detailAsset?.daily_change_pct, 2)}%
                     </Text>
                   </View>
                 </View>
@@ -676,7 +682,7 @@ export default function Investments() {
                   )}
                   <View style={styles.detailInfoItem}>
                     <Text style={styles.detailInfoLabel}>Volatilidade</Text>
-                    <Text style={styles.detailInfoValue}>{detailAsset.volatility.toFixed(1)}%</Text>
+                    <Text style={styles.detailInfoValue}>{safeFixed(detailAsset?.volatility, 1)}%</Text>
                   </View>
                   <View style={styles.detailInfoItem}>
                     <Text style={styles.detailInfoLabel}>Categoria</Text>
@@ -745,14 +751,14 @@ export default function Investments() {
                   </Text>
                   {tradeType === 'sell' && getHoldingForAsset(selectedAsset.id) && (
                     <Text style={styles.tradeAvailable}>
-                      Disponível: {getHoldingForAsset(selectedAsset.id)!.quantity.toFixed(
+                      Disponível: {safeFixed(getHoldingForAsset(selectedAsset.id)?.quantity, 
                         getHoldingForAsset(selectedAsset.id)!.quantity >= 1 ? 0 : 4
                       )} unidades
                     </Text>
                   )}
                 </View>
 
-                <Text style={styles.tradeLabel}>Quantidade</Text>
+                <Text style={styles.tradeLabel}{t('investments.quantity')}</Text>
                 <TextInput
                   style={styles.tradeInput}
                   placeholder="0"
@@ -788,7 +794,7 @@ export default function Investments() {
                               <TouchableOpacity
                                 key={pct}
                                 style={styles.quickBtn}
-                                onPress={() => setQuantity(qty.toFixed(qty >= 1 ? 0 : 4))}
+                                onPress={() => setQuantity(safeFixed(qty, qty >= 1 ? 0 : 4))}
                               >
                                 <Text style={styles.quickBtnText}>{pct * 100}%</Text>
                               </TouchableOpacity>

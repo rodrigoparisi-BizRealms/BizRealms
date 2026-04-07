@@ -326,7 +326,7 @@ async def get_owned_companies(current_user: dict = Depends(get_current_user)):
         if c.get('ad_boost_expires') and c['ad_boost_expires'] > now:
             boost_active = True
         c['ad_boost_active'] = boost_active
-        effective_mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
+        effective_mult = c.get('revenue_multiplier', 1.0) * (10.0 if boost_active else 1.0)
         base_rev = c.get('daily_revenue', c.get('monthly_revenue', 0) / 30 if c.get('monthly_revenue') else 0)
         c['daily_revenue'] = base_rev
         c['effective_revenue'] = round(base_rev * effective_mult)
@@ -369,7 +369,7 @@ async def collect_company_revenue(current_user: dict = Depends(get_current_user)
             continue
         daily_rev = c.get('daily_revenue', c.get('monthly_revenue', 0) / 30 if c.get('monthly_revenue') else 0)
         boost_active = c.get('ad_boost_expires') and c['ad_boost_expires'] > now
-        mult = c.get('revenue_multiplier', 1.0) * (2.0 if boost_active else 1.0)
+        mult = c.get('revenue_multiplier', 1.0) * (10.0 if boost_active else 1.0)
         rev = daily_rev * game_days * mult
         total_revenue += rev
         await db.user_companies.update_one(
@@ -401,12 +401,12 @@ async def company_ad_boost(current_user: dict = Depends(get_current_user)):
     companies = await db.user_companies.find({"user_id": current_user['id']}).to_list(200)
     if not companies:
         raise HTTPException(status_code=400, detail="Você não possui empresas")
-    expires = datetime.utcnow() + timedelta(hours=6)
+    expires = datetime.utcnow() + timedelta(hours=3)
     for c in companies:
         await db.user_companies.update_one({"id": c['id']}, {"$set": {"ad_boost_expires": expires}})
     return {
-        "message": "Boost ativado! Rendimentos de TODAS as empresas duplicados por 6 horas!",
-        "boost_duration_hours": 6,
+        "message": "Mega Boost ativado! Rendimentos de TODAS as empresas 10x por 3 horas!",
+        "boost_duration_hours": 3,
         "expires_at": expires.isoformat(),
         "companies_boosted": len(companies),
     }
