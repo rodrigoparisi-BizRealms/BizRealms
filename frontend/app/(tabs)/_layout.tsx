@@ -6,6 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import MiniPlayer from '../../components/MiniPlayer';
 
 export default function TabsLayout() {
   const { t } = useLanguage();
@@ -103,6 +104,7 @@ export default function TabsLayout() {
           <Tabs.Screen name="coaching" options={{ href: null }} />
         </Tabs>
       </View>
+      <MiniPlayer />
     </View>
   );
 }

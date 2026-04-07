@@ -1,147 +1,175 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
+import { Audio } from 'expo-av';
 
-export interface Track {
-  id: string;
-  name: string;
-  artist: string;
-  youtubeId: string;
-  color: string;
-}
-
-export const JAZZ_BLUES_TRACKS: Track[] = [
+// Royalty-free ambient radio streams for background music
+const TRACKS = [
   {
     id: '1',
-    name: 'Smooth Jazz Vibes',
-    artist: 'Jazz Instrumental',
-    youtubeId: 'neV3EPgvZ3g',
-    color: '#9C27B0',
+    title: 'Lofi Business',
+    artist: 'BizRealms Radio',
+    icon: 'cafe',
+    uri: 'https://stream.zeno.fm/0r0xa792kwzuv',
   },
   {
     id: '2',
-    name: 'Late Night Blues',
-    artist: 'Blues Instrumental',
-    youtubeId: 'JjPVQsdFSKA',
-    color: '#3F51B5',
+    title: 'Chill Jazz',
+    artist: 'BizRealms Radio',
+    icon: 'musical-notes',
+    uri: 'https://stream.zeno.fm/f3wvbbqmdg8uv',
   },
   {
     id: '3',
-    name: 'Relaxing Jazz Cafe',
-    artist: 'Cafe Jazz',
-    youtubeId: 'Dx5qFachd3A',
-    color: '#FF9800',
+    title: 'Focus & Study',
+    artist: 'BizRealms Radio',
+    icon: 'headset',
+    uri: 'https://stream.zeno.fm/4lyg909c28zuv',
   },
   {
     id: '4',
-    name: 'Blues Guitar Session',
-    artist: 'Blues Guitar',
-    youtubeId: 'gIpMz5PtVDg',
-    color: '#F44336',
+    title: 'Deep House',
+    artist: 'BizRealms Radio',
+    icon: 'pulse',
+    uri: 'https://stream.zeno.fm/k87y77k5c68uv',
   },
   {
     id: '5',
-    name: 'Midnight Jazz Lounge',
-    artist: 'Jazz Lounge',
-    youtubeId: 'fEvM-OUbaKs',
-    color: '#4CAF50',
+    title: 'Classical Piano',
+    artist: 'BizRealms Radio',
+    icon: 'heart',
+    uri: 'https://stream.zeno.fm/egm2z3sykzzuv',
   },
 ];
 
-// Build a YouTube playlist string with all IDs for auto-advance
-export const ALL_YOUTUBE_IDS = JAZZ_BLUES_TRACKS.map(t => t.youtubeId).join(',');
-
 interface MusicContextType {
-  activeTrack: Track | null;
   isPlaying: boolean;
-  musicEnabled: boolean;
-  playTrack: (track: Track) => void;
-  togglePlay: () => void;
-  stopMusic: () => void;
-  setMusicEnabled: (enabled: boolean) => void;
-  nextTrack: () => void;
+  currentTrack: typeof TRACKS[0] | null;
+  tracks: typeof TRACKS;
+  play: (track?: typeof TRACKS[0]) => Promise<void>;
+  pause: () => Promise<void>;
+  toggle: () => Promise<void>;
+  nextTrack: () => Promise<void>;
+  prevTrack: () => Promise<void>;
+  selectTrack: (track: typeof TRACKS[0]) => Promise<void>;
+  showPlayer: boolean;
+  setShowPlayer: (show: boolean) => void;
 }
 
 const MusicContext = createContext<MusicContextType>({
-  activeTrack: null,
   isPlaying: false,
-  musicEnabled: true,
-  playTrack: () => {},
-  togglePlay: () => {},
-  stopMusic: () => {},
-  setMusicEnabled: () => {},
-  nextTrack: () => {},
+  currentTrack: null,
+  tracks: TRACKS,
+  play: async () => {},
+  pause: async () => {},
+  toggle: async () => {},
+  nextTrack: async () => {},
+  prevTrack: async () => {},
+  selectTrack: async () => {},
+  showPlayer: false,
+  setShowPlayer: () => {},
 });
 
-const MUSIC_ENABLED_KEY = '@bizrealms_music_enabled';
+export const useMusic = () => useContext(MusicContext);
 
-export function MusicProvider({ children }: { children: ReactNode }) {
-  const [activeTrack, setActiveTrack] = useState<Track | null>(null);
+export function MusicProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [musicEnabled, _setMusicEnabled] = useState(true);
-  const autoAdvanceTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<typeof TRACKS[0] | null>(null);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
-  // Load music enabled preference and auto-start
   useEffect(() => {
-    AsyncStorage.getItem(MUSIC_ENABLED_KEY).then(val => {
-      const enabled = val === null ? true : val === 'true';
-      _setMusicEnabled(enabled);
-      // Auto-start music if enabled
-      if (enabled && !activeTrack) {
-        const randomIndex = Math.floor(Math.random() * JAZZ_BLUES_TRACKS.length);
-        setActiveTrack(JAZZ_BLUES_TRACKS[randomIndex]);
-        setIsPlaying(true);
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: true,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    }).catch(() => {});
+    
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(() => {});
       }
-    });
+    };
   }, []);
 
-  const setMusicEnabled = (enabled: boolean) => {
-    _setMusicEnabled(enabled);
-    AsyncStorage.setItem(MUSIC_ENABLED_KEY, String(enabled));
-    if (!enabled) {
+  const loadAndPlay = useCallback(async (track: typeof TRACKS[0]) => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.stopAsync().catch(() => {});
+        await soundRef.current.unloadAsync().catch(() => {});
+        soundRef.current = null;
+      }
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: track.uri },
+        { shouldPlay: true, isLooping: false, volume: 0.5 },
+      );
+      soundRef.current = sound;
+      setCurrentTrack(track);
+      setIsPlaying(true);
+      setShowPlayer(true);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded) {
+          setIsPlaying(status.isPlaying);
+        }
+      });
+    } catch (e) {
+      console.warn('[Music] Error loading track:', e);
+    }
+  }, []);
+
+  const play = useCallback(async (track?: typeof TRACKS[0]) => {
+    if (track) {
+      await loadAndPlay(track);
+    } else if (soundRef.current) {
+      await soundRef.current.playAsync().catch(() => {});
+      setIsPlaying(true);
+    } else {
+      await loadAndPlay(TRACKS[0]);
+    }
+  }, [loadAndPlay]);
+
+  const pause = useCallback(async () => {
+    if (soundRef.current) {
+      await soundRef.current.pauseAsync().catch(() => {});
       setIsPlaying(false);
-      setActiveTrack(null);
-      if (autoAdvanceTimer.current) clearInterval(autoAdvanceTimer.current);
     }
-  };
+  }, []);
 
-  const nextTrack = () => {
-    if (!activeTrack) {
-      playTrack(JAZZ_BLUES_TRACKS[0]);
-      return;
+  const toggle = useCallback(async () => {
+    if (isPlaying) {
+      await pause();
+    } else {
+      await play();
     }
-    const idx = JAZZ_BLUES_TRACKS.findIndex(t => t.id === activeTrack.id);
-    const next = JAZZ_BLUES_TRACKS[(idx + 1) % JAZZ_BLUES_TRACKS.length];
-    setActiveTrack(next);
-    setIsPlaying(true);
-  };
+  }, [isPlaying, pause, play]);
 
-  const playTrack = (track: Track) => {
-    if (!musicEnabled) return;
-    setActiveTrack(track);
-    setIsPlaying(true);
-  };
+  const nextTrack = useCallback(async () => {
+    const idx = TRACKS.findIndex(t => t.id === currentTrack?.id);
+    const next = TRACKS[(idx + 1) % TRACKS.length];
+    await loadAndPlay(next);
+  }, [currentTrack, loadAndPlay]);
 
-  const togglePlay = () => {
-    if (!activeTrack) return;
-    setIsPlaying(prev => !prev);
-  };
+  const prevTrack = useCallback(async () => {
+    const idx = TRACKS.findIndex(t => t.id === currentTrack?.id);
+    const prev = TRACKS[(idx - 1 + TRACKS.length) % TRACKS.length];
+    await loadAndPlay(prev);
+  }, [currentTrack, loadAndPlay]);
 
-  const stopMusic = () => {
-    setIsPlaying(false);
-    setActiveTrack(null);
-    if (autoAdvanceTimer.current) clearInterval(autoAdvanceTimer.current);
-  };
+  const selectTrack = useCallback(async (track: typeof TRACKS[0]) => {
+    await loadAndPlay(track);
+  }, [loadAndPlay]);
 
   return (
-    <MusicContext.Provider value={{
-      activeTrack, isPlaying, musicEnabled,
-      playTrack, togglePlay, stopMusic, setMusicEnabled, nextTrack,
-    }}>
+    <MusicContext.Provider
+      value={{
+        isPlaying, currentTrack, tracks: TRACKS,
+        play, pause, toggle, nextTrack, prevTrack, selectTrack,
+        showPlayer, setShowPlayer,
+      }}
+    >
       {children}
     </MusicContext.Provider>
   );
-}
-
-export function useMusic() {
-  return useContext(MusicContext);
 }

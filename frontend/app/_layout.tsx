@@ -6,6 +6,7 @@ import { NetworkProvider } from '../context/NetworkContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import { AdProvider } from '../context/AdContext';
 import { SoundProvider } from '../context/SoundContext';
+import { MusicProvider } from '../context/MusicContext';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { initSentry, wrapApp } from '../context/sentryService';
 
