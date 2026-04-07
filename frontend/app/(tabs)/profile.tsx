@@ -11,6 +11,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -793,24 +794,11 @@ export default function Profile() {
                 flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
                 backgroundColor: '#1DB954', borderRadius: 14, padding: 14,
               }}
-              onPress={async () => {
-                const { Linking } = require('react-native');
-                try {
-                  const canOpen = await Linking.canOpenURL('spotify://');
-                  if (canOpen) {
-                    await Linking.openURL('spotify://');
-                  } else {
-                    await Linking.openURL('https://open.spotify.com');
-                  }
-                } catch {
-                  await Linking.openURL('https://open.spotify.com');
-                }
-              }}
+              onPress={() => Linking.openURL('https://open.spotify.com')}
               activeOpacity={0.7}
             >
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="logo-tux" size={22} color="#fff" />
-                <Text style={{ position: 'absolute', color: '#fff', fontSize: 18, fontWeight: 'bold' }}>♫</Text>
+                <Ionicons name="musical-notes" size={22} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Spotify</Text>
@@ -824,19 +812,7 @@ export default function Profile() {
                 flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
                 backgroundColor: '#FF0000', borderRadius: 14, padding: 14,
               }}
-              onPress={async () => {
-                const { Linking } = require('react-native');
-                try {
-                  const canOpen = await Linking.canOpenURL('youtubemusic://');
-                  if (canOpen) {
-                    await Linking.openURL('youtubemusic://');
-                  } else {
-                    await Linking.openURL('https://music.youtube.com');
-                  }
-                } catch {
-                  await Linking.openURL('https://music.youtube.com');
-                }
-              }}
+              onPress={() => Linking.openURL('https://music.youtube.com')}
               activeOpacity={0.7}
             >
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#cc0000', alignItems: 'center', justifyContent: 'center' }}>
