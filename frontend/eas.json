@@ -14,6 +14,7 @@
         "simulator": true
       },
       "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://bizrealms-production-ead0.up.railway.app",
         "EXPO_PUBLIC_SENTRY_DSN": "https://aed9d5abbb8fd2897cd3ee012f906cdd@o4511175037812736.ingest.us.sentry.io/4511175048757248"
       }
     },
@@ -23,6 +24,7 @@
         "buildType": "apk"
       },
       "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://bizrealms-production-ead0.up.railway.app",
         "EXPO_PUBLIC_SENTRY_DSN": "https://aed9d5abbb8fd2897cd3ee012f906cdd@o4511175037812736.ingest.us.sentry.io/4511175048757248"
       }
     },
@@ -35,6 +37,7 @@
         "autoIncrement": true
       },
       "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://bizrealms-production-ead0.up.railway.app",
         "EXPO_PUBLIC_SENTRY_DSN": "https://aed9d5abbb8fd2897cd3ee012f906cdd@o4511175037812736.ingest.us.sentry.io/4511175048757248"
       }
     }
