@@ -529,7 +529,7 @@ Adapte o tom ao nível do jogador: iniciante (nível 1-10), intermediário (10-3
 @router.post("/coaching/advice")
 async def get_coaching_advice(request: dict, current_user: dict = Depends(get_current_user)):
     """Get AI coaching advice based on player stats"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    from llm_wrapper import chat_completion
     user_question = request.get('question', 'Me dê dicas para crescer no jogo')
     
     user = await db.users.find_one({"id": current_user['id']})
@@ -562,27 +562,25 @@ PERGUNTA DO JOGADOR: {user_question}
 """
     
     try:
-        llm_key = os.getenv('EMERGENT_LLM_KEY')
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"coaching-{current_user['id']}-{datetime.utcnow().strftime('%Y%m%d%H')}",
+        response = await chat_completion(
             system_message=COACHING_SYSTEM_PROMPT,
+            user_message=player_context,
+            model="gpt-4.1-mini"
         )
-        chat.with_model("openai", "gpt-4.1-mini")
         
-        msg = UserMessage(text=player_context)
-        response = await chat.send_message(msg)
-        
-        await db.coaching_history.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": current_user['id'],
-            "question": user_question,
-            "response": response,
-            "player_level": user.get('level', 1),
-            "created_at": datetime.utcnow(),
-        })
-        
-        return {"success": True, "advice": response, "player_level": user.get('level', 1)}
+        if response:
+            await db.coaching_history.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": current_user['id'],
+                "question": user_question,
+                "response": response,
+                "player_level": user.get('level', 1),
+                "created_at": datetime.utcnow(),
+            })
+            
+            return {"success": True, "advice": response, "player_level": user.get('level', 1)}
+        else:
+            raise Exception("LLM unavailable")
     except Exception as e:
         logger.error(f"Coaching AI error: {e}")
         level = user.get('level', 1)

@@ -281,10 +281,8 @@ async def generate_event(current_user: dict = Depends(get_current_user)):
     event_data = None
     ai_generated = False
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        llm_key = os.getenv('EMERGENT_LLM_KEY')
-        if llm_key:
-            player_context = f"""
+        from llm_wrapper import chat_completion
+        player_context = f"""
 DADOS DO JOGADOR:
 - Nível: {level} | Dificuldade: {difficulty}
 - Dinheiro em caixa: $ {money:,.2f}
@@ -302,16 +300,13 @@ REGRAS DE VALORES:
 
 Gere um evento SURPREENDENTE e ÚNICO para este jogador."""
 
-            chat = LlmChat(
-                api_key=llm_key,
-                session_id=f"events-{uid}-{now.strftime('%Y%m%d%H%M')}",
-                system_message=EVENT_SYSTEM_PROMPT,
-            )
-            chat.with_model("openai", "gpt-4.1-mini")
+        response = await chat_completion(
+            system_message=EVENT_SYSTEM_PROMPT,
+            user_message=player_context,
+            model="gpt-4.1-mini"
+        )
 
-            msg = UserMessage(text=player_context)
-            response = await chat.send_message(msg)
-
+        if response:
             # Parse JSON from response
             clean = response.strip()
             if clean.startswith('```'):
