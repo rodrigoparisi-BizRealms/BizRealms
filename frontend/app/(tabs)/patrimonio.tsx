@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
@@ -64,7 +65,7 @@ export default function Patrimonio() {
   };
 
   const handleBuy = (asset: any) => {
-    confirmAction(t('assets.buyConfirm'), `${t('assets.buyQuestion')} ${asset.name} ${t('assets.forPrice')} ${formatMoney(asset.price)}?\n\n${asset.description}\n\n${t('assets.appreciationRate')}: ${asset.appreciation > 0 ? '+' : ''}${(asset.appreciation * 100).toFixed(0)}%/${t('general.month')}`, async () => {
+    confirmAction(t('assets.buyConfirm'), `${t('assets.buyQuestion')} ${asset.name} ${t('assets.forPrice')} ${formatMoney(asset.price)}?\n\n${asset.description}\n\n${t('assets.appreciationRate')}: ${asset.appreciation > 0 ? '+' : ''}${safeFixed((asset.appreciation || 0) * 100, 0)}%/${t('general.month')}`, async () => {
       setBuying(asset.id);
       try {
         const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/assets/buy`, { asset_id: asset.id }, { headers: { Authorization: `Bearer ${token}` } });
@@ -205,7 +206,7 @@ export default function Patrimonio() {
                 <View style={s.aValues}>
                   <Text style={[s.aValue, { color: colors.text }]}>{formatMoney(a.current_value)}</Text>
                   <Text style={[s.aProfit, { color: isProfit ? '#4CAF50' : '#F44336' }]}>
-                    {isProfit ? '+' : ''}{a.profit_pct.toFixed(1)}%
+                    {isProfit ? '+' : ''}{safeFixed(a.profit_pct, 1)}%
                   </Text>
                 </View>
               </View>
@@ -231,7 +232,7 @@ export default function Patrimonio() {
 
         {viewMode === 'offers' && offers.map(offer => {
           const isProfit = offer.offer_amount >= offer.purchase_price;
-          const profitPct = offer.purchase_price > 0 ? ((offer.offer_amount - offer.purchase_price) / offer.purchase_price * 100).toFixed(0) : '0';
+          const profitPct = offer.purchase_price > 0 ? safeFixed((offer.offer_amount - offer.purchase_price) / offer.purchase_price * 100, 0) : '0';
           const hrs = Math.floor(offer.remaining_minutes / 60);
           const mins = offer.remaining_minutes % 60;
           return (
@@ -297,7 +298,7 @@ export default function Patrimonio() {
               <Text style={[s.aDesc, { color: colors.textSecondary }]}>{a.description}</Text>
               <View style={s.storeMeta}>
                 <Text style={[s.metaChip, { color: appreciation >= 0 ? '#4CAF50' : '#F44336' }]}>
-                  {appreciation >= 0 ? '+' : ''}{(appreciation * 100).toFixed(0)}%{t('assets.perYear')}
+                  {appreciation >= 0 ? '+' : ''}{safeFixed((appreciation || 0) * 100, 0)}%{t('assets.perYear')}
                 </Text>
                 <Text style={[s.metaChip, { color: colors.textSecondary }]}>+{a.status_boost} {t('assets.statusBoost').toLowerCase()}</Text>
               </View>

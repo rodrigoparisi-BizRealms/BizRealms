@@ -1,3 +1,4 @@
+import { safeFixed } from '../utils/safeFixed';
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,17 +45,17 @@ const GROUP_DESC: Record<string, Record<string, string>> = {
 
 function formatTarget(group: string, target: number): string {
   if (group === 'money' || group === 'net_worth') {
-    if (target >= 1_000_000_000) return `${(target / 1_000_000_000).toFixed(0)}B`;
-    if (target >= 1_000_000) return `${(target / 1_000_000).toFixed(0)}M`;
-    if (target >= 1_000) return `${(target / 1_000).toFixed(0)}K`;
+    if (target >= 1_000_000_000) return `${safeFixed(target / 1_000_000_000, 0)}B`;
+    if (target >= 1_000_000) return `${safeFixed(target / 1_000_000, 0)}M`;
+    if (target >= 1_000) return `${safeFixed(target / 1_000, 0)}K`;
     return `${target}`;
   }
   return `${target}`;
 }
 
 function formatReward(money: number): string {
-  if (money >= 1_000_000) return `${(money / 1_000_000).toFixed(0)}M`;
-  if (money >= 1_000) return `${(money / 1_000).toFixed(0)}K`;
+  if (money >= 1_000_000) return `${safeFixed(money / 1_000_000, 0)}M`;
+  if (money >= 1_000) return `${safeFixed(money / 1_000, 0)}K`;
   return `${money}`;
 }
 

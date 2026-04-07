@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -146,7 +147,7 @@ export default function BackgroundSelection() {
                   <Ionicons name="trending-up" size={16} color="#2196F3" />
                   <Text style={styles.bonusText}>
                     XP: {background.xp_multiplier > 1 ? '+' : ''}
-                    {((background.xp_multiplier - 1) * 100).toFixed(0)}%
+                    {safeFixed((background.xp_multiplier - 1) * 100, 0)}%
                   </Text>
                 </View>
               )}

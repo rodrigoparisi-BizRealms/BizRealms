@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
@@ -177,7 +178,7 @@ function generateMapHTML(companies: Company[], categories: CategoryInfo): string
         '📍 ' + c.city + '<br>' +
         '👥 ' + c.employees + ' funcionários<br>' +
         '💵 ' + c.revenue + '<br>' +
-        '<span class="popup-rating">⭐ ' + c.rating.toFixed(1) + '</span>' +
+        '<span class="popup-rating">⭐ ' + safeFixed(c.rating, 1) + '</span>' +
         posText + investText +
         '</div>' +
         '<button class="popup-btn" onclick="selectCompany(\\'' + c.id + '\\')">Ver Detalhes</button>';
@@ -430,7 +431,7 @@ export default function MapScreen() {
                   </View>
                   <View style={styles.detailGridItem}>
                     <Ionicons name="star" size={20} color="#FFD700" />
-                    <Text style={styles.detailGridValue}>{selectedCompany.rating.toFixed(1)}</Text>
+                    <Text style={styles.detailGridValue}>{safeFixed(selectedCompany.rating, 1)}</Text>
                     <Text style={styles.detailGridLabel}>Avaliação</Text>
                   </View>
                   <View style={styles.detailGridItem}>

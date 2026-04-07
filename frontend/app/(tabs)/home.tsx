@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -635,7 +636,7 @@ export default function Home() {
                     <Text style={styles.compDesc} numberOfLines={1}>{comp.description}</Text>
                   </View>
                   <View style={styles.compTimeBadge}>
-                    <Text style={styles.compTimeText}>{comp.days_remaining?.toFixed(0)}d</Text>
+                    <Text style={styles.compTimeText}>{safeFixed(comp.days_remaining, 0)}d</Text>
                   </View>
                 </View>
                 {/* Mini leaderboard */}
@@ -869,7 +870,7 @@ export default function Home() {
                     styles.profitText,
                     { color: investmentProfit >= 0 ? '#4CAF50' : '#F44336' }
                   ]}>
-                    {investmentProfit >= 0 ? '+' : ''}{investmentProfitPct.toFixed(1)}%
+                    {investmentProfit >= 0 ? '+' : ''}{safeFixed(investmentProfitPct, 1)}%
                   </Text>
                 </View>
               </View>
@@ -893,12 +894,12 @@ export default function Home() {
               {portfolio?.holdings?.slice(0, 3).map((h: any) => (
                 <View key={h.asset_id} style={styles.miniHolding}>
                   <Text style={styles.miniTicker}>{h.ticker || h.asset_name}</Text>
-                  <Text style={styles.miniQty}>{h.quantity?.toFixed(h.quantity < 1 ? 4 : 2)}</Text>
+                  <Text style={styles.miniQty}>{safeFixed(h.quantity, (h.quantity || 0) < 1 ? 4 : 2)}</Text>
                   <Text style={[
                     styles.miniProfit,
                     { color: (h.profit || 0) >= 0 ? '#4CAF50' : '#F44336' }
                   ]}>
-                    {(h.profit_pct || 0) >= 0 ? '+' : ''}{(h.profit_pct || 0).toFixed(1)}%
+                    {(h.profit_pct || 0) >= 0 ? '+' : ''}{safeFixed(h.profit_pct || 0, 1)}%
                   </Text>
                 </View>
               ))}

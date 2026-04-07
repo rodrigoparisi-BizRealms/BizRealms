@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
@@ -353,7 +354,7 @@ export default function Store() {
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <>
-                    <Text style={s.buyPrice}>$ {item.price_brl.toFixed(2).replace('.', ',')}</Text>
+                    <Text style={s.buyPrice}>$ {safeFixed(item.price_brl, 2).replace('.', ',')}</Text>
                     <Ionicons name="cart" size={18} color="#fff" />
                   </>
                 )}
@@ -383,7 +384,7 @@ export default function Store() {
                   </View>
                   <Text style={s.sumName}>{selectedItem.name}</Text>
                   <Text style={s.sumReward}>{formatReward(selectedItem)}</Text>
-                  <Text style={s.sumPrice}>$ {selectedItem.price_brl.toFixed(2).replace('.', ',')}</Text>
+                  <Text style={s.sumPrice}>$ {safeFixed(selectedItem.price_brl, 2).replace('.', ',')}</Text>
                 </View>
 
                 {/* Stripe Pay Button */}
@@ -450,7 +451,7 @@ export default function Store() {
                       {' • '}{p.payment_method === 'pix' ? 'PIX' : 'Cartão'}
                     </Text>
                   </View>
-                  <Text style={s.histPrice}>$ {p.price_brl?.toFixed(2).replace('.', ',')}</Text>
+                  <Text style={s.histPrice}>$ {safeFixed(p.price_brl, 2).replace('.', ',')}</Text>
                 </View>
               ))}
             </ScrollView>

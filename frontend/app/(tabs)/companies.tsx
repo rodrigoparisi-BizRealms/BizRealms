@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
@@ -153,7 +154,7 @@ export default function Companies() {
   };
 
   const handleBuy = (company: any) => {
-    const roiMonths = (company.daily_revenue || 0) > 0 ? ((company.price || 0) / company.daily_revenue).toFixed(1) : '?';
+    const roiMonths = (company.daily_revenue || 0) > 0 ? safeFixed((company.price || 0) / company.daily_revenue, 1) : '?';
     confirmAction(t('companies.buy') || 'Comprar Empresa', `${t('companies.buyConfirm') || 'Deseja comprar'} ${company.name} ${t('companies.buyFor') || 'por'} ${formatMoney(company.price)}?\n\n💵 ${t('companies.monthlyRevenue') || 'Receita diária'}: ${formatMoney(company.daily_revenue)}\n📊 ${t('companies.roiEstimate') || 'Retorno estimado'}: ${roiMonths} ${t('general.months') || 'meses'}`, async () => {
       setBuying(company.id);
       try {
@@ -171,7 +172,7 @@ export default function Companies() {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/collect-revenue`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (r.data.total_revenue > 0) {
         let msg = `Total: $ ${r.data.total_revenue.toLocaleString('en-US')}\nXP: +${r.data.xp_gained}`;
-        r.data.details?.forEach((d: any) => { msg += `\n• ${d.name}: $ ${d.revenue.toFixed(2)}`; });
+        r.data.details?.forEach((d: any) => { msg += `\n• ${d.name}: $ ${safeFixed(d.revenue, 2)}`; });
         showAlert('Receitas Coletadas!', msg);
       } else { showAlert('Aviso', r.data.message); }
       await loadData(); await refreshUser();
@@ -542,7 +543,7 @@ export default function Companies() {
               <View style={s.buyMeta}>
                 <Text style={s.metaText}>💵 {formatMoney(c.daily_revenue || 0)}/day</Text>
                 <Text style={s.metaText}>👥 {c.employees || 0} emp.</Text>
-                <Text style={s.metaText}>📊 ROI: {(c.daily_revenue || 0) > 0 ? ((c.price || 0) / c.daily_revenue).toFixed(0) : '?'}d</Text>
+                <Text style={s.metaText}>📊 ROI: {(c.daily_revenue || 0) > 0 ? safeFixed((c.price || 0) / c.daily_revenue, 0) : '?'}d</Text>
                 <Text style={s.metaText}>📊 {t('profile.levelLabel')} {c.level_required || 1}</Text>
               </View>
               {c.already_owned ? (

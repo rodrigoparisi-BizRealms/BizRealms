@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -141,12 +142,12 @@ export default function Jobs() {
 
       if (response.data.status === 'accepted') {
         if (Platform.OS === 'web') {
-          const ok = window.confirm(`Aprovado!\n\n${response.data.message}\nCompatibilidade: ${response.data.match_score.toFixed(0)}%\n\nDeseja aceitar a vaga?`);
+          const ok = window.confirm(`Aprovado!\n\n${response.data.message}\nCompatibilidade: ${safeFixed(response.data.match_score, 0)}%\n\nDeseja aceitar a vaga?`);
           if (ok) handleAccept(jobId);
         } else {
           Alert.alert(
             'Aprovado!',
-            `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`,
+            `${response.data.message}\n\nCompatibilidade: ${safeFixed(response.data.match_score, 0)}%`,
             [
               { text: 'Ver Depois', style: 'cancel' },
               { text: 'Aceitar Vaga', onPress: () => handleAccept(jobId) },
@@ -155,11 +156,11 @@ export default function Jobs() {
         }
       } else {
         if (Platform.OS === 'web') {
-          window.alert(`Candidatura Enviada\n\n${response.data.message}\nCompatibilidade: ${response.data.match_score.toFixed(0)}%`);
+          window.alert(`Candidatura Enviada\n\n${response.data.message}\nCompatibilidade: ${safeFixed(response.data.match_score, 0)}%`);
         } else {
           Alert.alert(
             'Candidatura Enviada',
-            `${response.data.message}\n\nCompatibilidade: ${response.data.match_score.toFixed(0)}%\n\nSua candidatura foi registrada mas o match precisa ser maior para aprovação automática.`
+            `${response.data.message}\n\nCompatibilidade: ${safeFixed(response.data.match_score, 0)}%\n\nSua candidatura foi registrada mas o match precisa ser maior para aprovação automática.`
           );
         }
       }
@@ -183,7 +184,7 @@ export default function Jobs() {
 
       Alert.alert(
         'Parabéns!',
-        `${response.data.message}\n\nGanho diário: $ ${response.data.daily_earnings.toFixed(2)}`
+        `${response.data.message}\n\nGanho diário: $ ${safeFixed(response.data.daily_earnings, 2)}`
       );
       await loadData();
       await refreshUser();
@@ -204,7 +205,7 @@ export default function Jobs() {
         Alert.alert('Aviso', response.data.message);
       } else {
         let message = `${response.data.message}\n\n` +
-          `Ganhos: $ ${response.data.earnings.toFixed(2)}\n` +
+          `Ganhos: $ ${safeFixed(response.data.earnings, 2)}\n` +
           `XP: +${response.data.xp_gained}\n` +
           `Dias trabalhados: ${response.data.days_worked}`;
         
@@ -212,7 +213,7 @@ export default function Jobs() {
           message += `\nBoost Propaganda: ${response.data.boost_multiplier}x`;
         }
         if (response.data.courses_boost > 0) {
-          message += `\nBoost Cursos: +${(response.data.courses_boost * 100).toFixed(0)}%`;
+          message += `\nBoost Cursos: +${safeFixed((response.data.courses_boost || 0) * 100, 0)}%`;
         }
         if (response.data.promotion) {
           message += `\n\n${response.data.promotion}`;
@@ -298,7 +299,7 @@ export default function Jobs() {
       const title = 'Boost Ativado!';
       const msg = `${response.data.message}\n\n` +
         `Multiplicador: ${response.data.multiplier}x\n` +
-        `Ganho diário: $ ${response.data.daily_earnings_boosted.toFixed(2)}\n` +
+        `Ganho diário: $ ${safeFixed(response.data.daily_earnings_boosted, 2)}\n` +
         `Duração restante: ${durStr}`;
 
       if (Platform.OS === 'web') {
@@ -394,7 +395,7 @@ export default function Jobs() {
                 {formatMoney(currentJob.salary)}/{t('general.month')}
               </Text>
               <Text style={styles.dailyEarnings}>
-                $ {((currentJob.salary / 30) * (adBoost.active ? adBoost.multiplier : 1)).toFixed(2)}/dia
+                $ {safeFixed((currentJob.salary / 30) * (adBoost.active ? adBoost.multiplier : 1), 2)}/dia
                 {adBoost.active && adBoost.multiplier > 1 && (
                   <Text style={styles.boosted}> BOOST!</Text>
                 )}
@@ -481,7 +482,7 @@ export default function Jobs() {
                   <Text style={styles.acceptedJobTitle}>{app.job?.title || 'Vaga'}</Text>
                   <Text style={styles.acceptedJobCompany}>{app.job?.company || ''}</Text>
                   <Text style={styles.acceptedMatch}>
-                    Compatibilidade: {app.match_score.toFixed(0)}%
+                    Compatibilidade: {safeFixed(app.match_score, 0)}%
                   </Text>
                   {app.job?.salary && (
                     <Text style={styles.acceptedSalary}>

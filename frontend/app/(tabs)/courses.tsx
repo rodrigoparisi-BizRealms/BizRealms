@@ -1,3 +1,4 @@
+import { safeFixed } from '../../utils/safeFixed';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -105,7 +106,7 @@ export default function Courses() {
       return;
     }
 
-    const courseInfo = `Custo: $ ${course.cost.toLocaleString('en-US')}\nBenefícios: +${(course.earnings_boost * 100).toFixed(0)}% ganhos permanentes`;
+    const courseInfo = `Custo: $ ${course.cost.toLocaleString('en-US')}\nBenefícios: +${safeFixed((course.earnings_boost || 0) * 100, 0)}% ganhos permanentes`;
 
     if (Platform.OS === 'web') {
       const ok = window.confirm(`Fazer Curso: ${course.name}?\n\n${courseInfo}\n\nEste boost é PERMANENTE!`);
@@ -186,7 +187,7 @@ export default function Courses() {
             </View>
             <Text style={styles.summaryCount}>{myCourses.length} curso(s) completado(s)</Text>
             <Text style={styles.summaryBoost}>
-              Boost Total: +{(totalBoost * 100).toFixed(0)}% ganhos permanentes 🚀
+              Boost Total: +{safeFixed((totalBoost || 0) * 100, 0)}% ganhos permanentes 🚀
             </Text>
           </View>
         )}
@@ -234,7 +235,7 @@ export default function Courses() {
                   <View style={styles.benefitItem}>
                     <Ionicons name="trending-up" size={14} color={isLocked ? '#555' : '#4CAF50'} />
                     <Text style={[styles.benefitText, isLocked && { color: '#555' }]}>
-                      +{(course.earnings_boost * 100).toFixed(0)}% ganhos
+                      +{safeFixed((course.earnings_boost || 0) * 100, 0)}% ganhos
                     </Text>
                   </View>
                   <View style={styles.benefitItem}>

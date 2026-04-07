@@ -1,3 +1,4 @@
+import { safeFixed } from '../utils/safeFixed';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -19,8 +20,8 @@ const AVATAR_COLORS: Record<string, string> = {
 };
 
 const formatMoney = (v: number) => {
-  if (v >= 1_000_000) return `$ ${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000) return `$ ${(v / 1_000).toFixed(1)}K`;
+  if (v >= 1_000_000) return `$ ${safeFixed(v / 1_000_000, 1)}M`;
+  if (v >= 1_000) return `$ ${safeFixed(v / 1_000, 1)}K`;
   return `$ ${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 };
 
@@ -336,23 +337,23 @@ export default function Rankings() {
           </View>
           <View style={s.realPrizePool}>
             <Text style={s.realPrizeLabel}>{t('rankings.monthPool')}</Text>
-            <Text style={s.realPrizeAmount}>$ {(prizePool.prize_pool_total || 0).toFixed(2)}</Text>
+            <Text style={s.realPrizeAmount}>$ {safeFixed(prizePool.prize_pool_total, 2)}</Text>
             <Text style={s.realPrizeSub}>5% da receita de ads • {prizePool.days_remaining || 0} dias restantes</Text>
           </View>
           <View style={s.realDistRow}>
             <View style={[s.realDistItem, { borderColor: '#FFD700' }]}>
               <Text style={[s.realDistPos, { color: '#FFD700' }]}>1º</Text>
-              <Text style={s.realDistAmount}>$ {(prizePool.distribution?.['1st'] || 0).toFixed(2)}</Text>
+              <Text style={s.realDistAmount}>$ {safeFixed(prizePool.distribution?.['1st'], 2)}</Text>
               <Text style={s.realDistPct}>60%</Text>
             </View>
             <View style={[s.realDistItem, { borderColor: '#C0C0C0' }]}>
               <Text style={[s.realDistPos, { color: '#C0C0C0' }]}>2º</Text>
-              <Text style={s.realDistAmount}>$ {(prizePool.distribution?.['2nd'] || 0).toFixed(2)}</Text>
+              <Text style={s.realDistAmount}>$ {safeFixed(prizePool.distribution?.['2nd'], 2)}</Text>
               <Text style={s.realDistPct}>30%</Text>
             </View>
             <View style={[s.realDistItem, { borderColor: '#CD7F32' }]}>
               <Text style={[s.realDistPos, { color: '#CD7F32' }]}>3º</Text>
-              <Text style={s.realDistAmount}>$ {(prizePool.distribution?.['3rd'] || 0).toFixed(2)}</Text>
+              <Text style={s.realDistAmount}>$ {safeFixed(prizePool.distribution?.['3rd'], 2)}</Text>
               <Text style={s.realDistPct}>10%</Text>
             </View>
           </View>
@@ -370,7 +371,7 @@ export default function Rankings() {
             >
               <Ionicons name="gift" size={20} color="#000" />
               <Text style={s.claimRealText}>
-                Resgatar $ {(prizePool.unclaimed_reward.amount || 0).toFixed(2)} ({prizePool.unclaimed_reward.position}º lugar)
+                Resgatar $ {safeFixed(prizePool.unclaimed_reward.amount, 2)} ({prizePool.unclaimed_reward.position}º lugar)
               </Text>
             </TouchableOpacity>
           )}
