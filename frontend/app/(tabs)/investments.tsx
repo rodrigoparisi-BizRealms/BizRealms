@@ -569,7 +569,7 @@ export default function Investments() {
 
                       <View style={styles.holdingDetails}>
                         <View style={styles.holdingDetail}>
-                          <Text style={styles.detailLabel}{t('investments.quantity')}</Text>
+                          <Text style={styles.detailLabel}>{t('investments.quantity')}</Text>
                           <Text style={styles.detailValue}>
                             {safeFixed(holding?.quantity, (holding?.quantity ?? 0) >= 1 ? 0 : 4)}
                           </Text>
@@ -758,7 +758,7 @@ export default function Investments() {
                   )}
                 </View>
 
-                <Text style={styles.tradeLabel}{t('investments.quantity')}</Text>
+                <Text style={styles.tradeLabel}>{t('investments.quantity')}</Text>
                 <TextInput
                   style={styles.tradeInput}
                   placeholder="0"
