@@ -287,6 +287,15 @@ async def public_privacy(lang: str = "en"):
 async def root():
     return {"message": "BizRealms API", "version": "2.0.0"}
 
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for Railway deployment."""
+    try:
+        await db.command("ping")
+        return {"status": "healthy", "database": "connected", "version": "2.0.0"}
+    except Exception:
+        return JSONResponse(status_code=503, content={"status": "unhealthy", "database": "disconnected"})
+
 # ==================== IMPORT & INCLUDE ROUTE MODULES ====================
 from routes.auth import router as auth_router
 from routes.user import router as user_router
