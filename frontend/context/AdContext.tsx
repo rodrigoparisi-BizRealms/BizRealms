@@ -9,10 +9,11 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AdMobAvailable, initializeAdMob, useAdMobRewarded } from './adMobService';
+import { AdMobAvailable, initializeAdMob, useAdMobRewarded, showInterstitialAd } from './adMobService';
 
 interface AdContextType {
   showAd: (onReward: () => void, adType?: string) => void;
+  showInterstitial: () => Promise<boolean>;
   isAdPlaying: boolean;
   isAdLoaded: boolean;
   adMobReady: boolean;
@@ -20,6 +21,7 @@ interface AdContextType {
 
 const AdContext = createContext<AdContextType>({
   showAd: () => {},
+  showInterstitial: async () => false,
   isAdPlaying: false,
   isAdLoaded: false,
   adMobReady: false,
@@ -122,13 +124,22 @@ export function AdProvider({ children }: { children: React.ReactNode }) {
     offer: { icon: 'pricetag', title: 'New Offers!', subtitle: 'Watch to unlock company offers' },
     better_offer: { icon: 'trending-up', title: 'Better Offer!', subtitle: 'Watch to improve the offer value' },
     double: { icon: 'cash', title: 'Double your Gains!', subtitle: 'Watch to double your daily reward' },
+    boost: { icon: 'flash', title: 'Company Boost!', subtitle: 'Watch to increase your earnings multiplier' },
   };
+
+  // Interstitial wrapper
+  const showInterstitial = useCallback(async () => {
+    if (AdMobAvailable) {
+      return await showInterstitialAd();
+    }
+    return false;
+  }, []);
 
   const msg = adMessages[adType] || adMessages.reward;
   const progressWidth = progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
   return (
-    <AdContext.Provider value={{ showAd, isAdPlaying, isAdLoaded: nativeAdLoaded || AdMobAvailable, adMobReady: AdMobAvailable }}>
+    <AdContext.Provider value={{ showAd, showInterstitial, isAdPlaying, isAdLoaded: nativeAdLoaded || AdMobAvailable, adMobReady: AdMobAvailable }}>
       {children}
 
       {/* Simulated Ad Modal (web or fallback) */}

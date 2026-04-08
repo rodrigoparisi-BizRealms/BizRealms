@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { AdMobAvailable, AD_UNIT_IDS, BannerAd, BannerAdSize } from '../context/adMobService';
 
+// Simulated ad messages for web fallback
 const AD_MESSAGES = [
   { icon: 'rocket', color: '#FF5722', title: 'BizRealms Premium', sub: 'Desbloqueie vantagens exclusivas!' },
   { icon: 'trophy', color: '#FFD700', title: 'Ranking Semanal', sub: 'Jogue e ganhe prêmios reais!' },
@@ -14,11 +16,15 @@ const AD_MESSAGES = [
 
 export default function AdBanner() {
   const { colors } = useTheme();
-  const [adIndex, setAdIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  const [adError, setAdError] = useState(false);
+
+  // For web fallback
+  const [adIndex, setAdIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    if (AdMobAvailable && !adError) return; // Don't rotate on native if AdMob works
     const interval = setInterval(() => {
       Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
         setAdIndex(prev => (prev + 1) % AD_MESSAGES.length);
@@ -26,10 +32,31 @@ export default function AdBanner() {
       });
     }, 8000);
     return () => clearInterval(interval);
-  }, []);
+  }, [adError]);
 
   if (dismissed) return null;
 
+  // ===== NATIVE: Real AdMob Banner =====
+  if (AdMobAvailable && BannerAd && !adError) {
+    return (
+      <View style={[s.nativeContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <BannerAd
+          unitId={AD_UNIT_IDS.BANNER}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+          onAdFailedToLoad={(error: any) => {
+            console.log('[AdBanner] Failed to load:', error);
+            setAdError(true); // Fallback to simulated
+          }}
+        />
+        <TouchableOpacity onPress={() => setDismissed(true)} style={s.nativeClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name="close" size={14} color={colors.textMuted} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ===== WEB / FALLBACK: Simulated Banner =====
   const ad = AD_MESSAGES[adIndex];
 
   return (
@@ -42,7 +69,7 @@ export default function AdBanner() {
           <Text style={[s.title, { color: colors.text }]} numberOfLines={1}>{ad.title}</Text>
           <Text style={[s.sub, { color: colors.textSecondary }]} numberOfLines={1}>{ad.sub}</Text>
         </View>
-        <View style={[s.adLabel]}>
+        <View style={s.adLabel}>
           <Text style={s.adLabelText}>AD</Text>
         </View>
       </Animated.View>
@@ -54,6 +81,20 @@ export default function AdBanner() {
 }
 
 const s = StyleSheet.create({
+  // Native banner
+  nativeContainer: {
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    position: 'relative',
+  },
+  nativeClose: {
+    position: 'absolute',
+    right: 4,
+    top: 4,
+    padding: 4,
+    zIndex: 10,
+  },
+  // Simulated banner
   container: {
     flexDirection: 'row',
     alignItems: 'center',

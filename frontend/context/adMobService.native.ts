@@ -1,41 +1,61 @@
 /**
  * AdMob service - NATIVE version (iOS/Android)
- * Uses real Google AdMob Rewarded Ads
+ * Uses real Google AdMob: Banner, Interstitial, and Rewarded Ads
  */
 import { Platform } from 'react-native';
 import {
   RewardedAd,
   RewardedAdEventType,
+  InterstitialAd,
+  AdEventType,
   TestIds,
   MobileAds,
+  BannerAd,
+  BannerAdSize,
 } from 'react-native-google-mobile-ads';
 
 export const AdMobAvailable = true;
 
-const REWARDED_AD_UNIT_ID = Platform.select({
-  android: __DEV__
-    ? TestIds.REWARDED
-    : 'ca-app-pub-4504602138884633/3926119981',
-  ios: __DEV__
-    ? TestIds.REWARDED
-    : 'ca-app-pub-4504602138884633/7580422403',
-  default: TestIds.REWARDED,
-}) as string;
+// Re-export for use in components
+export { BannerAd, BannerAdSize, TestIds };
 
+// ============================================================
+// Ad Unit IDs - Real IDs for production, Test IDs for dev
+// ============================================================
+export const AD_UNIT_IDS = {
+  BANNER: Platform.select({
+    android: __DEV__ ? TestIds.BANNER : 'ca-app-pub-4504602138884633/6773541538',
+    ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-4504602138884633/2207813829',
+    default: TestIds.BANNER,
+  }) as string,
+  INTERSTITIAL: Platform.select({
+    android: __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-4504602138884633/2612701606',
+    ios: __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-4504602138884633/6334557836',
+    default: TestIds.INTERSTITIAL,
+  }) as string,
+  REWARDED: Platform.select({
+    android: __DEV__ ? TestIds.REWARDED : 'ca-app-pub-4504602138884633/6631837667',
+    ios: __DEV__ ? TestIds.REWARDED : 'ca-app-pub-4504602138884633/4259262098',
+    default: TestIds.REWARDED,
+  }) as string,
+};
+
+// ============================================================
+// Rewarded Ad
+// ============================================================
 let rewardedAd: ReturnType<typeof RewardedAd.createForAdRequest> | null = null;
-let adLoaded = false;
-let listeners: Array<() => void> = [];
+let rewardedLoaded = false;
+let rewardedListeners: Array<() => void> = [];
 let onRewardCallback: (() => void) | null = null;
 let onAdClosedCallback: (() => void) | null = null;
 let onLoadedCallback: ((loaded: boolean) => void) | null = null;
 
-function loadAd() {
-  // Cleanup
-  listeners.forEach((unsub) => unsub());
-  listeners = [];
-  adLoaded = false;
+function loadRewardedAd() {
+  rewardedListeners.forEach((unsub) => unsub());
+  rewardedListeners = [];
+  rewardedLoaded = false;
 
-  rewardedAd = RewardedAd.createForAdRequest(REWARDED_AD_UNIT_ID, {
+  rewardedAd = RewardedAd.createForAdRequest(AD_UNIT_IDS.REWARDED, {
     requestNonPersonalizedAdsOnly: true,
   });
 
@@ -43,7 +63,7 @@ function loadAd() {
     RewardedAdEventType.LOADED,
     () => {
       console.log('[AdMob] Rewarded ad loaded');
-      adLoaded = true;
+      rewardedLoaded = true;
       if (onLoadedCallback) onLoadedCallback(true);
     }
   );
@@ -60,41 +80,79 @@ function loadAd() {
   );
 
   const closedUnsub = rewardedAd.addAdEventListener('closed' as any, () => {
-    console.log('[AdMob] Ad closed');
-    adLoaded = false;
+    console.log('[AdMob] Rewarded ad closed');
+    rewardedLoaded = false;
     if (onLoadedCallback) onLoadedCallback(false);
     if (onAdClosedCallback) onAdClosedCallback();
-    // Reload after closing
-    setTimeout(() => loadAd(), 1000);
+    setTimeout(() => loadRewardedAd(), 1000);
   });
 
-  listeners = [loadedUnsub, earnedUnsub, closedUnsub];
+  rewardedListeners = [loadedUnsub, earnedUnsub, closedUnsub];
   rewardedAd.load();
   console.log('[AdMob] Loading rewarded ad...');
 }
 
+// ============================================================
+// Interstitial Ad
+// ============================================================
+let interstitialAd: ReturnType<typeof InterstitialAd.createForAdRequest> | null = null;
+let interstitialLoaded = false;
+let interstitialListeners: Array<() => void> = [];
+
+function loadInterstitialAd() {
+  interstitialListeners.forEach((unsub) => unsub());
+  interstitialListeners = [];
+  interstitialLoaded = false;
+
+  interstitialAd = InterstitialAd.createForAdRequest(AD_UNIT_IDS.INTERSTITIAL, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+
+  const loadedUnsub = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
+    console.log('[AdMob] Interstitial ad loaded');
+    interstitialLoaded = true;
+  });
+
+  const closedUnsub = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
+    console.log('[AdMob] Interstitial ad closed');
+    interstitialLoaded = false;
+    setTimeout(() => loadInterstitialAd(), 2000);
+  });
+
+  interstitialListeners = [loadedUnsub, closedUnsub];
+  interstitialAd.load();
+  console.log('[AdMob] Loading interstitial ad...');
+}
+
+// ============================================================
+// Initialize
+// ============================================================
 export async function initializeAdMob() {
   try {
     await MobileAds().initialize();
     console.log('[AdMob] SDK initialized');
-    loadAd();
+    loadRewardedAd();
+    loadInterstitialAd();
   } catch (e) {
     console.log('[AdMob] Init error:', e);
   }
 }
 
+// ============================================================
+// Hooks / Exports
+// ============================================================
 export function useAdMobRewarded() {
   return {
-    isLoaded: adLoaded,
+    isLoaded: rewardedLoaded,
     adMobReady: true,
     showRewarded: async (onReward: () => void): Promise<boolean> => {
-      if (!adLoaded || !rewardedAd) return false;
+      if (!rewardedLoaded || !rewardedAd) return false;
       onRewardCallback = onReward;
       try {
         await rewardedAd.show();
         return true;
       } catch (e) {
-        console.log('[AdMob] Show error:', e);
+        console.log('[AdMob] Rewarded show error:', e);
         return false;
       }
     },
@@ -105,4 +163,18 @@ export function useAdMobRewarded() {
       onAdClosedCallback = cb;
     },
   };
+}
+
+export async function showInterstitialAd(): Promise<boolean> {
+  if (!interstitialLoaded || !interstitialAd) {
+    console.log('[AdMob] Interstitial not ready');
+    return false;
+  }
+  try {
+    await interstitialAd.show();
+    return true;
+  } catch (e) {
+    console.log('[AdMob] Interstitial show error:', e);
+    return false;
+  }
 }
