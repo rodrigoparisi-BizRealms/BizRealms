@@ -121,6 +121,7 @@ export default {
     analyzing: 'Analysiere deine Daten...', q1: 'Wie wachse ich schneller?', q2: 'Wo soll ich investieren?',
     q3: 'Soll ich mehr Firmen kaufen?', q4: 'Welche Kurse jetzt?', q5: 'Wie nutze ich die Bank optimal?',
     q6: 'Wie erreiche ich die Spitze?',
+    errorMsg: 'Entschuldigung, technische Probleme. Versuchen Sie es erneut.',
   },
   rankings: {
     title: 'Rankings', weekly: 'Wöchentlich', monthly: 'Monatlich', realPrize: 'Echtgeldpreise',

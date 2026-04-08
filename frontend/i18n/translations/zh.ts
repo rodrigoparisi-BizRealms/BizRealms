@@ -123,6 +123,7 @@ export default {
     analyzing: '分析数据中...', q1: '如何更快成长？', q2: '应该投资什么？',
     q3: '应该买更多企业吗？', q4: '现在应该学什么课程？', q5: '如何利用银行？',
     q6: '如何登上排名榜首？',
+    errorMsg: '抱歉，技术问题。请稍后再试。',
   },
   rankings: {
     title: '排名', weekly: '每周', monthly: '每月', realPrize: '真实现金奖励',

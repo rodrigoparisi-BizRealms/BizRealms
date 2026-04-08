@@ -121,6 +121,7 @@ export default {
     analyzing: 'Analizando tus datos...', q1: '¿Cómo crecer más rápido?', q2: '¿Dónde invertir mi dinero?',
     q3: '¿Debo comprar más empresas?', q4: '¿Qué cursos hacer ahora?', q5: '¿Cómo usar el banco a mi favor?',
     q6: '¿Cómo llegar al top del ranking?',
+    errorMsg: 'Disculpa, estoy con problemas técnicos. Inténtalo de nuevo.',
   },
   rankings: {
     title: 'Rankings', weekly: 'Semanal', monthly: 'Mensual', realPrize: 'Premios en Dinero Real',

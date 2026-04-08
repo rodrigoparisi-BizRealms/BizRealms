@@ -9,6 +9,17 @@ import uuid
 import random as _random
 import math
 
+def _generate_buyer_name():
+    """Generate a random buyer name for asset offers."""
+    first_names = ['Carlos', 'Maria', 'João', 'Ana', 'Pedro', 'Lucas', 'Fernanda', 'Rafael', 'Juliana', 'Diego',
+                   'James', 'Emma', 'Oliver', 'Sophia', 'Liam', 'Isabella', 'Noah', 'Mia', 'Ethan', 'Ava',
+                   'Hiroshi', 'Yuki', 'Chen', 'Priya', 'Ahmed', 'Fatima', 'Klaus', 'Marie', 'Paolo', 'Elena']
+    last_names = ['Silva', 'Santos', 'Oliveira', 'Costa', 'Souza', 'Pereira', 'Almeida', 'Smith', 'Johnson',
+                  'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Martinez', 'Anderson', 'Taylor',
+                  'Tanaka', 'Müller', 'Rossi', 'Chen', 'Kim', 'Patel', 'Nguyen', 'Dubois', 'Fischer']
+    return f"{_random.choice(first_names)} {_random.choice(last_names)}"
+
+
 from database import db
 from utils import get_current_user, hash_password, verify_password, create_token, decode_token, calculate_level, security
 from models import (

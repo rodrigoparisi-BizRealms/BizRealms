@@ -121,6 +121,7 @@ export default {
     analyzing: 'Analizzando i tuoi dati...', q1: 'Come crescere più velocemente?', q2: 'Dove investire?',
     q3: 'Devo comprare più aziende?', q4: 'Quali corsi fare ora?', q5: 'Come usare la banca al meglio?',
     q6: 'Come raggiungere la vetta?',
+    errorMsg: 'Scusa, problemi tecnici. Riprova tra poco.',
   },
   rankings: {
     title: 'Classifiche', weekly: 'Settimanale', monthly: 'Mensile', realPrize: 'Premi in Denaro Reale',

@@ -438,6 +438,7 @@ export default {
     q4: 'Quais cursos fazer agora?',
     q5: 'Como usar o banco a meu favor?',
     q6: 'Como chegar ao topo do ranking?',
+    errorMsg: 'Desculpe, estou com problemas técnicos. Tente novamente em instantes.',
   },
   // Rankings
   rankings: {

@@ -429,6 +429,7 @@ export default {
     q4: 'Which courses to take now?',
     q5: 'How to use the bank wisely?',
     q6: 'How to reach the top ranking?',
+    errorMsg: 'Sorry, I am having technical issues. Please try again shortly.',
   },
   rankings: {
     title: 'Rankings',

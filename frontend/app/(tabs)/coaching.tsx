@@ -15,13 +15,13 @@ import { useHaptics } from '../../hooks/useHaptics';
 
 const API = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-const QUICK_QUESTIONS = [
-  { icon: 'trending-up', text: 'Como crescer mais rápido?', color: '#4CAF50' },
-  { icon: 'cash', text: 'Onde investir meu dinheiro?', color: '#FF9800' },
-  { icon: 'business', text: 'Devo comprar mais empresas?', color: '#2196F3' },
-  { icon: 'school', text: 'Quais cursos fazer agora?', color: '#9C27B0' },
-  { icon: 'card', text: 'Como usar o banco a meu favor?', color: '#1E88E5' },
-  { icon: 'trophy', text: 'Como chegar ao topo do ranking?', color: '#FFD700' },
+const QUICK_QUESTIONS_KEYS = [
+  { icon: 'trending-up', key: 'q1', color: '#4CAF50' },
+  { icon: 'cash', key: 'q2', color: '#FF9800' },
+  { icon: 'business', key: 'q3', color: '#2196F3' },
+  { icon: 'school', key: 'q4', color: '#9C27B0' },
+  { icon: 'card', key: 'q5', color: '#1E88E5' },
+  { icon: 'trophy', key: 'q6', color: '#FFD700' },
 ];
 
 interface ChatMessage {
@@ -105,7 +105,7 @@ export default function Coaching() {
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
         type: 'coach',
-        text: 'Desculpe, estou com problemas técnicos. Tente novamente em instantes.',
+        text: t('coaching.errorMsg') || 'Sorry, technical issues. Try again.',
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -149,21 +149,21 @@ export default function Coaching() {
               <View style={s.welcomeIcon}>
                 <Ionicons name="sparkles" size={40} color="#FFD700" />
               </View>
-              <Text style={s.welcomeTitle}>Olá, {user?.username || 'Jogador'}!</Text>
+              <Text style={s.welcomeTitle}>{t('coaching.welcome')}, {user?.username || 'Jogador'}!</Text>
               <Text style={s.welcomeText}>
-                Sou seu Coach IA de negócios. Analiso seu portfólio e dou conselhos personalizados para você crescer no jogo.
+                {t('coaching.welcomeText')}
               </Text>
               <Text style={s.welcomeHint}>{t('coaching.welcomeHint')}</Text>
 
               <View style={s.quickGrid}>
-                {QUICK_QUESTIONS.map((q, i) => (
+                {QUICK_QUESTIONS_KEYS.map((q, i) => (
                   <TouchableOpacity
                     key={i}
                     style={s.quickCard}
-                    onPress={() => sendMessage(q.text)}
+                    onPress={() => sendMessage(t(`coaching.${q.key}`))}
                   >
                     <Ionicons name={q.icon as any} size={20} color={q.color} />
-                    <Text style={s.quickText}>{q.text}</Text>
+                    <Text style={s.quickText}>{t(`coaching.${q.key}`)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -197,9 +197,9 @@ export default function Coaching() {
           {/* Quick questions after first response */}
           {messages.length > 0 && !loading && (
             <View style={s.quickActionsRow}>
-              {QUICK_QUESTIONS.slice(0, 3).map((q, i) => (
-                <TouchableOpacity key={i} style={s.quickPill} onPress={() => sendMessage(q.text)}>
-                  <Text style={s.quickPillText}>{q.text}</Text>
+              {QUICK_QUESTIONS_KEYS.slice(0, 3).map((q, i) => (
+                <TouchableOpacity key={i} style={s.quickPill} onPress={() => sendMessage(t(`coaching.${q.key}`))}>
+                  <Text style={s.quickPillText}>{t(`coaching.${q.key}`)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
