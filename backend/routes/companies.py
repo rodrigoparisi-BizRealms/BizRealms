@@ -326,7 +326,9 @@ async def get_owned_companies(current_user: dict = Depends(get_current_user)):
         if c.get('ad_boost_expires') and c['ad_boost_expires'] > now:
             boost_active = True
         c['ad_boost_active'] = boost_active
-        effective_mult = c.get('revenue_multiplier', 1.0) * (10.0 if boost_active else 1.0)
+        boost_level = c.get('ad_boost_level', 1) if boost_active else 1
+        effective_mult = c.get('revenue_multiplier', 1.0) * (float(boost_level) if boost_active else 1.0)
+        c['ad_boost_level'] = boost_level
         base_rev = c.get('daily_revenue', c.get('monthly_revenue', 0) / 30 if c.get('monthly_revenue') else 0)
         c['daily_revenue'] = base_rev
         c['effective_revenue'] = round(base_rev * effective_mult)
@@ -369,7 +371,8 @@ async def collect_company_revenue(current_user: dict = Depends(get_current_user)
             continue
         daily_rev = c.get('daily_revenue', c.get('monthly_revenue', 0) / 30 if c.get('monthly_revenue') else 0)
         boost_active = c.get('ad_boost_expires') and c['ad_boost_expires'] > now
-        mult = c.get('revenue_multiplier', 1.0) * (10.0 if boost_active else 1.0)
+        boost_level = c.get('ad_boost_level', 1) if boost_active else 1
+        mult = c.get('revenue_multiplier', 1.0) * (float(boost_level) if boost_active else 1.0)
         rev = daily_rev * game_days * mult
         total_revenue += rev
         await db.user_companies.update_one(
@@ -398,14 +401,39 @@ async def collect_company_revenue(current_user: dict = Depends(get_current_user)
 
 @router.post("/companies/ad-boost")
 async def company_ad_boost(current_user: dict = Depends(get_current_user)):
+    """Progressive ad boost: each ad watched increases multiplier by 1x, up to 10x max."""
     companies = await db.user_companies.find({"user_id": current_user['id']}).to_list(200)
     if not companies:
         raise HTTPException(status_code=400, detail="Você não possui empresas")
-    expires = datetime.utcnow() + timedelta(hours=3)
+    
+    now = datetime.utcnow()
+    expires = now + timedelta(hours=3)
+    
+    # Get current boost level from first company (all share same boost)
+    sample = companies[0]
+    current_level = 1
+    if sample.get('ad_boost_expires') and sample['ad_boost_expires'] > now:
+        current_level = sample.get('ad_boost_level', 1)
+    else:
+        # Expired or no boost - reset to level 1
+        current_level = 1
+    
+    # Increment boost level (max 10)
+    new_level = min(current_level + 1, 10)
+    
+    if current_level >= 10:
+        raise HTTPException(status_code=400, detail="Boost já está no máximo (10x)! Aguarde expirar.")
+    
     for c in companies:
-        await db.user_companies.update_one({"id": c['id']}, {"$set": {"ad_boost_expires": expires}})
+        await db.user_companies.update_one(
+            {"id": c['id']},
+            {"$set": {"ad_boost_expires": expires, "ad_boost_level": new_level}}
+        )
+    
     return {
-        "message": "Mega Boost ativado! Rendimentos de TODAS as empresas 10x por 3 horas!",
+        "message": f"Boost aumentado para {new_level}x! Assista mais anúncios para chegar a 10x!",
+        "boost_level": new_level,
+        "max_level": 10,
         "boost_duration_hours": 3,
         "expires_at": expires.isoformat(),
         "companies_boosted": len(companies),

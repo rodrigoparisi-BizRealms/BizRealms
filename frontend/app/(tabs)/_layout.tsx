@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import MiniPlayer from '../../components/MiniPlayer';
+import AdBanner from '../../components/AdBanner';
 
 export default function TabsLayout() {
   const { t } = useLanguage();
@@ -18,6 +19,7 @@ export default function TabsLayout() {
   
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AdBanner />
       <View style={{ flex: 1 }}>
         <Tabs
           screenOptions={{

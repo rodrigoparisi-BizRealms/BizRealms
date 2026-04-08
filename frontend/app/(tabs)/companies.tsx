@@ -181,21 +181,29 @@ export default function Companies() {
   };
 
   const handleAdBoost = () => {
-    setWatchingAd(true); setAdProgress(0);
-    const duration = 30000; const interval = 100; const steps = duration / interval; let step = 0;
-    const prog = setInterval(() => {
-      step++; setAdProgress((step / steps) * 100);
-      if (step >= steps) { clearInterval(prog); completeAdBoost(); }
-    }, interval);
+    // Get current boost level
+    const currentLevel = owned.length > 0 ? (owned[0].ad_boost_level || 1) : 1;
+    const isActive = owned.some(c => c.ad_boost_active);
+    const effectiveLevel = isActive ? currentLevel : 0;
+    
+    if (effectiveLevel >= 10) {
+      showAlert('Boost Máximo!', 'Suas empresas já estão no boost máximo de 10x!');
+      return;
+    }
+    
+    // Show ad through AdContext, then call backend on reward
+    showAd(async () => {
+      await completeAdBoost();
+    }, 'boost');
   };
 
   const completeAdBoost = async () => {
     try {
       const r = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/companies/ad-boost`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      showAlert('Boost Ativado!', `${r.data.message}\n\n${r.data.companies_boosted} empresas receberam o boost!`);
+      const level = r.data.boost_level || 1;
+      showAlert(`Boost ${level}x Ativado!`, `${r.data.message}\n\n${r.data.companies_boosted} empresas no nível ${level}x!`);
       await loadData();
     } catch (e: any) { showAlert(t('general.error'), e.response?.data?.detail || t('general.error')); }
-    finally { setWatchingAd(false); setAdProgress(0); }
   };
 
   const handleCreate = async () => {
@@ -219,6 +227,8 @@ export default function Companies() {
   };
 
   const hasBoostActive = owned.some(c => c.ad_boost_active);
+  const currentBoostLevel = hasBoostActive ? (owned[0]?.ad_boost_level || 1) : 0;
+  const isMaxBoost = currentBoostLevel >= 10;
 
   // Group franchises under their parent companies
   const groupedCompanies = React.useMemo(() => {
@@ -283,22 +293,40 @@ export default function Companies() {
             <View style={s.revenueCard}>
               <Text style={s.revenueLabel}>{t('companies.revenue')}</Text>
               <Text style={s.revenueValue}>{formatMoney(totalRevenue)}/{t('general.month')}</Text>
-              {hasBoostActive && <View style={s.boostBadge}><Ionicons name="flash" size={14} color="#000" /><Text style={s.boostText}>10x MEGA BOOST</Text></View>}
+              {hasBoostActive && (
+                <View style={s.boostSection}>
+                  <View style={s.boostBadge}>
+                    <Ionicons name="flash" size={14} color="#000" />
+                    <Text style={s.boostText}>{currentBoostLevel}x BOOST{isMaxBoost ? ' MAX' : ''}</Text>
+                  </View>
+                  {/* Progress bar showing boost level 1-10 */}
+                  <View style={s.boostProgress}>
+                    {[...Array(10)].map((_, i) => (
+                      <View key={i} style={[s.boostDot, i < currentBoostLevel && s.boostDotActive, i === 9 && currentBoostLevel >= 10 && { backgroundColor: '#FF5722' }]} />
+                    ))}
+                  </View>
+                  <Text style={s.boostProgressText}>{currentBoostLevel}/10</Text>
+                </View>
+              )}
               <View style={s.actionRow}>
                 <TouchableOpacity style={[s.collectBtn, collecting && s.disabled]} onPress={handleCollect} disabled={collecting}>
                   <Ionicons name="cash" size={18} color="#fff" />
                   <Text style={s.collectText}>{collecting ? t('general.loading') : t('companies.collect')}</Text>
                 </TouchableOpacity>
               </View>
-              {!watchingAd ? (
+              {!isMaxBoost ? (
                 <TouchableOpacity style={s.adBtn} onPress={handleAdBoost}>
                   <Ionicons name="play-circle" size={18} color="#fff" />
-                  <Text style={s.adText}>{t('companies.watchAd')} (10x/3h)</Text>
+                  <Text style={s.adText}>
+                    {hasBoostActive
+                      ? `Assistir anúncio (${currentBoostLevel}x → ${currentBoostLevel + 1}x)`
+                      : 'Assistir anúncio (+2x boost)'}
+                  </Text>
                 </TouchableOpacity>
               ) : (
-                <View style={s.adWatching}>
-                  <Text style={s.adWatchingText}>Assistindo anúncio...</Text>
-                  <View style={s.progressBg}><View style={[s.progressFill, { width: `${adProgress}%` }]} /></View>
+                <View style={[s.adBtn, { backgroundColor: '#333', opacity: 0.6 }]}>
+                  <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                  <Text style={s.adText}>Boost Máximo 10x Ativado!</Text>
                 </View>
               )}
               {owned.length >= 2 && (
@@ -333,7 +361,7 @@ export default function Companies() {
                 <View style={s.companyRevenue}>
                   <Text style={s.revText}>{formatMoney(c._totalRevenue)}</Text>
                   <Text style={s.revLabel}>/dia</Text>
-                  {c.ad_boost_active && <Text style={s.boostMini}>10x!</Text>}
+                  {c.ad_boost_active && <Text style={s.boostMini}>{c.ad_boost_level || 1}x!</Text>}
                 </View>
               </View>
               <Text style={s.companyDesc}>{c.description}</Text>
@@ -625,9 +653,14 @@ const s = StyleSheet.create({
   revenueCard: { backgroundColor: '#2a3a2a', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 2, borderColor: '#4CAF50' },
   revenueLabel: { color: '#888', fontSize: 14 },
   revenueValue: { color: '#4CAF50', fontSize: 28, fontWeight: 'bold', marginVertical: 8 },
-  boostBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD700', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, alignSelf: 'flex-start', gap: 4, marginBottom: 12 },
+  boostBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD700', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, alignSelf: 'flex-start', gap: 4 },
   boostText: { color: '#000', fontSize: 12, fontWeight: 'bold' },
   boostMini: { color: '#FFD700', fontSize: 11, fontWeight: 'bold' },
+  boostSection: { marginBottom: 12, gap: 6 },
+  boostProgress: { flexDirection: 'row', gap: 4, alignItems: 'center' },
+  boostDot: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#3a3a3a' },
+  boostDotActive: { backgroundColor: '#FFD700' },
+  boostProgressText: { color: '#FFD700', fontSize: 11, fontWeight: 'bold', textAlign: 'right' },
   actionRow: { marginBottom: 8 },
   collectBtn: { backgroundColor: '#4CAF50', borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   collectText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
