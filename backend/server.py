@@ -81,7 +81,50 @@ LEGAL_HTML_STYLE = """
 
 @app.get("/legal/terms", response_class=HTMLResponse)
 @app.get("/api/legal/terms", response_class=HTMLResponse)
-async def public_terms(lang: str = "en"):
+async def public_terms(lang: str = "en", page: str = "terms"):
+    # === DELETE ACCOUNT PAGE ===
+    if page == "delete":
+        if lang == "pt":
+            dc = """<h1>Exclusão de Conta</h1>
+<p class="meta">BizRealms - Instruções para exclusão</p>
+<h2>Como excluir sua conta</h2>
+<ol style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Abra o app <strong>BizRealms</strong></li>
+<li>Vá em <strong>Perfil</strong></li>
+<li>Role até <strong>Configurações da Conta</strong></li>
+<li>Toque em <strong>Excluir Conta</strong></li>
+<li>Confirme a exclusão</li>
+</ol>
+<p>Ou envie email para <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a> com assunto "Excluir minha conta".</p>
+<h2>Dados excluídos</h2>
+<ul style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Dados pessoais (nome, email, senha)</li>
+<li>Progresso do jogo</li>
+<li>Histórico de transações</li>
+<li>Configurações e preferências</li>
+</ul>
+<h2>Prazo</h2>
+<p>Todos os dados são excluídos <strong>imediatamente</strong>.</p>"""
+        else:
+            dc = """<h1>Account Deletion</h1>
+<p class="meta">BizRealms - Deletion instructions</p>
+<h2>How to delete your account</h2>
+<ol style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Open <strong>BizRealms</strong></li>
+<li>Go to <strong>Profile</strong></li>
+<li>Scroll to <strong>Account Settings</strong></li>
+<li>Tap <strong>Delete Account</strong></li>
+<li>Confirm</li>
+</ol>
+<p>Or email <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a></p>
+<h2>Data deleted</h2>
+<ul style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Personal data</li><li>Game progress</li><li>Transaction history</li><li>Settings</li>
+</ul>
+<h2>Timeframe</h2>
+<p>All data deleted <strong>immediately</strong>.</p>"""
+        return HTMLResponse(f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Delete Account</title>{LEGAL_HTML_STYLE}</head><body><div class="logo"><span>BizRealms</span></div>{dc}<div class="footer">&copy; 2025 BizRealms.</div></body></html>""")
+    # === TERMS PAGE ===
     if lang == "pt":
         content = """
 <h1>Termos de Uso</h1>
