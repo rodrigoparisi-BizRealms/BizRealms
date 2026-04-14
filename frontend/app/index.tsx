@@ -51,7 +51,7 @@ export default function Index() {
     <View style={styles.container}>
       {/* Full-screen banner image */}
       <Image
-        source={require('../assets/images/splash-banner.png')}
+        source={require('../assets/images/splash-banner.jpg')}
         style={styles.bannerImage}
         resizeMode="cover"
       />
