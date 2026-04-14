@@ -642,17 +642,40 @@ async def assets_download_page():
     """Page with download links for Play Store assets."""
     return HTMLResponse("""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BizRealms - Download Assets</title>
-<style>body{font-family:sans-serif;background:#1a1a2e;color:#fff;max-width:600px;margin:0 auto;padding:20px;text-align:center}
-h1{color:#FFD700}a{display:inline-block;background:#4CAF50;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;margin:12px;font-size:16px}
-a:hover{background:#45a049}img{max-width:100%;border-radius:8px;margin:10px 0;border:1px solid #333}</style></head><body>
+<style>body{font-family:sans-serif;background:#1a1a2e;color:#fff;max-width:800px;margin:0 auto;padding:20px;text-align:center}
+h1{color:#FFD700}h2{color:#4A90D9;margin-top:32px}
+.btn{display:inline-block;background:#4CAF50;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;margin:8px;font-size:14px}
+.btn:hover{background:#45a049}
+img{border-radius:8px;margin:8px 0;border:1px solid #333}
+.grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin:16px 0}
+.card{background:#222238;border-radius:12px;padding:16px;width:220px}
+.card img{width:100%;height:auto}
+.card p{font-size:12px;color:#888;margin:8px 0}
+hr{border:none;border-top:1px solid #333;margin:24px 0}
+</style></head><body>
 <h1>BizRealms - Play Store Assets</h1>
-<p>Clique para baixar:</p>
-<h3>Feature Graphic (1024x500)</h3>
-<img src="/api/download/feature-graphic.png" alt="Feature Graphic">
-<br><a href="/api/download/feature-graphic.png" download="feature-graphic.png">Download Feature Graphic</a>
-<h3>Icone 512x512</h3>
-<img src="/api/download/icon-512.png" alt="Icon" style="max-width:200px">
-<br><a href="/api/download/icon-512.png" download="icon-512.png">Download Icone 512x512</a>
+<p style="color:#aaa">Clique nos botoes para baixar os arquivos</p>
+
+<h2>Icone do App (512x512)</h2>
+<img src="/api/download/icon-512.png" alt="Icon" style="width:128px;height:128px">
+<br><a class="btn" href="/api/download/icon-512.png" download="icon-512.png">Download Icone</a>
+
+<hr>
+<h2>Feature Graphic (1024x500)</h2>
+<img src="/api/download/feature-graphic.png" alt="Feature Graphic" style="max-width:100%">
+<br><a class="btn" href="/api/download/feature-graphic.png" download="feature-graphic.png">Download Feature Graphic</a>
+
+<hr>
+<h2>Screenshots Tablet 7" (810x1440 - 9:16)</h2>
+<div class="grid">
+<div class="card"><img src="/api/download/tab-screenshot-01-home.png"><p>Home</p><a class="btn" href="/api/download/tab-screenshot-01-home.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab-screenshot-02-jobs.png"><p>Jobs</p><a class="btn" href="/api/download/tab-screenshot-02-jobs.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab-screenshot-03-companies.png"><p>Companies</p><a class="btn" href="/api/download/tab-screenshot-03-companies.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab-screenshot-04-assets.png"><p>Investments</p><a class="btn" href="/api/download/tab-screenshot-04-assets.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab-screenshot-05-store.png"><p>Store</p><a class="btn" href="/api/download/tab-screenshot-05-store.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab-screenshot-06-profile.png"><p>Profile</p><a class="btn" href="/api/download/tab-screenshot-06-profile.png" download>Download</a></div>
+</div>
+<p style="color:#666;font-size:11px;margin-top:24px">Todas as imagens em formato PNG, prontas para upload na Play Console</p>
 </body></html>""")
 
 @app.on_event("startup")
