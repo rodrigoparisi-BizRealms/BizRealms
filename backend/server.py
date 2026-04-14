@@ -340,6 +340,7 @@ from routes.assets import startup_assets
 
 # ==================== PUBLIC PAGES ====================
 @app.get("/delete-account", response_class=HTMLResponse)
+@app.get("/api/delete-account", response_class=HTMLResponse)
 async def delete_account_page():
     """Public page for account deletion instructions (required by Google Play)."""
     return HTMLResponse(content="""<!DOCTYPE html>
@@ -377,6 +378,7 @@ h1{color:#FFD700}h2{color:#4A90D9}a{color:#FFD700}.box{background:#222238;border
 </body></html>""")
 
 @app.get("/privacy-policy", response_class=HTMLResponse)
+@app.get("/api/privacy-policy", response_class=HTMLResponse)
 async def privacy_policy_page():
     """Public privacy policy page (required by Google Play)."""
     return HTMLResponse(content="""<!DOCTYPE html>
