@@ -196,7 +196,63 @@ async def public_terms(lang: str = "en"):
 
 @app.get("/legal/privacy", response_class=HTMLResponse)
 @app.get("/api/legal/privacy", response_class=HTMLResponse)
-async def public_privacy(lang: str = "en"):
+async def public_privacy(lang: str = "en", page: str = "privacy"):
+    # === DELETE ACCOUNT PAGE ===
+    if page == "delete":
+        if lang == "pt":
+            content = """
+<h1>Exclusão de Conta</h1>
+<p class="meta">BizRealms - Instruções para exclusão de conta e dados</p>
+<h2>Como excluir sua conta</h2>
+<ol style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Abra o app <strong>BizRealms</strong></li>
+<li>Vá em <strong>Perfil</strong> (ícone no canto inferior direito)</li>
+<li>Role até <strong>Configurações da Conta</strong></li>
+<li>Toque em <strong>Excluir Conta</strong></li>
+<li>Confirme a exclusão</li>
+</ol>
+<p>Ou envie um email para <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a> com o assunto "Excluir minha conta".</p>
+<h2>Dados excluídos</h2>
+<ul style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Dados pessoais (nome, email, senha)</li>
+<li>Progresso do jogo (empresas, investimentos, ativos)</li>
+<li>Histórico de transações</li>
+<li>Configurações e preferências</li>
+</ul>
+<h2>Prazo</h2>
+<p>Todos os dados são excluídos <strong>imediatamente</strong> após a confirmação.</p>
+<h2>Contato</h2>
+<p><a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a></p>
+"""
+        else:
+            content = """
+<h1>Account Deletion</h1>
+<p class="meta">BizRealms - Account and data deletion instructions</p>
+<h2>How to delete your account</h2>
+<ol style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Open the <strong>BizRealms</strong> app</li>
+<li>Go to <strong>Profile</strong> (bottom right icon)</li>
+<li>Scroll to <strong>Account Settings</strong></li>
+<li>Tap <strong>Delete Account</strong></li>
+<li>Confirm deletion</li>
+</ol>
+<p>Or email <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a> with subject "Delete my account".</p>
+<h2>Data deleted</h2>
+<ul style="margin:12px 0;padding-left:24px;line-height:2">
+<li>Personal data (name, email, password)</li>
+<li>Game progress (companies, investments, assets)</li>
+<li>Transaction history</li>
+<li>Settings and preferences</li>
+</ul>
+<h2>Timeframe</h2>
+<p>All data is deleted <strong>immediately</strong> upon confirmation.</p>
+"""
+        return HTMLResponse(f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>BizRealms - Delete Account</title>{LEGAL_HTML_STYLE}</head><body>
+<div class="logo"><span>BizRealms</span></div>
+{content}
+<div class="footer">&copy; 2025 BizRealms.</div>
+</body></html>""")
+    # === PRIVACY POLICY PAGE ===
     if lang == "pt":
         content = """
 <h1>Política de Privacidade</h1>
