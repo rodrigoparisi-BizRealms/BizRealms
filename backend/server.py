@@ -676,6 +676,23 @@ hr{border:none;border-top:1px solid #333;margin:24px 0}
 <div class="card"><img src="/api/download/tab-screenshot-06-profile.png"><p>Profile</p><a class="btn" href="/api/download/tab-screenshot-06-profile.png" download>Download</a></div>
 </div>
 <p style="color:#666;font-size:11px;margin-top:24px">Todas as imagens em formato PNG, prontas para upload na Play Console</p>
+
+<hr>
+<h2>Screenshots Tablet 10" (1080x1920 - 9:16)</h2>
+<div class="grid">
+<div class="card"><img src="/api/download/tab10-screenshot-01-home.png"><p>Home</p><a class="btn" href="/api/download/tab10-screenshot-01-home.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab10-screenshot-02-jobs.png"><p>Jobs</p><a class="btn" href="/api/download/tab10-screenshot-02-jobs.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab10-screenshot-03-companies.png"><p>Companies</p><a class="btn" href="/api/download/tab10-screenshot-03-companies.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab10-screenshot-04-invest.png"><p>Investments</p><a class="btn" href="/api/download/tab10-screenshot-04-invest.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab10-screenshot-05-store.png"><p>Store</p><a class="btn" href="/api/download/tab10-screenshot-05-store.png" download>Download</a></div>
+<div class="card"><img src="/api/download/tab10-screenshot-06-profile.png"><p>Profile</p><a class="btn" href="/api/download/tab10-screenshot-06-profile.png" download>Download</a></div>
+</div>
+
+<hr>
+<h2>Logo Extraida</h2>
+<img src="/api/download/bizrealms-logo-extracted.jpg" alt="Logo" style="max-width:100%">
+<br><a class="btn" href="/api/download/bizrealms-logo-extracted.jpg" download>Download Logo</a>
+
 </body></html>""")
 
 @app.on_event("startup")
