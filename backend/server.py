@@ -337,6 +337,133 @@ from routes.investments import startup_investments
 from routes.companies import startup_map, startup_companies
 from routes.assets import startup_assets
 
+
+# ==================== PUBLIC PAGES ====================
+@app.get("/delete-account", response_class=HTMLResponse)
+async def delete_account_page():
+    """Public page for account deletion instructions (required by Google Play)."""
+    return HTMLResponse(content="""<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BizRealms - Exclusão de Conta</title>
+<style>body{font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#1a1a2e;color:#e0e0e0}
+h1{color:#FFD700}h2{color:#4A90D9}a{color:#FFD700}.box{background:#222238;border-radius:12px;padding:20px;margin:16px 0}
+.btn{display:inline-block;background:#FF5722;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:12px}</style>
+</head><body>
+<h1>🎮 BizRealms</h1>
+<h2>Exclusão de Conta e Dados</h2>
+<div class="box">
+<p><strong>Para solicitar a exclusão da sua conta BizRealms e todos os dados associados, siga os passos:</strong></p>
+<ol>
+<li>Abra o app <strong>BizRealms</strong></li>
+<li>Vá em <strong>Perfil</strong> (ícone no canto inferior direito)</li>
+<li>Role até <strong>"Configurações da Conta"</strong></li>
+<li>Toque em <strong>"Excluir Conta"</strong></li>
+<li>Confirme a exclusão</li>
+</ol>
+<p>Ou envie um email para: <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a> com o assunto "Excluir minha conta" e o email cadastrado.</p>
+</div>
+<div class="box">
+<h3>Dados que serão excluídos:</h3>
+<ul>
+<li>✅ Dados pessoais (nome, email, senha)</li>
+<li>✅ Progresso do jogo (empresas, investimentos, ativos)</li>
+<li>✅ Histórico de transações no jogo</li>
+<li>✅ Configurações e preferências</li>
+</ul>
+<h3>Prazo de exclusão:</h3>
+<p>Todos os dados são excluídos <strong>imediatamente</strong> após a confirmação.</p>
+</div>
+<p style="color:#888;font-size:12px;margin-top:24px">© 2025 BizRealms. Todos os direitos reservados.</p>
+</body></html>""")
+
+@app.get("/privacy-policy", response_class=HTMLResponse)
+async def privacy_policy_page():
+    """Public privacy policy page (required by Google Play)."""
+    return HTMLResponse(content="""<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BizRealms - Política de Privacidade</title>
+<style>body{font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#1a1a2e;color:#e0e0e0}
+h1{color:#FFD700}h2{color:#4A90D9}h3{color:#E6A817}.box{background:#222238;border-radius:12px;padding:20px;margin:16px 0}
+a{color:#FFD700}</style>
+</head><body>
+<h1>🎮 BizRealms</h1>
+<h2>Política de Privacidade</h2>
+<p><em>Última atualização: Abril 2025</em></p>
+
+<div class="box">
+<h3>1. Dados Coletados</h3>
+<ul>
+<li><strong>Dados de cadastro:</strong> Nome de usuário, endereço de email, senha (criptografada)</li>
+<li><strong>Dados do jogo:</strong> Progresso, empresas, investimentos, ativos virtuais</li>
+<li><strong>Dados de uso:</strong> Logs de acesso, dispositivo, sistema operacional</li>
+<li><strong>Dados de publicidade:</strong> ID de publicidade do dispositivo (Google Advertising ID)</li>
+</ul>
+</div>
+
+<div class="box">
+<h3>2. Uso dos Dados</h3>
+<ul>
+<li>Prover e manter o funcionamento do jogo</li>
+<li>Personalizar a experiência do jogador</li>
+<li>Exibir anúncios personalizados (Google AdMob)</li>
+<li>Análise de erros e melhorias (Sentry)</li>
+<li>Comunicações sobre o jogo (notificações push)</li>
+</ul>
+</div>
+
+<div class="box">
+<h3>3. Compartilhamento de Dados</h3>
+<p>Compartilhamos dados com os seguintes serviços terceiros:</p>
+<ul>
+<li><strong>Google AdMob:</strong> Para exibição de anúncios</li>
+<li><strong>Sentry:</strong> Para monitoramento de erros</li>
+<li><strong>Railway:</strong> Hospedagem do servidor</li>
+<li><strong>MongoDB Atlas:</strong> Armazenamento de dados</li>
+</ul>
+<p>Não vendemos dados pessoais a terceiros.</p>
+</div>
+
+<div class="box">
+<h3>4. Segurança</h3>
+<p>Todos os dados são transmitidos via HTTPS (criptografia em trânsito). Senhas são armazenadas com hash bcrypt.</p>
+</div>
+
+<div class="box">
+<h3>5. Seus Direitos</h3>
+<ul>
+<li>Acessar seus dados pessoais</li>
+<li>Corrigir dados incorretos</li>
+<li>Solicitar exclusão da conta e dados</li>
+<li>Revogar consentimento de uso de dados</li>
+</ul>
+<p>Para exercer seus direitos, acesse as configurações do app ou envie email para: <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a></p>
+</div>
+
+<div class="box">
+<h3>6. Retenção de Dados</h3>
+<p>Seus dados são mantidos enquanto a conta estiver ativa. Ao excluir a conta, todos os dados são removidos imediatamente.</p>
+</div>
+
+<div class="box">
+<h3>7. Menores de Idade</h3>
+<p>O BizRealms é destinado a maiores de 13 anos. Não coletamos intencionalmente dados de menores de 13 anos.</p>
+</div>
+
+<div class="box">
+<h3>8. Alterações</h3>
+<p>Esta política pode ser atualizada periodicamente. Notificaremos os usuários sobre mudanças significativas através do app.</p>
+</div>
+
+<div class="box">
+<h3>9. Contato</h3>
+<p>Email: <a href="mailto:suporte@bizrealms.com">suporte@bizrealms.com</a></p>
+<p>Desenvolvedor: BizRealms</p>
+</div>
+
+<p style="color:#888;font-size:12px;margin-top:24px">© 2025 BizRealms. Todos os direitos reservados.</p>
+</body></html>""")
+
+
 @app.on_event("startup")
 async def on_startup():
     """Run all startup seed functions."""
