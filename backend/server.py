@@ -2,7 +2,7 @@
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, HTMLResponse
+from starlette.responses import JSONResponse, HTMLResponse, FileResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -624,6 +624,36 @@ a{color:#FFD700}</style>
 <p style="color:#888;font-size:12px;margin-top:24px">© 2025 BizRealms. Todos os direitos reservados.</p>
 </body></html>""")
 
+
+# ==================== DOWNLOAD ASSETS ====================
+DOCS_DIR = ROOT_DIR.parent / "docs"
+
+@app.get("/api/download/{filename}")
+async def download_asset(filename: str):
+    """Serve downloadable assets from docs folder."""
+    filepath = DOCS_DIR / filename
+    if not filepath.exists() or not filepath.is_file():
+        return JSONResponse(status_code=404, content={"detail": "File not found"})
+    media = "image/png" if filename.endswith(".png") else "application/octet-stream"
+    return FileResponse(str(filepath), media_type=media, filename=filename)
+
+@app.get("/api/assets-page", response_class=HTMLResponse)
+async def assets_download_page():
+    """Page with download links for Play Store assets."""
+    return HTMLResponse("""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BizRealms - Download Assets</title>
+<style>body{font-family:sans-serif;background:#1a1a2e;color:#fff;max-width:600px;margin:0 auto;padding:20px;text-align:center}
+h1{color:#FFD700}a{display:inline-block;background:#4CAF50;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;margin:12px;font-size:16px}
+a:hover{background:#45a049}img{max-width:100%;border-radius:8px;margin:10px 0;border:1px solid #333}</style></head><body>
+<h1>BizRealms - Play Store Assets</h1>
+<p>Clique para baixar:</p>
+<h3>Feature Graphic (1024x500)</h3>
+<img src="/api/download/feature-graphic.png" alt="Feature Graphic">
+<br><a href="/api/download/feature-graphic.png" download="feature-graphic.png">Download Feature Graphic</a>
+<h3>Icone 512x512</h3>
+<img src="/api/download/icon-512.png" alt="Icon" style="max-width:200px">
+<br><a href="/api/download/icon-512.png" download="icon-512.png">Download Icone 512x512</a>
+</body></html>""")
 
 @app.on_event("startup")
 async def on_startup():
