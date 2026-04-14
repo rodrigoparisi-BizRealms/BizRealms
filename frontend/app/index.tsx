@@ -42,7 +42,7 @@ export default function Index() {
         } else {
           router.replace('/(auth)/login');
         }
-      }, 1500);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [user, loading]);
