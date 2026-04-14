@@ -7,6 +7,7 @@ from bson import ObjectId
 import uuid
 import random
 import math
+import os
 
 from database import db
 from utils import get_current_user, hash_password, verify_password, create_token, decode_token, calculate_level, security
@@ -362,82 +363,84 @@ async def claim_ranking_reward(current_user: dict = Depends(get_current_user)):
 
 
 # ==================== REAL MONEY REWARDS (PREMIAÇÃO REAL) ====================
+# Flow: AdMob Revenue (5%) → Prize Pool → Top 3 Monthly → Player Claims → Admin Pays
+
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "rodrigo_parisi@yahoo.com.br")
+
+async def _calculate_monthly_rankings():
+    """Calculate net worth rankings for all users."""
+    all_users = await db.users.find({}).to_list(1000)
+    rankings = []
+    for u in all_users:
+        nw = await calculate_user_net_worth(u)
+        rankings.append(nw)
+    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
+    return rankings
+
 
 @router.get("/rewards/prize-pool")
 async def get_prize_pool(current_user: dict = Depends(get_current_user)):
     """Get current monthly prize pool and distribution info"""
+    import calendar
     now = datetime.utcnow()
     current_month = now.strftime("%Y-%m")
-    
-    # Simulated ad revenue (in production, this comes from real ad network)
-    # Base: $ 5000/month simulated ad revenue, 5% goes to prize pool
+
+    # Ad revenue estimate: 5% goes to prize pool
     total_players = await db.users.count_documents({})
-    base_revenue = 5000 + (total_players * 50)  # More players = more ad revenue
-    prize_pool_total = round(base_revenue * 0.05, 2)  # 5% of ad revenue
-    
-    # Distribution: 60% 1st, 30% 2nd, 10% 3rd
+    base_revenue = 5000 + (total_players * 50)
+    prize_pool_total = round(base_revenue * 0.05, 2)
+
     distribution = {
         "1st": round(prize_pool_total * 0.60, 2),
         "2nd": round(prize_pool_total * 0.30, 2),
         "3rd": round(prize_pool_total * 0.10, 2),
     }
-    
-    # Get current monthly rankings (top 3)
-    all_users = await db.users.find({}).to_list(1000)
-    rankings = []
-    for u in all_users:
-        portfolio = await db.user_investments.find({"user_id": u['id']}).to_list(100)
-        inv_value = sum(i.get('current_value', i.get('amount', 0) * i.get('current_price', i.get('purchase_price', 0))) for i in portfolio)
-        companies = await db.user_companies.find({"user_id": u['id']}).to_list(500)
-        comp_value = sum(c.get('purchase_price', 0) for c in companies)
-        assets = await db.user_assets.find({"user_id": u['id']}).to_list(100)
-        asset_value = sum(a.get('current_value', a.get('purchase_price', 0)) for a in assets)
-        total_nw = u.get('money', 0) + inv_value + comp_value + asset_value
-        rankings.append({
-            "user_id": u['id'],
-            "username": u.get('username', 'Jogador'),
-            "avatar_color": u.get('avatar_color', 'blue'),
-            "level": u.get('level', 1),
-            "total_net_worth": round(total_nw, 2),
-        })
-    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
-    top3 = rankings[:3]
-    
-    # Check user's position
+
+    # Rankings
+    rankings = await _calculate_monthly_rankings()
+    top3 = [{
+        "user_id": r['user_id'], "name": r['name'],
+        "avatar_color": r.get('avatar_color', 'blue'),
+        "level": r.get('level', 1),
+        "total_net_worth": r['total_net_worth'],
+    } for r in rankings[:3]]
+
     user_pos = next((i + 1 for i, r in enumerate(rankings) if r['user_id'] == current_user['id']), None)
-    
-    # Check if user has PayPal configured
+
+    # User payment info
     user_doc = await db.users.find_one({"id": current_user['id']})
-    has_paypal = bool(user_doc.get('paypal_email'))
-    
-    # Check if there are unclaimed real rewards for user
+    payment_info = user_doc.get('payment_info', {})
+    has_payment_method = bool(payment_info.get('method'))
+
+    # Unclaimed rewards
     unclaimed_real = await db.real_money_rewards.find_one({
         "user_id": current_user['id'],
-        "claimed": False,
+        "status": {"$in": ["pending_claim", "unclaimed"]},
     })
-    
-    # Check previous months' rewards history
+
+    # History
     history = await db.real_money_rewards.find({
         "user_id": current_user['id']
     }).sort("month", -1).to_list(12)
     for h in history:
         h.pop('_id', None)
-    
-    # Days remaining in month
-    import calendar
+
     _, last_day = calendar.monthrange(now.year, now.month)
     days_remaining = last_day - now.day
-    
+
     return {
         "current_month": current_month,
         "prize_pool_total": prize_pool_total,
         "distribution": distribution,
-        "simulated_ad_revenue": base_revenue,
+        "estimated_ad_revenue": base_revenue,
         "top3": top3,
         "user_position": user_pos,
         "total_players": total_players,
-        "has_paypal": has_paypal,
-        "paypal_email": user_doc.get('paypal_email', ''),
+        "has_payment_method": has_payment_method,
+        "payment_info": {
+            "method": payment_info.get('method', ''),
+            "detail": payment_info.get('pix_key', '') or payment_info.get('paypal_email', ''),
+        },
         "days_remaining": days_remaining,
         "has_unclaimed_reward": unclaimed_real is not None,
         "unclaimed_reward": {
@@ -445,125 +448,256 @@ async def get_prize_pool(current_user: dict = Depends(get_current_user)):
             "position": unclaimed_real.get('position', 0),
             "month": unclaimed_real.get('month', ''),
             "id": unclaimed_real.get('id', ''),
+            "status": unclaimed_real.get('status', ''),
         } if unclaimed_real else None,
         "history": history,
+        "prizes_info": [
+            {"position": 1, "pct": 60, "amount": distribution["1st"], "icon": "trophy", "color": "#FFD700"},
+            {"position": 2, "pct": 30, "amount": distribution["2nd"], "icon": "medal", "color": "#C0C0C0"},
+            {"position": 3, "pct": 10, "amount": distribution["3rd"], "icon": "ribbon", "color": "#CD7F32"},
+        ],
     }
 
 
-@router.post("/rewards/update-paypal")
-async def update_paypal_email(request: dict, current_user: dict = Depends(get_current_user)):
-    """Update user's PayPal email for receiving real money rewards"""
+# ---- Player Payment Info (PIX / PayPal) ----
+
+@router.post("/rewards/update-payment-info")
+async def update_payment_info(request: dict, current_user: dict = Depends(get_current_user)):
+    """Update player's payment method (PIX or PayPal) for receiving real money rewards."""
+    method = request.get('method', '').strip().lower()  # 'pix' or 'paypal'
+    pix_key = request.get('pix_key', '').strip()
     paypal_email = request.get('paypal_email', '').strip()
 
-    if not paypal_email:
-        raise HTTPException(status_code=400, detail="PayPal email cannot be empty")
-    if '@' not in paypal_email or '.' not in paypal_email:
-        raise HTTPException(status_code=400, detail="Invalid email format")
+    if method not in ('pix', 'paypal'):
+        raise HTTPException(status_code=400, detail="Método inválido. Use 'pix' ou 'paypal'.")
+
+    if method == 'pix' and not pix_key:
+        raise HTTPException(status_code=400, detail="Informe sua chave PIX.")
+    if method == 'paypal':
+        if not paypal_email or '@' not in paypal_email:
+            raise HTTPException(status_code=400, detail="Informe um email PayPal válido.")
+
+    payment_info = {
+        "method": method,
+        "pix_key": pix_key if method == 'pix' else '',
+        "paypal_email": paypal_email if method == 'paypal' else '',
+        "updated_at": datetime.utcnow().isoformat(),
+    }
 
     await db.users.update_one({"id": current_user['id']}, {
-        "$set": {
-            "paypal_email": paypal_email,
-            "paypal_updated_at": datetime.utcnow(),
-        }
+        "$set": {"payment_info": payment_info}
     })
 
-    return {"success": True, "message": f"PayPal updated: {paypal_email}"}
+    detail = pix_key if method == 'pix' else paypal_email
+    return {"success": True, "message": f"Método de pagamento atualizado: {method.upper()} - {detail}"}
 
-@router.delete("/rewards/delete-paypal")
-async def delete_paypal_email(current_user: dict = Depends(get_current_user)):
-    """Remove user's PayPal email."""
-    await db.users.update_one({"id": current_user['id']}, {
-        "$unset": {
-            "paypal_email": "",
-            "paypal_updated_at": "",
-        }
-    })
-    return {"success": True, "message": "PayPal removed successfully"}
 
+@router.delete("/rewards/delete-payment-info")
+async def delete_payment_info(current_user: dict = Depends(get_current_user)):
+    """Remove player's payment info."""
+    await db.users.update_one({"id": current_user['id']}, {"$unset": {"payment_info": ""}})
+    return {"success": True, "message": "Método de pagamento removido."}
+
+
+# ---- Monthly Distribution (Auto / Admin) ----
 
 @router.post("/rewards/distribute-monthly")
 async def distribute_monthly_rewards(current_user: dict = Depends(get_current_user)):
-    """Distribute monthly real money rewards to top 3 (admin/auto trigger)"""
+    """Distribute monthly real money rewards to top 3. Runs once per month."""
     now = datetime.utcnow()
     current_month = now.strftime("%Y-%m")
-    
-    # Check if already distributed this month
+
     existing = await db.real_money_rewards.find_one({"month": current_month})
     if existing:
-        return {"success": False, "message": "Premiação deste mês já foi distribuída"}
-    
-    # Calculate prize pool
+        return {"success": False, "message": f"Premiação de {current_month} já foi distribuída."}
+
     total_players = await db.users.count_documents({})
     base_revenue = 5000 + (total_players * 50)
     prize_pool_total = round(base_revenue * 0.05, 2)
-    
-    # Get rankings
-    all_users = await db.users.find({}).to_list(1000)
-    rankings = []
-    for u in all_users:
-        portfolio = await db.user_investments.find({"user_id": u['id']}).to_list(100)
-        inv_value = sum(i.get('current_value', i.get('amount', 0) * i.get('current_price', i.get('purchase_price', 0))) for i in portfolio)
-        companies = await db.user_companies.find({"user_id": u['id']}).to_list(500)
-        comp_value = sum(c.get('purchase_price', 0) for c in companies)
-        assets = await db.user_assets.find({"user_id": u['id']}).to_list(100)
-        asset_value = sum(a.get('current_value', a.get('purchase_price', 0)) for a in assets)
-        total_nw = u.get('money', 0) + inv_value + comp_value + asset_value
-        rankings.append({"user_id": u['id'], "username": u.get('username', 'Jogador'), "total_net_worth": total_nw})
-    rankings.sort(key=lambda x: x['total_net_worth'], reverse=True)
-    
-    # Distribute to top 3
-    prizes = [0.60, 0.30, 0.10]
-    for i, pct in enumerate(prizes):
+
+    rankings = await _calculate_monthly_rankings()
+
+    prizes_pct = [0.60, 0.30, 0.10]
+    winners = []
+
+    for i, pct in enumerate(prizes_pct):
         if i >= len(rankings):
             break
+        winner = rankings[i]
         amount = round(prize_pool_total * pct, 2)
         reward = {
             "id": str(uuid.uuid4()),
-            "user_id": rankings[i]['user_id'],
-            "username": rankings[i]['username'],
+            "user_id": winner['user_id'],
+            "username": winner['name'],
             "month": current_month,
             "position": i + 1,
             "amount": amount,
-            "total_net_worth": rankings[i]['total_net_worth'],
-            "claimed": False,
+            "total_net_worth": winner['total_net_worth'],
+            "status": "pending_claim",  # pending_claim → claimed → processing → paid
+            "payment_method": None,
+            "payment_detail": None,
+            "claimed_at": None,
+            "paid_at": None,
+            "paid_by_admin": False,
             "created_at": now,
         }
         await db.real_money_rewards.insert_one(reward)
-    
-    return {"success": True, "message": f"Premiação de {current_month} distribuída! Pool: $ {prize_pool_total:.2f}"}
 
+        # Create in-app notification for the winner
+        notification = {
+            "id": str(uuid.uuid4()),
+            "user_id": winner['user_id'],
+            "type": "reward",
+            "title": f"🏆 Parabéns! Você ficou em {i+1}º lugar!",
+            "message": f"Você ganhou $ {amount:.2f} USD no ranking mensal de {current_month}! Resgate seu prêmio na aba de Rankings.",
+            "read": False,
+            "created_at": now,
+        }
+        await db.notifications.insert_one(notification)
+
+        winners.append({
+            "position": i + 1, "name": winner['name'],
+            "net_worth": winner['total_net_worth'], "prize": f"$ {amount:.2f}",
+        })
+
+    # Log the distribution
+    await db.ranking_distributions.insert_one({
+        "type": "monthly_real_money",
+        "month": current_month,
+        "prize_pool": prize_pool_total,
+        "winners": winners,
+        "created_at": now,
+    })
+
+    return {"success": True, "message": f"Premiação de {current_month} distribuída! Pool: $ {prize_pool_total:.2f}", "winners": winners}
+
+
+# ---- Player Claims Reward ----
 
 @router.post("/rewards/claim-real")
 async def claim_real_money_reward(request: dict, current_user: dict = Depends(get_current_user)):
-    """Claim a real money reward (requires PayPal)"""
+    """Player claims their real money reward. Must have payment info configured."""
     reward_id = request.get('reward_id')
-    
-    # Check PayPal
+    if not reward_id:
+        raise HTTPException(status_code=400, detail="reward_id é obrigatório.")
+
+    # Check payment info
     user = await db.users.find_one({"id": current_user['id']})
-    if not user.get('paypal_email'):
-        raise HTTPException(status_code=400, detail="Set up your PayPal email in your profile before claiming!")
-    
+    payment_info = user.get('payment_info', {})
+    if not payment_info.get('method'):
+        raise HTTPException(
+            status_code=400,
+            detail="Configure seu método de pagamento (PIX ou PayPal) antes de resgatar!"
+        )
+
     reward = await db.real_money_rewards.find_one({
         "id": reward_id,
         "user_id": current_user['id'],
-        "claimed": False,
+        "status": "pending_claim",
     })
     if not reward:
-        raise HTTPException(status_code=404, detail="Recompensa não encontrada ou já resgatada")
-    
-    # Mark as claimed
-    await db.real_money_rewards.update_one({"id": reward_id}, {
-        "$set": {
-            "claimed": True,
-            "claimed_at": datetime.utcnow(),
-            "paypal_email_used": user.get('paypal_email'),
-            "status": "processing",  # In production: pending -> processing -> paid
-        }
-    })
-    
-    return {
-        "success": True,
-        "message": f"Resgate de $ {reward['amount']:.2f} solicitado!\n\nPagamento será enviado para seu PayPal: {user.get('paypal_email', '')}\n\nPrazo: até 5 dias úteis.",
+        raise HTTPException(status_code=404, detail="Recompensa não encontrada ou já resgatada.")
+
+    method = payment_info.get('method', '')
+    detail = payment_info.get('pix_key', '') if method == 'pix' else payment_info.get('paypal_email', '')
+
+    # Update reward status to "claimed" (waiting admin payment)
+    await db.real_money_rewards.update_one({"id": reward_id}, {"$set": {
+        "status": "claimed",
+        "claimed_at": datetime.utcnow(),
+        "payment_method": method,
+        "payment_detail": detail,
+    }})
+
+    # Create admin notification for payment
+    admin_notif = {
+        "id": str(uuid.uuid4()),
+        "type": "admin_payment_request",
+        "player_name": user.get('name', 'Jogador'),
+        "player_email": user.get('email', ''),
+        "reward_id": reward_id,
         "amount": reward['amount'],
         "position": reward['position'],
+        "month": reward['month'],
+        "payment_method": method,
+        "payment_detail": detail,
+        "status": "pending",
+        "created_at": datetime.utcnow(),
     }
+    await db.admin_payment_queue.insert_one(admin_notif)
+
+    method_label = "PIX" if method == "pix" else "PayPal"
+    return {
+        "success": True,
+        "message": f"Prêmio de $ {reward['amount']:.2f} resgatado!\n\nPagamento via {method_label}: {detail}\n\nPrazo: até 5 dias úteis.",
+        "amount": reward['amount'],
+        "position": reward['position'],
+        "payment_method": method_label,
+        "payment_detail": detail,
+    }
+
+
+# ---- Admin: Payment Management ----
+
+@router.get("/admin/pending-payments")
+async def get_pending_payments(current_user: dict = Depends(get_current_user)):
+    """Get all pending payment requests for admin."""
+    # Simple admin check: only the admin email can access
+    if current_user.get('email') != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador.")
+
+    pending = await db.admin_payment_queue.find(
+        {"status": "pending"}
+    ).sort("created_at", -1).to_list(100)
+    for p in pending:
+        p.pop('_id', None)
+
+    # Also get claimed rewards not yet paid
+    claimed_rewards = await db.real_money_rewards.find(
+        {"status": "claimed"}
+    ).sort("claimed_at", -1).to_list(100)
+    for c in claimed_rewards:
+        c.pop('_id', None)
+
+    return {
+        "pending_payments": pending,
+        "claimed_rewards": claimed_rewards,
+        "total_pending": len(pending),
+    }
+
+
+@router.post("/admin/mark-paid/{reward_id}")
+async def mark_reward_as_paid(reward_id: str, current_user: dict = Depends(get_current_user)):
+    """Admin marks a reward as paid after manual transfer."""
+    if current_user.get('email') != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador.")
+
+    reward = await db.real_money_rewards.find_one({"id": reward_id})
+    if not reward:
+        raise HTTPException(status_code=404, detail="Recompensa não encontrada.")
+
+    await db.real_money_rewards.update_one({"id": reward_id}, {"$set": {
+        "status": "paid",
+        "paid_at": datetime.utcnow(),
+        "paid_by_admin": True,
+    }})
+
+    # Update admin queue
+    await db.admin_payment_queue.update_one(
+        {"reward_id": reward_id},
+        {"$set": {"status": "paid", "paid_at": datetime.utcnow()}}
+    )
+
+    # Notify player
+    notification = {
+        "id": str(uuid.uuid4()),
+        "user_id": reward['user_id'],
+        "type": "payment_completed",
+        "title": "💰 Pagamento Realizado!",
+        "message": f"Seu prêmio de $ {reward['amount']:.2f} ({reward['month']}) foi enviado via {reward.get('payment_method', 'N/A').upper()}!",
+        "read": False,
+        "created_at": datetime.utcnow(),
+    }
+    await db.notifications.insert_one(notification)
+
+    return {"success": True, "message": f"Pagamento de $ {reward['amount']:.2f} marcado como pago para {reward.get('username', 'Jogador')}."}
