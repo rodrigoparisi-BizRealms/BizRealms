@@ -372,37 +372,10 @@ async def complete_character_profile(
 
 @router.post("/user/reset-account")
 async def reset_account(current_user: dict = Depends(get_current_user)):
-    """Reset all game data for the current user (keeps auth info)."""
+    """Permanently delete the user account and ALL associated data."""
     uid = current_user['id']
     
-    # Reset user game data (keep auth fields: id, email, password, name, avatar, language)
-    await db.users.update_one(
-        {"id": uid},
-        {"$set": {
-            "money": 1000,
-            "level": 1,
-            "experience_points": 0,
-            "education": [],
-            "certifications": [],
-            "work_experience": [],
-            "skills": {},
-            "background": "",
-            "dream": "",
-            "daily_offers_used": 0,
-            "last_offer_reset": None,
-            "ads_watched_today": 0,
-            "last_ad_date": "",
-            "full_name": "",
-            "identity_document": "",
-        },
-        "$unset": {
-            "paypal_email": "",
-            "paypal_updated_at": "",
-            "payment_info": "",
-        }}
-    )
-    
-    # Delete ALL user's game data from every collection
+    # Delete ALL user data from every collection
     await db.user_companies.delete_many({"user_id": uid})
     await db.user_assets.delete_many({"user_id": uid})
     await db.user_holdings.delete_many({"user_id": uid})
@@ -427,8 +400,15 @@ async def reset_account(current_user: dict = Depends(get_current_user)):
     await db.game_events.delete_many({"user_id": uid})
     await db.game_crises.delete_many({"user_id": uid})
     await db.prestige.delete_many({"user_id": uid})
+    await db.ranking_snapshots.update_many({}, {"$pull": {"rankings": {"user_id": uid}}})
+    await db.push_tokens.delete_many({"user_id": uid})
+    await db.subscriptions.delete_many({"user_id": uid})
+    await db.competitions.update_many({}, {"$pull": {"participants": {"user_id": uid}}})
     
-    return {"success": True, "message": "Conta zerada com sucesso! Todos os dados do jogo foram reiniciados."}
+    # Finally, delete the user account itself
+    await db.users.delete_one({"id": uid})
+    
+    return {"success": True, "message": "Conta excluída com sucesso. Todos os dados foram removidos permanentemente."}
 
 @router.post("/user/watch-ad")
 async def watch_ad(current_user: dict = Depends(get_current_user)):

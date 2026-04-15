@@ -410,23 +410,23 @@ export default function Profile() {
         await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/user/reset-account`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        showAlert('Conta Zerada', t('profile.accountResetSuccess') || 'Sua conta foi zerada com sucesso. Todos os dados do jogo foram reiniciados.');
-        await refreshUser();
+        // Account is now fully deleted - logout and redirect to login
+        await logout();
       } catch (e: any) {
         showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       }
     };
     if (Platform.OS === 'web') {
-      if (window.confirm(t('profile.resetConfirmMsg') || 'TEM CERTEZA que deseja ZERAR sua conta? Todos os seus dados do jogo (dinheiro, empresas, investimentos, patrimônio, empregos) serão apagados permanentemente. Esta ação NÃO pode ser desfeita!')) {
+      if (window.confirm('TEM CERTEZA que deseja EXCLUIR sua conta? Sua conta será apagada PERMANENTEMENTE junto com TODOS os dados (dinheiro, empresas, investimentos, empregos, estatísticas). Para jogar novamente, será necessário criar uma nova conta. Esta ação NÃO pode ser desfeita!')) {
         doReset();
       }
     } else {
       Alert.alert(
-        t('profile.resetAccount') || 'Zerar Conta',
-        t('profile.resetConfirmMsg') || 'TEM CERTEZA que deseja ZERAR sua conta? Todos os seus dados do jogo serão apagados permanentemente. Esta ação NÃO pode ser desfeita!',
+        'Excluir Conta',
+        'TEM CERTEZA que deseja EXCLUIR sua conta?\n\nSua conta será apagada PERMANENTEMENTE junto com TODOS os dados:\n\n• Dinheiro e patrimônio\n• Empresas e investimentos\n• Empregos e cursos\n• Estatísticas e rankings\n• Dados pessoais e PayPal\n\nPara jogar novamente, será necessário criar uma nova conta.\n\nEsta ação NÃO pode ser desfeita!',
         [
           { text: t('general.cancel'), style: 'cancel' },
-          { text: 'ZERAR TUDO', style: 'destructive', onPress: doReset },
+          { text: 'EXCLUIR CONTA', style: 'destructive', onPress: doReset },
         ]
       );
     }
@@ -898,13 +898,13 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
-        {/* Reset Account Button */}
+        {/* Delete Account Button */}
         <TouchableOpacity
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, backgroundColor: '#2a1a1a', borderRadius: 12, marginHorizontal: 16, marginBottom: 8 }}
           onPress={handleResetAccount}
         >
-          <Ionicons name="refresh-circle" size={22} color="#FF9800" />
-          <Text style={{ color: '#FF9800', fontSize: 15, fontWeight: '600' }}>{t('profile.resetAccount') || 'Zerar Conta'}</Text>
+          <Ionicons name="trash" size={22} color="#F44336" />
+          <Text style={{ color: '#F44336', fontSize: 15, fontWeight: '600' }}>{'Excluir Conta'}</Text>
         </TouchableOpacity>
 
         {/* Logout Button */}
