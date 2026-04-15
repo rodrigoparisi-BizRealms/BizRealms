@@ -327,17 +327,24 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     if isinstance(last_collection, str):
         last_collection = datetime.fromisoformat(last_collection.replace('Z', '+00:00'))
     
-    # Game time: 30 game days = 24 real hours => 1 game day = 2880 real seconds
-    GAME_DAY_SECONDS = 2880
+    # Game time: 30 game days = 72 real hours (3 real days) => 1 game day = 8640 real seconds
+    # This means a full monthly salary takes ~3 real days to accumulate
+    GAME_DAY_SECONDS = 8640
+    MAX_COLLECTIBLE_DAYS = 30  # Cap: max 1 game month of accumulated earnings
+    MIN_COLLECTION_INTERVAL = 1800  # Minimum 30 minutes between collections
     now = datetime.utcnow()
-    game_days_elapsed = (now - last_collection).total_seconds() / GAME_DAY_SECONDS
     
-    if game_days_elapsed < 0.01:
+    real_seconds_elapsed = (now - last_collection).total_seconds()
+    
+    if real_seconds_elapsed < MIN_COLLECTION_INTERVAL:
+        minutes_left = int((MIN_COLLECTION_INTERVAL - real_seconds_elapsed) / 60)
         return {
-            "message": "Você já coletou seus ganhos recentemente. Aguarde pelo menos 1 minuto!",
+            "message": f"Aguarde {minutes_left} minuto(s) para coletar novamente.",
             "earnings": 0,
             "days_elapsed": 0
         }
+    
+    game_days_elapsed = min(real_seconds_elapsed / GAME_DAY_SECONDS, MAX_COLLECTIBLE_DAYS)
     
     # Calculate earnings based on game days (salary is per 30 game days)
     daily_salary = current_job['salary'] / 30

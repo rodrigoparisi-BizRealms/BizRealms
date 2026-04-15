@@ -144,8 +144,8 @@ export default function Profile() {
     setSavingPaypal(true);
     try {
       await axios.post(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/update-paypal`,
-        { paypal_email: paypalEmail },
+        `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/update-payment-info`,
+        { method: 'paypal', paypal_email: paypalEmail },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       showAlert(t('general.success'), t('profile.paypalSaved') || 'PayPal account saved!');
@@ -160,7 +160,7 @@ export default function Profile() {
     const doDelete = async () => {
       try {
         await axios.delete(
-          `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/delete-paypal`,
+          `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/delete-payment-info`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         showAlert(t('general.success'), t('profile.paypalRemoved') || 'PayPal account removed');
