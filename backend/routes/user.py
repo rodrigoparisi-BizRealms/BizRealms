@@ -375,7 +375,7 @@ async def reset_account(current_user: dict = Depends(get_current_user)):
     """Reset all game data for the current user (keeps auth info)."""
     uid = current_user['id']
     
-    # Reset user game data (keep auth fields)
+    # Reset user game data (keep auth fields: id, email, password, name, avatar, language)
     await db.users.update_one(
         {"id": uid},
         {"$set": {
@@ -391,21 +391,44 @@ async def reset_account(current_user: dict = Depends(get_current_user)):
             "daily_offers_used": 0,
             "last_offer_reset": None,
             "ads_watched_today": 0,
+            "last_ad_date": "",
+            "full_name": "",
+            "identity_document": "",
+        },
+        "$unset": {
+            "paypal_email": "",
+            "paypal_updated_at": "",
+            "payment_info": "",
         }}
     )
     
-    # Delete all user's game data
+    # Delete ALL user's game data from every collection
     await db.user_companies.delete_many({"user_id": uid})
     await db.user_assets.delete_many({"user_id": uid})
-    await db.user_investments.delete_many({"user_id": uid})
+    await db.user_holdings.delete_many({"user_id": uid})
+    await db.investment_transactions.delete_many({"user_id": uid})
     await db.company_offers.delete_many({"user_id": uid})
     await db.asset_offers.delete_many({"user_id": uid})
-    await db.user_loans.delete_many({"user_id": uid})
-    await db.user_credit_cards.delete_many({"user_id": uid})
+    await db.loans.delete_many({"user_id": uid})
+    await db.credit_cards.delete_many({"user_id": uid})
+    await db.card_transactions.delete_many({"user_id": uid})
     await db.notifications.delete_many({"user_id": uid})
     await db.achievements.delete_many({"user_id": uid})
+    await db.work_experiences.delete_many({"user_id": uid})
+    await db.job_applications.delete_many({"user_id": uid})
+    await db.user_courses.delete_many({"user_id": uid})
+    await db.ad_boosts.delete_many({"user_id": uid})
+    await db.ranking_rewards.delete_many({"user_id": uid})
+    await db.real_money_rewards.delete_many({"user_id": uid})
+    await db.admin_payment_queue.delete_many({"reward_id": {"$exists": True}, "player_email": current_user.get('email')})
+    await db.coaching_history.delete_many({"user_id": uid})
+    await db.store_purchases.delete_many({"user_id": uid})
+    await db.daily_rewards.delete_many({"user_id": uid})
+    await db.game_events.delete_many({"user_id": uid})
+    await db.game_crises.delete_many({"user_id": uid})
+    await db.prestige.delete_many({"user_id": uid})
     
-    return {"success": True, "message": "Conta zerada com sucesso. Todos os dados do jogo foram reiniciados."}
+    return {"success": True, "message": "Conta zerada com sucesso! Todos os dados do jogo foram reiniciados."}
 
 @router.post("/user/watch-ad")
 async def watch_ad(current_user: dict = Depends(get_current_user)):

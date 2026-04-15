@@ -485,7 +485,7 @@ async def update_payment_info(request: dict, current_user: dict = Depends(get_cu
     }
 
     await db.users.update_one({"id": current_user['id']}, {
-        "$set": {"payment_info": payment_info}
+        "$set": {"payment_info": payment_info, "paypal_email": paypal_email if method == 'paypal' else ''}
     })
 
     detail = pix_key if method == 'pix' else paypal_email
@@ -495,7 +495,9 @@ async def update_payment_info(request: dict, current_user: dict = Depends(get_cu
 @router.delete("/rewards/delete-payment-info")
 async def delete_payment_info(current_user: dict = Depends(get_current_user)):
     """Remove player's payment info."""
-    await db.users.update_one({"id": current_user['id']}, {"$unset": {"payment_info": ""}})
+    await db.users.update_one({"id": current_user['id']}, {
+        "$unset": {"payment_info": "", "paypal_email": "", "paypal_updated_at": ""}
+    })
     return {"success": True, "message": "Método de pagamento removido."}
 
 
