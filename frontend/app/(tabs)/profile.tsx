@@ -164,6 +164,7 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         showAlert(t('general.success'), t('profile.paypalRemoved') || 'PayPal account removed');
+        setPaypalEmail('');
         await refreshUser();
       } catch (e: any) {
         showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
