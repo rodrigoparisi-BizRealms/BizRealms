@@ -410,8 +410,9 @@ export default function Profile() {
         await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/user/reset-account`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // Account is now fully deleted - logout and redirect to login
+        // Account is now fully deleted - logout and go to login screen
         await logout();
+        router.replace('/(auth)/login');
       } catch (e: any) {
         showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
       }
