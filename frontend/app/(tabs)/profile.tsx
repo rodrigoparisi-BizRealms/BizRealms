@@ -596,7 +596,7 @@ export default function Profile() {
                   <Ionicons name="briefcase" size={26} color="#9C27B0" />
                 </View>
                 <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
                     {user.work_experience.length} {user.work_experience.length === 1 ? 'emprego' : 'empregos'}
                   </Text>
                   {(() => {
@@ -613,14 +613,14 @@ export default function Profile() {
                         <View style={{ flexDirection: 'row', gap: 16, marginTop: 2 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                             <Ionicons name="cash" size={14} color="#FFD700" />
-                            <Text style={{ color: '#aaa', fontSize: 12 }}>
+                            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
                               $ {totalSalary.toLocaleString('en-US')}/mês total
                             </Text>
                           </View>
                           {totalXp > 0 && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                               <Ionicons name="star" size={14} color="#FF9800" />
-                              <Text style={{ color: '#aaa', fontSize: 12 }}>
+                              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
                                 {totalXp.toLocaleString('en-US')} XP
                               </Text>
                             </View>
@@ -715,7 +715,7 @@ export default function Profile() {
                     paddingHorizontal: 16, paddingVertical: 14,
                     backgroundColor: locale === lang.code ? (isDark ? '#1a2a4a' : '#E3F2FD') : 'transparent',
                     borderBottomWidth: idx < languages.length - 1 ? 1 : 0,
-                    borderBottomColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                    borderBottomColor: colors.divider,
                   }}
                   onPress={() => { playClick(); setLocale(lang.code); setShowLangPicker(false); }}
                 >
@@ -766,7 +766,7 @@ export default function Profile() {
             activeOpacity={0.7}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: soundEnabled ? '#1a3a1a' : '#2a2a2a', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: soundEnabled ? colors.accentLight : colors.inputBg, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name={soundEnabled ? 'volume-high' : 'volume-mute'} size={22} color={soundEnabled ? '#4CAF50' : '#666'} />
               </View>
               <View>
@@ -794,7 +794,7 @@ export default function Profile() {
             activeOpacity={biometricAvailable ? 0.7 : 1}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: biometricEnabled ? '#1a3a4a' : '#2a2a2a', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: biometricEnabled ? colors.accentLight : colors.inputBg, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="finger-print" size={22} color={biometricEnabled ? '#2196F3' : '#666'} />
               </View>
               <View>
@@ -821,7 +821,7 @@ export default function Profile() {
             </TouchableOpacity>
             <TouchableOpacity style={[styles.addButton, { backgroundColor: '#0070BA' }]} onPress={openPaypalModal}>
               <Ionicons name="create" size={20} color="#fff" />
-              <Text style={[styles.addButtonText, { color: '#fff' }]}>{(user as any)?.paypal_email ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
+              <Text style={[styles.addButtonText, { color: colors.text }]}>{(user as any)?.paypal_email ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
             </TouchableOpacity>
           </View>
           
@@ -837,13 +837,13 @@ export default function Profile() {
                   <Ionicons name="close-circle" size={22} color="#666" />
                 </TouchableOpacity>
               </View>
-              <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
                 {t('profile.paypalInfoText1')}
               </Text>
-              <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
                 {t('profile.paypalInfoText2')}
               </Text>
-              <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
                 {t('profile.paypalInfoText3')}
               </Text>
               <Text style={{ color: '#FF9800', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>
@@ -859,14 +859,14 @@ export default function Profile() {
                     <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
                     <Text style={{ color: '#4CAF50', fontSize: 14, fontWeight: '600' }}>{t('profile.paypalConfigured') || 'Conta PayPal cadastrada'}</Text>
                   </View>
-                  <View style={{ backgroundColor: '#1a2a3a', borderRadius: 10, padding: 12, gap: 6 }}>
+                  <View style={{ backgroundColor: colors.card, borderRadius: 10, padding: 12, gap: 6 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ color: '#aaa', fontSize: 12 }}>E-mail</Text>
-                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{(user as any).paypal_email}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>E-mail</Text>
+                      <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600' }}>{(user as any).paypal_email}</Text>
                     </View>
                   </View>
                   <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, backgroundColor: '#2a1a1a', borderRadius: 10, marginTop: 4 }}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, backgroundColor: colors.card, borderRadius: 10, marginTop: 4 }}
                     onPress={handleDeletePaypal}
                   >
                     <Ionicons name="trash" size={16} color="#F44336" />
@@ -901,7 +901,7 @@ export default function Profile() {
 
         {/* Delete Account Button */}
         <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, backgroundColor: '#2a1a1a', borderRadius: 12, marginHorizontal: 16, marginBottom: 8 }}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, backgroundColor: colors.card, borderRadius: 12, marginHorizontal: 16, marginBottom: 8 }}
           onPress={handleResetAccount}
         >
           <Ionicons name="trash" size={22} color="#F44336" />
@@ -1124,7 +1124,7 @@ export default function Profile() {
                 </TouchableOpacity>
               </View>
               <ScrollView style={{ maxHeight: 420 }}>
-                <View style={{ backgroundColor: '#2a1a1a', borderRadius: 10, padding: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ backgroundColor: colors.card, borderRadius: 10, padding: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Ionicons name="alert-circle" size={18} color="#FF9800" />
                   <Text style={{ color: '#FF9800', fontSize: 12, flex: 1 }}>{t('profile.allFieldsRequired') || 'Todos os campos são obrigatórios *'}</Text>
                 </View>
@@ -1199,7 +1199,7 @@ export default function Profile() {
                 onPress={handleSavePaypal}
                 disabled={savingPaypal}
               >
-                <Text style={[styles.saveButtonText, { color: '#fff' }]}>{savingPaypal ? 'Salvando...' : t('profile.savePaypal') || 'Salvar Conta PayPal'}</Text>
+                <Text style={[styles.saveButtonText, { color: colors.text }]}>{savingPaypal ? 'Salvando...' : t('profile.savePaypal') || 'Salvar Conta PayPal'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1224,7 +1224,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#333',
     marginBottom: 24,
   },
   avatarWrapper: {
@@ -1258,7 +1258,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#1a1a1a',
+    borderColor: '#333',
   },
   name: {
     fontSize: 24,
@@ -1288,7 +1288,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   moneyBadge: {
-    backgroundColor: '#2a3a2a',
+    backgroundColor: '#1e1e1e',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
   },
   skillName: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#aaa',
   },
   skillValue: {
     fontSize: 14,
@@ -1403,7 +1403,7 @@ const styles = StyleSheet.create({
   },
   cardInfo: {
     fontSize: 12,
-    color: '#666',
+    color: '#888',
   },
   currentBadge: {
     color: '#4CAF50',
@@ -1414,7 +1414,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   personalLabel: {
-    color: '#ccc',
+    color: '#aaa',
     fontSize: 14,
     flex: 1,
   },
@@ -1427,16 +1427,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: '#444',
     borderStyle: 'dashed',
   },
   emptyText: {
-    color: '#666',
+    color: '#888',
     fontSize: 16,
     fontWeight: 'bold',
   },
   emptySubtext: {
-    color: '#555',
+    color: '#888',
     fontSize: 13,
     textAlign: 'center',
   },
@@ -1470,12 +1470,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#333',
     gap: 12,
   },
   legalLinkText: {
     flex: 1,
-    color: '#ccc',
+    color: '#aaa',
     fontSize: 15,
   },
 
@@ -1585,7 +1585,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: '#444',
   },
 
   // Level Selector
@@ -1600,7 +1600,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#2a2a2a',
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: '#444',
   },
   levelOptionActive: {
     backgroundColor: '#4CAF50',
@@ -1629,7 +1629,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: '#444',
   },
   boostOptionActive: {
     backgroundColor: '#FF9800',
@@ -1689,13 +1689,13 @@ const mStyles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#2a2a2a',
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: '#444',
   },
   toggleBtnActive: {
     backgroundColor: '#9C27B015',
     borderColor: '#9C27B050',
   },
-  toggleText: { color: '#666', fontSize: 12, fontWeight: 'bold' },
+  toggleText: { color: '#888', fontSize: 12, fontWeight: 'bold' },
   disabledCard: {
     backgroundColor: '#1e1e1e',
     borderRadius: 14,
@@ -1703,7 +1703,7 @@ const mStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  disabledText: { color: '#555', fontSize: 14 },
+  disabledText: { color: '#888', fontSize: 14 },
   autoPlayInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1752,7 +1752,7 @@ const mStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#2a1a1a',
+    backgroundColor: '#1e1e1e',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1762,7 +1762,7 @@ const mStyles = StyleSheet.create({
     padding: 12,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#333',
   },
   trackIcon: {
     width: 38,
@@ -1772,7 +1772,7 @@ const mStyles = StyleSheet.create({
     alignItems: 'center',
   },
   trackName: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  trackArtist: { color: '#777', fontSize: 11, marginTop: 2 },
+  trackArtist: { color: '#888', fontSize: 11, marginTop: 2 },
   eqBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 18 },
   eqBar: { width: 3, borderRadius: 2 },
 });

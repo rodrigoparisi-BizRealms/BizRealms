@@ -262,7 +262,7 @@ export default function Store() {
           <View style={{ gap: 8, marginBottom: 12 }}>
             <View style={[s.dailyCard, { borderColor: '#4CAF50', marginBottom: 0 }]}>
               <View style={s.dailyLeft}>
-                <View style={[s.dailyIconBg, { backgroundColor: '#1a3a1a' }]}>
+                <View style={[s.dailyIconBg, { backgroundColor: colors.card }]}>
                   <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -311,7 +311,7 @@ export default function Store() {
         </View>
 
         {filtered.map(item => {
-          const catCfg = CATEGORY_CFG[item.category] || { color: '#888', icon: 'cube', label: '' };
+          const catCfg = CATEGORY_CFG[item.category] || { color: colors.textMuted, icon: 'cube', label: '' };
           const isPurchasing = purchasing === item.id;
           return (
             <View key={item.id} style={s.itemCard}>
@@ -466,7 +466,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a1a1a' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loadText: { color: '#888', fontSize: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#333' },
   title: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
   subtitle: { fontSize: 13, color: '#888', marginTop: 2 },
   historyBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#2a2a2a', justifyContent: 'center', alignItems: 'center' },
@@ -483,7 +483,7 @@ const s = StyleSheet.create({
   fTextActive: { color: '#fff' },
   content: { padding: 16, paddingBottom: 32 },
   // Daily Free Money
-  dailyCard: { backgroundColor: '#1a2a1a', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#FFD700' },
+  dailyCard: { backgroundColor: '#1e1e1e', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#FFD700' },
   dailyLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
   dailyIconBg: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFD70020', justifyContent: 'center', alignItems: 'center' },
   dailyTitle: { color: '#FFD700', fontSize: 16, fontWeight: 'bold' },
@@ -491,9 +491,9 @@ const s = StyleSheet.create({
   dailyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD700', borderRadius: 12, paddingVertical: 12 },
   dailyBtnText: { color: '#000', fontSize: 14, fontWeight: 'bold' },
   // Stripe Notice
-  stripeNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#635BFF50' },
+  stripeNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#635BFF50' },
   stripeText: { flex: 1, color: '#635BFF', fontSize: 12, fontWeight: '600' },
-  stripeLoadingBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#635BFF' },
+  stripeLoadingBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#635BFF' },
   stripeLoadingText: { color: '#635BFF', fontSize: 14, fontWeight: '600' },
   // Item Card
   itemCard: { backgroundColor: '#2a2a2a', borderRadius: 16, padding: 16, marginBottom: 12, position: 'relative' as any },
@@ -528,17 +528,17 @@ const s = StyleSheet.create({
   stripeInfoText: { color: '#635BFF', fontSize: 12, fontWeight: '600' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#333' },
-  dividerText: { color: '#666', fontSize: 12 },
-  demoBtn: { backgroundColor: '#2a2a2a', borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#3a3a3a' },
+  dividerText: { color: '#888', fontSize: 12 },
+  demoBtn: { backgroundColor: '#2a2a2a', borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#444' },
   demoBtnText: { color: '#888', fontSize: 13, fontWeight: '600' },
   confirmBtn: { backgroundColor: '#E91E63', borderRadius: 14, padding: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   confirmText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   // History
   emptyHistory: { alignItems: 'center', paddingVertical: 32 },
-  emptyHistText: { color: '#666', fontSize: 16, marginTop: 12 },
-  histItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
+  emptyHistText: { color: '#888', fontSize: 16, marginTop: 12 },
+  histItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#333' },
   histInfo: { flex: 1 },
   histName: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  histDate: { color: '#666', fontSize: 12, marginTop: 4 },
+  histDate: { color: '#888', fontSize: 12, marginTop: 4 },
   histPrice: { color: '#FFD700', fontSize: 15, fontWeight: 'bold' },
 });

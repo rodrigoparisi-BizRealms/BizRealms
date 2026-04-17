@@ -826,7 +826,7 @@ export default function Home() {
             <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: GAME_TIPS[tipIndex].color + '25', justifyContent: 'center', alignItems: 'center' }}>
               <Ionicons name={GAME_TIPS[tipIndex].icon as any} size={18} color={GAME_TIPS[tipIndex].color} />
             </View>
-            <Text style={{ flex: 1, color: '#ccc', fontSize: 13, lineHeight: 18 }}>{GAME_TIPS[tipIndex].tip}</Text>
+            <Text style={{ flex: 1, color: colors.textSecondary, fontSize: 13, lineHeight: 18 }}>{GAME_TIPS[tipIndex].tip}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4, paddingBottom: 10 }}>
             {GAME_TIPS.map((_, i) => (
@@ -1161,7 +1161,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: '#444',
   },
   netWorthHeader: {
     flexDirection: 'row',
@@ -1275,7 +1275,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   panelSubLabel: {
-    color: '#666',
+    color: '#888',
     fontSize: 12,
     marginTop: 2,
   },
@@ -1304,7 +1304,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailLabel: {
-    color: '#666',
+    color: '#888',
     fontSize: 11,
     marginBottom: 4,
   },
@@ -1318,12 +1318,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   panelEmptyText: {
-    color: '#666',
+    color: '#888',
     fontSize: 14,
     fontWeight: '600',
   },
   panelEmptyHint: {
-    color: '#555',
+    color: '#888',
     fontSize: 12,
     marginTop: 4,
   },
@@ -1337,7 +1337,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   miniTicker: {
-    color: '#ccc',
+    color: '#aaa',
     fontSize: 13,
     fontWeight: '600',
     flex: 1,
@@ -1359,7 +1359,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   seeMore: {
-    color: '#555',
+    color: '#888',
     fontSize: 12,
     textAlign: 'center',
     paddingTop: 8,
@@ -1711,7 +1711,7 @@ const styles = StyleSheet.create({
   },
   compLeaderName: {
     fontSize: 13,
-    color: '#ccc',
+    color: '#aaa',
     flex: 1,
   },
   compLeaderScore: {

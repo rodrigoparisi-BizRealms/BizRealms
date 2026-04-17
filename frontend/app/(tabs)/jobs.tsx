@@ -356,7 +356,7 @@ export default function Jobs() {
       >
         {/* Courses Banner */}
         <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1a2a1a', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#4CAF5040' }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#4CAF5040' }}
           onPress={() => router.push('/(tabs)/courses')}
           activeOpacity={0.7}
         >
@@ -364,8 +364,8 @@ export default function Jobs() {
             <Ionicons name="school" size={22} color="#4CAF50" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Cursos Harvard & MIT</Text>
-            <Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>Aumente suas habilidades e desbloqueie vagas melhores</Text>
+            <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }}>Cursos Harvard & MIT</Text>
+            <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>Aumente suas habilidades e desbloqueie vagas melhores</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#4CAF50" />
         </TouchableOpacity>
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#333',
   },
   title: {
     fontSize: 28,
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
 
   // Current Job
   currentJobCard: {
-    backgroundColor: '#2a3a2a',
+    backgroundColor: '#1e1e1e',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#1a2a3a',
+    backgroundColor: '#1e1e1e',
     borderRadius: 8,
     padding: 12,
     gap: 8,
@@ -862,7 +862,7 @@ const styles = StyleSheet.create({
 
   // Accepted Offers
   acceptedCard: {
-    backgroundColor: '#2a3a2a',
+    backgroundColor: '#1e1e1e',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -925,7 +925,7 @@ const styles = StyleSheet.create({
   premiumJobCard: {
     borderWidth: 1,
     borderColor: '#FFD700',
-    backgroundColor: '#2a2a1a',
+    backgroundColor: '#1e1e1e',
   },
   premiumBadge: {
     flexDirection: 'row',
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
 
   // Info Box
   infoBox: {
-    backgroundColor: '#1a2a3a',
+    backgroundColor: '#1e1e1e',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',

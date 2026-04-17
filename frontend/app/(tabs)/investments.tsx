@@ -164,7 +164,7 @@ const chartStyles = StyleSheet.create({
   },
   labelText: {
     fontSize: 10,
-    color: '#666',
+    color: '#888',
   },
 });
 
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a1a1a' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, borderBottomWidth: 1, borderBottomColor: '#2a2a2a',
+    padding: 16, borderBottomWidth: 1, borderBottomColor: '#333',
   },
   title: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
   content: { padding: 16, paddingBottom: 32 },
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
 
   // Mini Portfolio
   miniPortfolio: {
-    backgroundColor: '#2a3a2a', borderRadius: 12, padding: 16, marginBottom: 16,
+    backgroundColor: '#1e1e1e', borderRadius: 12, padding: 16, marginBottom: 16,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     borderWidth: 1, borderColor: '#4CAF50',
   },
@@ -904,7 +904,7 @@ const styles = StyleSheet.create({
   },
   holdingBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   assetName: { fontSize: 12, color: '#888', marginTop: 2, maxWidth: 120 },
-  assetSector: { fontSize: 10, color: '#666', marginTop: 1 },
+  assetSector: { fontSize: 10, color: '#888', marginTop: 1 },
   assetCenter: { marginHorizontal: 12 },
   assetRight: { alignItems: 'flex-end' },
   assetPrice: { fontSize: 14, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
   summaryValue: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginBottom: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryItem: { flex: 1 },
-  summaryItemLabel: { color: '#666', fontSize: 12, marginBottom: 4 },
+  summaryItemLabel: { color: '#888', fontSize: 12, marginBottom: 4 },
   summaryItemValue: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
 
   // Holdings
@@ -936,7 +936,7 @@ const styles = StyleSheet.create({
   holdingProfit: { fontSize: 13, fontWeight: 'bold', marginTop: 2 },
   holdingDetails: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   holdingDetail: { flex: 1, alignItems: 'center' },
-  detailLabel: { fontSize: 11, color: '#666', marginBottom: 4 },
+  detailLabel: { fontSize: 11, color: '#888', marginBottom: 4 },
   detailValue: { fontSize: 13, color: '#aaa', fontWeight: 'bold' },
   holdingActions: { flexDirection: 'row', gap: 12 },
   buyBtn: {
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
   // Empty
   emptyPortfolio: { alignItems: 'center', paddingVertical: 48 },
   emptyTitle: { color: '#fff', fontSize: 22, fontWeight: 'bold', marginTop: 16 },
-  emptySubtext: { color: '#666', fontSize: 14, textAlign: 'center', marginTop: 8, maxWidth: 280 },
+  emptySubtext: { color: '#888', fontSize: 14, textAlign: 'center', marginTop: 8, maxWidth: 280 },
   goToMarket: {
     backgroundColor: '#4CAF50', borderRadius: 12, paddingHorizontal: 24,
     paddingVertical: 12, marginTop: 20,
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
   detailInfoItem: {
     backgroundColor: '#2a2a2a', borderRadius: 8, padding: 10, minWidth: '45%', flex: 1,
   },
-  detailInfoLabel: { color: '#666', fontSize: 11, marginBottom: 4 },
+  detailInfoLabel: { color: '#888', fontSize: 11, marginBottom: 4 },
   detailInfoValue: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
   detailDescription: { color: '#888', fontSize: 13, lineHeight: 18, marginBottom: 20 },
   detailButtons: { flexDirection: 'row', gap: 12 },
@@ -1026,17 +1026,17 @@ const styles = StyleSheet.create({
   eventEffects: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   effectChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   effectText: { fontSize: 10, fontWeight: 'bold' },
-  triggerEventBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginBottom: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FFD70040', backgroundColor: '#2a2a1a' },
+  triggerEventBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginBottom: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FFD70040', backgroundColor: '#1e1e1e' },
   triggerEventText: { color: '#FFD700', fontSize: 13, fontWeight: 'bold' },
   tradeInput: {
     backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16,
     color: '#fff', fontSize: 24, fontWeight: 'bold', textAlign: 'center',
-    borderWidth: 1, borderColor: '#3a3a3a',
+    borderWidth: 1, borderColor: '#444',
   },
   quickButtons: { flexDirection: 'row', gap: 8, marginTop: 12, justifyContent: 'center' },
   quickBtn: {
     backgroundColor: '#2a2a2a', borderRadius: 8, paddingHorizontal: 14,
-    paddingVertical: 8, borderWidth: 1, borderColor: '#3a3a3a',
+    paddingVertical: 8, borderWidth: 1, borderColor: '#444',
   },
   quickBtnText: { color: '#aaa', fontSize: 13, fontWeight: 'bold' },
   tradeSummary: {
