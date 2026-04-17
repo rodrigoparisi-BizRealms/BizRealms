@@ -15,8 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-  const { colors } = useTheme();
-  const styles = makeStyles(colors);
 import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
 import { SkeletonList } from '../../components/SkeletonLoader';
@@ -70,6 +68,8 @@ export default function Jobs() {
   const { trigger: haptic } = useHaptics();
   const { playClick, playSuccess } = useSound();
   const { t, formatMoney } = useLanguage();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
