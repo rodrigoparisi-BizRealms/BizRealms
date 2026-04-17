@@ -2,7 +2,7 @@
   "expo": {
     "name": "BizRealms",
     "slug": "bizrealms",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "owner": "bizrealms",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -58,7 +58,7 @@
     "android": {
       "package": "com.bizrealms.game",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f1723"
