@@ -174,6 +174,7 @@ export default function Investments() {
   const { playClick, playCoin } = useSound();
   const { t, formatMoney: fmtCurrency } = useLanguage();
   const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -841,16 +842,16 @@ export default function Investments() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a1a' },
+function makeStyles(colors: any) { return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, borderBottomWidth: 1, borderBottomColor: '#333',
+    padding: 16, borderBottomWidth: 1, borderBottomColor: colors.cardBorder,
   },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  title: { fontSize: 28, fontWeight: 'bold', color: colors.text },
   content: { padding: 16, paddingBottom: 32 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  loadingText: { color: '#888', fontSize: 16 },
+  loadingText: { color: colors.textMuted, fontSize: 16 },
 
   // View Toggle
   viewToggle: {
@@ -858,25 +859,25 @@ const styles = StyleSheet.create({
   },
   viewToggleBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, borderRadius: 10, backgroundColor: '#2a2a2a', gap: 6,
+    paddingVertical: 10, borderRadius: 10, backgroundColor: colors.inputBg, gap: 6,
   },
   viewToggleActive: { backgroundColor: '#4CAF50' },
-  viewToggleText: { color: '#888', fontSize: 14, fontWeight: 'bold' },
-  viewToggleTextActive: { color: '#fff' },
+  viewToggleText: { color: colors.textMuted, fontSize: 14, fontWeight: 'bold' },
+  viewToggleTextActive: { color: colors.text },
   badge: {
     backgroundColor: '#FF6B6B', borderRadius: 10, paddingHorizontal: 6,
     paddingVertical: 1, marginLeft: 4,
   },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+  badgeText: { color: colors.text, fontSize: 11, fontWeight: 'bold' },
 
   // Mini Portfolio
   miniPortfolio: {
-    backgroundColor: '#1e1e1e', borderRadius: 12, padding: 16, marginBottom: 16,
+    backgroundColor: colors.card, borderRadius: 12, padding: 16, marginBottom: 16,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     borderWidth: 1, borderColor: '#4CAF50',
   },
-  miniPortfolioLabel: { color: '#888', fontSize: 12, marginBottom: 4 },
-  miniPortfolioValue: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  miniPortfolioLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 4 },
+  miniPortfolioValue: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
   miniPortfolioRight: { alignItems: 'flex-end', flexDirection: 'row', gap: 8 },
   miniPortfolioProfit: { fontSize: 13, fontWeight: 'bold' },
 
@@ -885,29 +886,29 @@ const styles = StyleSheet.create({
   categoryRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
   categoryTab: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14,
-    paddingVertical: 8, borderRadius: 20, backgroundColor: '#2a2a2a', gap: 6,
+    paddingVertical: 8, borderRadius: 20, backgroundColor: colors.inputBg, gap: 6,
   },
   categoryTabActive: { backgroundColor: '#4CAF50' },
-  categoryTabText: { color: '#888', fontSize: 13, fontWeight: 'bold' },
-  categoryTabTextActive: { color: '#fff' },
+  categoryTabText: { color: colors.textMuted, fontSize: 13, fontWeight: 'bold' },
+  categoryTabTextActive: { color: colors.text },
 
   // Asset Card
   assetCard: {
-    backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16,
+    backgroundColor: colors.inputBg, borderRadius: 12, padding: 16,
     flexDirection: 'row', alignItems: 'center', marginBottom: 10,
   },
   assetLeft: { flex: 1 },
   assetTickerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  assetTicker: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  assetTicker: { fontSize: 16, fontWeight: 'bold', color: colors.text },
   holdingBadge: {
     backgroundColor: '#4CAF50', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
-  holdingBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  assetName: { fontSize: 12, color: '#888', marginTop: 2, maxWidth: 120 },
-  assetSector: { fontSize: 10, color: '#888', marginTop: 1 },
+  holdingBadgeText: { color: colors.text, fontSize: 10, fontWeight: 'bold' },
+  assetName: { fontSize: 12, color: colors.textMuted, marginTop: 2, maxWidth: 120 },
+  assetSector: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
   assetCenter: { marginHorizontal: 12 },
   assetRight: { alignItems: 'flex-end' },
-  assetPrice: { fontSize: 14, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
+  assetPrice: { fontSize: 14, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
   changeBadge: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8,
     paddingVertical: 3, borderRadius: 6, gap: 2,
@@ -916,87 +917,87 @@ const styles = StyleSheet.create({
 
   // Portfolio Summary
   summaryCard: {
-    backgroundColor: '#2a2a2a', borderRadius: 16, padding: 20, marginBottom: 20,
+    backgroundColor: colors.inputBg, borderRadius: 16, padding: 20, marginBottom: 20,
   },
-  summaryLabel: { color: '#888', fontSize: 14, marginBottom: 4 },
-  summaryValue: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginBottom: 16 },
+  summaryLabel: { color: colors.textMuted, fontSize: 14, marginBottom: 4 },
+  summaryValue: { color: colors.text, fontSize: 32, fontWeight: 'bold', marginBottom: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryItem: { flex: 1 },
-  summaryItemLabel: { color: '#888', fontSize: 12, marginBottom: 4 },
-  summaryItemValue: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  summaryItemLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 4 },
+  summaryItemValue: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
 
   // Holdings
-  holdingsTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  holdingCard: { backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16, marginBottom: 12 },
+  holdingsTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  holdingCard: { backgroundColor: colors.inputBg, borderRadius: 12, padding: 16, marginBottom: 12 },
   holdingHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  holdingTicker: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  holdingName: { fontSize: 12, color: '#888', marginTop: 2 },
+  holdingTicker: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+  holdingName: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   holdingValues: { alignItems: 'flex-end' },
-  holdingCurrentValue: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  holdingCurrentValue: { fontSize: 16, fontWeight: 'bold', color: colors.text },
   holdingProfit: { fontSize: 13, fontWeight: 'bold', marginTop: 2 },
   holdingDetails: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   holdingDetail: { flex: 1, alignItems: 'center' },
-  detailLabel: { fontSize: 11, color: '#888', marginBottom: 4 },
-  detailValue: { fontSize: 13, color: '#aaa', fontWeight: 'bold' },
+  detailLabel: { fontSize: 11, color: colors.textMuted, marginBottom: 4 },
+  detailValue: { fontSize: 13, color: colors.textSecondary, fontWeight: 'bold' },
   holdingActions: { flexDirection: 'row', gap: 12 },
   buyBtn: {
     flex: 1, backgroundColor: '#4CAF50', borderRadius: 10,
     paddingVertical: 10, alignItems: 'center',
   },
-  buyBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  buyBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 14 },
   sellBtn: {
-    flex: 1, backgroundColor: '#2a2a2a', borderRadius: 10,
+    flex: 1, backgroundColor: colors.inputBg, borderRadius: 10,
     paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#F44336',
   },
   sellBtnText: { color: '#F44336', fontWeight: 'bold', fontSize: 14 },
 
   // Empty
   emptyPortfolio: { alignItems: 'center', paddingVertical: 48 },
-  emptyTitle: { color: '#fff', fontSize: 22, fontWeight: 'bold', marginTop: 16 },
-  emptySubtext: { color: '#888', fontSize: 14, textAlign: 'center', marginTop: 8, maxWidth: 280 },
+  emptyTitle: { color: colors.text, fontSize: 22, fontWeight: 'bold', marginTop: 16 },
+  emptySubtext: { color: colors.textMuted, fontSize: 14, textAlign: 'center', marginTop: 8, maxWidth: 280 },
   goToMarket: {
     backgroundColor: '#4CAF50', borderRadius: 12, paddingHorizontal: 24,
     paddingVertical: 12, marginTop: 20,
   },
-  goToMarketText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  goToMarketText: { color: colors.text, fontWeight: 'bold', fontSize: 16 },
 
   // Detail Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
   detailModal: {
-    backgroundColor: '#1a1a1a', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, maxHeight: '90%',
   },
   detailHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
   },
-  detailTicker: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  detailName: { fontSize: 14, color: '#888', marginTop: 4 },
+  detailTicker: { fontSize: 24, fontWeight: 'bold', color: colors.text },
+  detailName: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   detailPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  detailPrice: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  detailPrice: { fontSize: 28, fontWeight: 'bold', color: colors.text },
   changeBadgeLarge: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10,
     paddingVertical: 4, borderRadius: 8, gap: 4,
   },
   changeTextLarge: { fontSize: 14, fontWeight: 'bold' },
   chartContainer: { marginBottom: 20 },
-  chartTitle: { color: '#888', fontSize: 12, marginBottom: 8 },
+  chartTitle: { color: colors.textMuted, fontSize: 12, marginBottom: 8 },
   detailInfoGrid: {
     flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16, gap: 8,
   },
   detailInfoItem: {
-    backgroundColor: '#2a2a2a', borderRadius: 8, padding: 10, minWidth: '45%', flex: 1,
+    backgroundColor: colors.inputBg, borderRadius: 8, padding: 10, minWidth: '45%', flex: 1,
   },
-  detailInfoLabel: { color: '#888', fontSize: 11, marginBottom: 4 },
-  detailInfoValue: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-  detailDescription: { color: '#888', fontSize: 13, lineHeight: 18, marginBottom: 20 },
+  detailInfoLabel: { color: colors.textMuted, fontSize: 11, marginBottom: 4 },
+  detailInfoValue: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
+  detailDescription: { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 20 },
   detailButtons: { flexDirection: 'row', gap: 12 },
   detailBuyBtn: {
     flex: 1, backgroundColor: '#4CAF50', borderRadius: 12, padding: 14,
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
   },
-  detailBuyText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  detailBuyText: { color: colors.text, fontWeight: 'bold', fontSize: 16 },
   detailSellBtn: {
-    flex: 1, backgroundColor: '#2a2a2a', borderRadius: 12, padding: 14,
+    flex: 1, backgroundColor: colors.inputBg, borderRadius: 12, padding: 14,
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
     borderWidth: 1, borderColor: '#F44336',
   },
@@ -1004,52 +1005,53 @@ const styles = StyleSheet.create({
 
   // Trade Modal
   tradeModal: {
-    backgroundColor: '#1a1a1a', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24,
   },
   tradeHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
   },
-  tradeTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  tradeTitle: { fontSize: 22, fontWeight: 'bold', color: colors.text },
   tradeInfo: { marginBottom: 20 },
-  tradeAssetName: { color: '#888', fontSize: 14 },
+  tradeAssetName: { color: colors.textMuted, fontSize: 14 },
   tradePrice: { color: '#4CAF50', fontSize: 16, fontWeight: 'bold', marginTop: 4 },
   tradeAvailable: { color: '#FF9800', fontSize: 13, marginTop: 4 },
-  tradeLabel: { color: '#888', fontSize: 14, marginBottom: 8 },
+  tradeLabel: { color: colors.textMuted, fontSize: 14, marginBottom: 8 },
   // Market Events
   eventsBanner: { marginBottom: 12, gap: 8 },
-  eventCard: { backgroundColor: '#2a2a2a', borderRadius: 12, padding: 12 },
+  eventCard: { backgroundColor: colors.inputBg, borderRadius: 12, padding: 12 },
   eventRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   eventTitle: { fontSize: 14, fontWeight: 'bold' },
-  eventDesc: { color: '#888', fontSize: 11, marginTop: 2 },
-  eventTimer: { color: '#888', fontSize: 12, fontWeight: 'bold' },
+  eventDesc: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  eventTimer: { color: colors.textMuted, fontSize: 12, fontWeight: 'bold' },
   eventEffects: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   effectChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   effectText: { fontSize: 10, fontWeight: 'bold' },
-  triggerEventBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginBottom: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FFD70040', backgroundColor: '#1e1e1e' },
+  triggerEventBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginBottom: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FFD70040', backgroundColor: colors.card },
   triggerEventText: { color: '#FFD700', fontSize: 13, fontWeight: 'bold' },
   tradeInput: {
-    backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16,
-    color: '#fff', fontSize: 24, fontWeight: 'bold', textAlign: 'center',
-    borderWidth: 1, borderColor: '#444',
+    backgroundColor: colors.inputBg, borderRadius: 12, padding: 16,
+    color: colors.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center',
+    borderWidth: 1, borderColor: colors.inputBorder,
   },
   quickButtons: { flexDirection: 'row', gap: 8, marginTop: 12, justifyContent: 'center' },
   quickBtn: {
-    backgroundColor: '#2a2a2a', borderRadius: 8, paddingHorizontal: 14,
-    paddingVertical: 8, borderWidth: 1, borderColor: '#444',
+    backgroundColor: colors.inputBg, borderRadius: 8, paddingHorizontal: 14,
+    paddingVertical: 8, borderWidth: 1, borderColor: colors.inputBorder,
   },
-  quickBtnText: { color: '#aaa', fontSize: 13, fontWeight: 'bold' },
+  quickBtnText: { color: colors.textSecondary, fontSize: 13, fontWeight: 'bold' },
   tradeSummary: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16, marginTop: 16,
+    backgroundColor: colors.inputBg, borderRadius: 12, padding: 16, marginTop: 16,
   },
-  tradeSummaryLabel: { color: '#888', fontSize: 16 },
-  tradeSummaryValue: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  tradeSummaryLabel: { color: colors.textMuted, fontSize: 16 },
+  tradeSummaryValue: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
   tradeConfirmBtn: {
     backgroundColor: '#4CAF50', borderRadius: 12, padding: 16,
     alignItems: 'center', marginTop: 16,
   },
   tradeConfirmSell: { backgroundColor: '#F44336' },
-  tradeConfirmText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  tradeConfirmText: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
   buttonDisabled: { opacity: 0.6 },
 });
+}

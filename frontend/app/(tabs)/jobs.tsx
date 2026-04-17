@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
   const { colors } = useTheme();
+  const styles = makeStyles(colors);
 import { useLanguage } from '../../context/LanguageContext';
 import { useRouter } from 'expo-router';
 import { SkeletonList } from '../../components/SkeletonLoader';
@@ -625,10 +626,10 @@ export default function Jobs() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: any) { return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.surface,
   },
   header: {
     flexDirection: 'row',
@@ -636,12 +637,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.cardBorder,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
   },
   content: {
     padding: 16,
@@ -654,13 +655,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 16,
   },
 
   // Current Job
   currentJobCard: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -682,12 +683,12 @@ const styles = StyleSheet.create({
   currentJobPosition: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   currentJobCompany: {
     fontSize: 16,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 12,
   },
   salaryRow: {
@@ -700,7 +701,7 @@ const styles = StyleSheet.create({
   },
   dailyEarnings: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
     marginTop: 4,
   },
   boosted: {
@@ -709,7 +710,7 @@ const styles = StyleSheet.create({
   },
   currentJobDays: {
     fontSize: 14,
-    color: '#aaa',
+    color: colors.textSecondary,
     marginBottom: 16,
   },
   boostBadge: {
@@ -752,7 +753,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   collectButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -769,18 +770,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   adButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
   adWatchingContainer: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   adWatchingText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,
@@ -798,13 +799,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B6B',
   },
   progressText: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 12,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 8,
     padding: 12,
     gap: 8,
@@ -812,11 +813,11 @@ const styles = StyleSheet.create({
   infoCardText: {
     flex: 1,
     fontSize: 12,
-    color: '#aaa',
+    color: colors.textSecondary,
     lineHeight: 16,
   },
   coursesLink: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -833,7 +834,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
   resignButton: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -857,12 +858,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
   },
 
   // Accepted Offers
   acceptedCard: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -877,12 +878,12 @@ const styles = StyleSheet.create({
   acceptedJobTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   acceptedJobCompany: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 4,
   },
   acceptedMatch: {
@@ -905,27 +906,27 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   acceptButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     fontWeight: 'bold',
   },
 
   // Job Cards
   jobCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
   },
   jobCardApplied: {
     borderWidth: 1,
-    borderColor: '#555',
+    borderColor: colors.textMuted,
     opacity: 0.85,
   },
   premiumJobCard: {
     borderWidth: 1,
     borderColor: '#FFD700',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
   },
   premiumBadge: {
     flexDirection: 'row',
@@ -955,12 +956,12 @@ const styles = StyleSheet.create({
   jobTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   jobCompany: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
   },
   jobSalary: {
     fontSize: 18,
@@ -969,7 +970,7 @@ const styles = StyleSheet.create({
   },
   jobDescription: {
     fontSize: 14,
-    color: '#aaa',
+    color: colors.textSecondary,
     marginBottom: 12,
     lineHeight: 20,
   },
@@ -986,14 +987,14 @@ const styles = StyleSheet.create({
   },
   jobInfoText: {
     fontSize: 12,
-    color: '#888',
+    color: colors.textMuted,
   },
   skillsRequired: {
     marginBottom: 16,
   },
   skillsLabel: {
     fontSize: 12,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 8,
   },
   skillsList: {
@@ -1009,7 +1010,7 @@ const styles = StyleSheet.create({
   },
   skillTagText: {
     fontSize: 12,
-    color: '#aaa',
+    color: colors.textSecondary,
   },
 
   // Apply Button
@@ -1024,7 +1025,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   applyButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1040,7 +1041,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   acceptJobButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1065,7 +1066,7 @@ const styles = StyleSheet.create({
 
   // Info Box
   infoBox: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -1076,7 +1077,8 @@ const styles = StyleSheet.create({
   infoBoxText: {
     flex: 1,
     fontSize: 14,
-    color: '#aaa',
+    color: colors.textSecondary,
     lineHeight: 20,
   },
 });
+}

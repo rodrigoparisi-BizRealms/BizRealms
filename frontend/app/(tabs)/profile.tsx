@@ -30,6 +30,7 @@ export default function Profile() {
   const { user, token, logout, refreshUser, biometricEnabled, biometricAvailable, toggleBiometric } = useAuth();
   const { locale, setLocale, languages, t, formatMoney } = useLanguage();
   const { isDark, colors, toggleTheme } = useTheme();
+  const styles = makeStyles(colors);
   const { showAd } = useAds();
   const { playClick, playSuccess, soundEnabled, toggleSound } = useSound();
   const router = useRouter();
@@ -1209,10 +1210,10 @@ export default function Profile() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: any) { return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: 16,
@@ -1224,7 +1225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.cardBorder,
     marginBottom: 24,
   },
   avatarWrapper: {
@@ -1258,17 +1259,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#333',
+    borderColor: colors.cardBorder,
   },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 12,
   },
   badges: {
@@ -1283,12 +1284,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   levelText: {
-    color: '#fff',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 14,
   },
   moneyBadge: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -1325,7 +1326,7 @@ const styles = StyleSheet.create({
   },
   skillName: {
     fontSize: 14,
-    color: '#aaa',
+    color: colors.textSecondary,
   },
   skillValue: {
     fontSize: 14,
@@ -1357,7 +1358,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     flex: 1,
   },
   addButton: {
@@ -1370,14 +1371,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   addButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
 
   // Cards
   card: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -1393,17 +1394,17 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 2,
   },
   cardInfo: {
     fontSize: 12,
-    color: '#888',
+    color: colors.textMuted,
   },
   currentBadge: {
     color: '#4CAF50',
@@ -1414,29 +1415,29 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   personalLabel: {
-    color: '#aaa',
+    color: colors.textSecondary,
     fontSize: 14,
     flex: 1,
   },
 
   // Empty State
   emptyCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.inputBorder,
     borderStyle: 'dashed',
   },
   emptyText: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 16,
     fontWeight: 'bold',
   },
   emptySubtext: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
   },
@@ -1446,7 +1447,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
@@ -1461,7 +1462,7 @@ const styles = StyleSheet.create({
   // Legal Links
   legalSection: {
     marginTop: 16,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -1470,12 +1471,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.cardBorder,
     gap: 12,
   },
   legalLinkText: {
     flex: 1,
-    color: '#aaa',
+    color: colors.textSecondary,
     fontSize: 15,
   },
 
@@ -1488,7 +1489,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   photoModalContent: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -1498,7 +1499,7 @@ const styles = StyleSheet.create({
   photoModalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   photoPreview: {
@@ -1511,7 +1512,7 @@ const styles = StyleSheet.create({
   },
   photoModalSubtext: {
     fontSize: 13,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -1528,7 +1529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   photoCancelText: {
-    color: '#aaa',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1540,7 +1541,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   photoSaveText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1555,7 +1556,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -1570,22 +1571,22 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
   },
   label: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 8,
     marginTop: 16,
   },
   input: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.inputBorder,
   },
 
   // Level Selector
@@ -1598,21 +1599,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.inputBorder,
   },
   levelOptionActive: {
     backgroundColor: '#4CAF50',
     borderColor: '#4CAF50',
   },
   levelOptionText: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: 'bold',
   },
   levelOptionTextActive: {
-    color: '#fff',
+    color: colors.text,
   },
 
   // Boost Selector
@@ -1625,23 +1626,23 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.inputBorder,
   },
   boostOptionActive: {
     backgroundColor: '#FF9800',
     borderColor: '#FF9800',
   },
   boostOptionText: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: 'bold',
   },
   boostOptionTextActive: {
-    color: '#fff',
+    color: colors.text,
   },
 
   submitButton: {
@@ -1653,13 +1654,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   submitButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 18,
     fontWeight: 'bold',
   },
   inputLabel: {
     fontSize: 14,
-    color: '#888',
+    color: colors.textMuted,
     marginBottom: 6,
     marginTop: 12,
   },
@@ -1672,7 +1673,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   saveButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1687,36 +1688,36 @@ const mStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.inputBorder,
   },
   toggleBtnActive: {
     backgroundColor: '#9C27B015',
     borderColor: '#9C27B050',
   },
-  toggleText: { color: '#888', fontSize: 12, fontWeight: 'bold' },
+  toggleText: { color: colors.textMuted, fontSize: 12, fontWeight: 'bold' },
   disabledCard: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 24,
     alignItems: 'center',
     gap: 8,
   },
-  disabledText: { color: '#888', fontSize: 14 },
+  disabledText: { color: colors.textMuted, fontSize: 14 },
   autoPlayInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     padding: 10,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.cardBorder,
   },
   autoPlayText: { color: '#9C27B0', fontSize: 12, fontWeight: '600' },
   playerCard: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     borderRadius: 14,
     overflow: 'hidden',
   },
@@ -1724,14 +1725,14 @@ const mStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     gap: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.cardBorder,
   },
   npDot: { width: 8, height: 8, borderRadius: 4 },
-  npName: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-  npArtist: { color: '#888', fontSize: 11 },
+  npName: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
+  npArtist: { color: colors.textMuted, fontSize: 11 },
   skipBtn: {
     width: 30,
     height: 30,
@@ -1752,7 +1753,7 @@ const mStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1762,7 +1763,7 @@ const mStyles = StyleSheet.create({
     padding: 12,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.cardBorder,
   },
   trackIcon: {
     width: 38,
@@ -1771,8 +1772,9 @@ const mStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trackName: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  trackArtist: { color: '#888', fontSize: 11, marginTop: 2 },
+  trackName: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  trackArtist: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
   eqBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 18 },
   eqBar: { width: 3, borderRadius: 2 },
 });
+}

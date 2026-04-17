@@ -49,6 +49,7 @@ export default function Home() {
   const { playClick } = useSound();
   const { t, formatMoney } = useLanguage();
   const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const fm = (v: number) => formatMoney(v, true);
   const [stats, setStats] = useState<any>(null);
   const [portfolio, setPortfolio] = useState<any>(null);
@@ -1060,17 +1061,17 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: any) { return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: 16,
     paddingBottom: 32,
   },
   loadingText: {
-    color: '#888',
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 12,
     fontSize: 16,
@@ -1096,7 +1097,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative' as const,
@@ -1114,7 +1115,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   notifBadgeText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 10,
     fontWeight: 'bold' as const,
   },
@@ -1135,11 +1136,11 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
   },
   location: {
     fontSize: 13,
-    color: '#888',
+    color: colors.textMuted,
     marginTop: 2,
   },
   levelBadge: {
@@ -1150,18 +1151,18 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   levelText: {
-    color: '#fff',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 14,
   },
   // Net Worth Card
   netWorthCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.inputBorder,
   },
   netWorthHeader: {
     flexDirection: 'row',
@@ -1170,7 +1171,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   netWorthLabel: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 14,
   },
   netWorthValue: {
@@ -1193,18 +1194,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   breakdownLabel: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 13,
     flex: 1,
   },
   breakdownValue: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: '600',
   },
   // Experience
   expCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -1215,12 +1216,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   expLabel: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 15,
     fontWeight: 'bold',
   },
   expValue: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 13,
   },
   progressBar: {
@@ -1235,7 +1236,7 @@ const styles = StyleSheet.create({
   },
   // Panel Cards
   panelCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -1259,7 +1260,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   panelTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 17,
     fontWeight: 'bold',
   },
@@ -1275,7 +1276,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   panelSubLabel: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -1294,7 +1295,7 @@ const styles = StyleSheet.create({
   panelDetailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -1304,12 +1305,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailLabel: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 11,
     marginBottom: 4,
   },
   detailValue: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
@@ -1318,12 +1319,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   panelEmptyText: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
   panelEmptyHint: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
@@ -1334,16 +1335,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: colors.cardBorder,
   },
   miniTicker: {
-    color: '#aaa',
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
     flex: 1,
   },
   miniQty: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 12,
     marginHorizontal: 12,
   },
@@ -1359,7 +1360,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   seeMore: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 12,
     textAlign: 'center',
     paddingTop: 8,
@@ -1372,7 +1373,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 14,
     flex: 1,
@@ -1380,25 +1381,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 22,
     fontWeight: 'bold',
     marginTop: 6,
   },
   statLabel: {
-    color: '#888',
+    color: colors.textMuted,
     fontSize: 11,
     marginTop: 4,
   },
   // Skills
   skillsCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
   sectionTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 12,
@@ -1409,7 +1410,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   skillName: {
-    color: '#fff',
+    color: colors.text,
     width: 110,
     fontSize: 13,
   },
@@ -1426,21 +1427,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   skillLevel: {
-    color: '#888',
+    color: colors.textMuted,
     width: 36,
     textAlign: 'right',
     fontSize: 13,
   },
   // Event Card
   eventCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1.5,
   },
   eventCardGenerate: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -1468,7 +1469,7 @@ const styles = StyleSheet.create({
   eventCardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginTop: 2,
   },
   eventPulseDot: {
@@ -1487,7 +1488,7 @@ const styles = StyleSheet.create({
   },
   eventCardDesc: {
     fontSize: 13,
-    color: '#aaa',
+    color: colors.textSecondary,
     lineHeight: 19,
     marginTop: 10,
     marginLeft: 52,
@@ -1506,11 +1507,11 @@ const styles = StyleSheet.create({
   eventGenerateTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
   },
   eventGenerateHint: {
     fontSize: 12,
-    color: '#888',
+    color: colors.textMuted,
     marginTop: 2,
   },
   eventGenerateBtn: {
@@ -1523,7 +1524,7 @@ const styles = StyleSheet.create({
   },
   // Phase Card
   phaseCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -1543,7 +1544,7 @@ const styles = StyleSheet.create({
   },
   phaseCardLabel: {
     fontSize: 11,
-    color: '#888',
+    color: colors.textMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1561,7 +1562,7 @@ const styles = StyleSheet.create({
   },
   phaseIndexText: {
     fontSize: 11,
-    color: '#aaa',
+    color: colors.textSecondary,
     fontWeight: '700',
   },
   phaseProgressSection: {
@@ -1580,7 +1581,7 @@ const styles = StyleSheet.create({
   },
   phaseProgressText: {
     fontSize: 11,
-    color: '#888',
+    color: colors.textMuted,
   },
   phaseBonusRow: {
     flexDirection: 'row',
@@ -1595,7 +1596,7 @@ const styles = StyleSheet.create({
   },
   // Crisis Card
   crisisCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -1619,7 +1620,7 @@ const styles = StyleSheet.create({
   crisisTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginTop: 2,
   },
   crisisPulseDot: {
@@ -1629,7 +1630,7 @@ const styles = StyleSheet.create({
   },
   crisisDesc: {
     fontSize: 13,
-    color: '#aaa',
+    color: colors.textSecondary,
     lineHeight: 19,
     marginTop: 10,
     marginLeft: 52,
@@ -1648,11 +1649,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 8,
   },
   compCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 14,
     marginBottom: 8,
@@ -1676,7 +1677,7 @@ const styles = StyleSheet.create({
   },
   compDesc: {
     fontSize: 12,
-    color: '#888',
+    color: colors.textMuted,
     marginTop: 1,
   },
   compTimeBadge: {
@@ -1687,7 +1688,7 @@ const styles = StyleSheet.create({
   },
   compTimeText: {
     fontSize: 11,
-    color: '#aaa',
+    color: colors.textSecondary,
     fontWeight: '700',
   },
   compLeaderboard: {
@@ -1711,12 +1712,12 @@ const styles = StyleSheet.create({
   },
   compLeaderName: {
     fontSize: 13,
-    color: '#aaa',
+    color: colors.textSecondary,
     flex: 1,
   },
   compLeaderScore: {
     fontSize: 12,
-    color: '#aaa',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   compRewards: {
@@ -1732,7 +1733,7 @@ const styles = StyleSheet.create({
   },
   // Prestige
   prestigeCard: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.inputBg,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -1745,7 +1746,7 @@ const styles = StyleSheet.create({
   },
   prestigeLabel: {
     fontSize: 11,
-    color: '#888',
+    color: colors.textMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1779,3 +1780,4 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
+}
