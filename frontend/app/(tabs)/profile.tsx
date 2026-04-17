@@ -1117,7 +1117,7 @@ export default function Profile() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Dados Pessoais</Text>
+                <Text style={styles.modalTitle}>{t('profile.personalData') || 'Dados Pessoais'}</Text>
                 <TouchableOpacity onPress={() => setShowPersonalModal(false)}>
                   <Ionicons name="close" size={28} color="#fff" />
                 </TouchableOpacity>
@@ -1125,17 +1125,17 @@ export default function Profile() {
               <ScrollView style={{ maxHeight: 420 }}>
                 <View style={{ backgroundColor: '#2a1a1a', borderRadius: 10, padding: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Ionicons name="alert-circle" size={18} color="#FF9800" />
-                  <Text style={{ color: '#FF9800', fontSize: 12, flex: 1 }}>Todos os campos são obrigatórios *</Text>
+                  <Text style={{ color: '#FF9800', fontSize: 12, flex: 1 }}>{t('profile.allFieldsRequired') || 'Todos os campos são obrigatórios *'}</Text>
                 </View>
 
                 <Text style={styles.inputLabel}>{t('profile.personalFullName') || 'Nome Completo'} *</Text>
-                <TextInput style={styles.input} value={personalData.full_name} onChangeText={v => setPersonalData(p => ({...p, full_name: v}))} placeholder="Nome completo" placeholderTextColor="#666" />
+                <TextInput style={styles.input} value={personalData.full_name} onChangeText={v => setPersonalData(p => ({...p, full_name: v}))} placeholder={t('profile.personalFullName') || 'Nome completo'} placeholderTextColor="#666" />
 
                 <Text style={styles.inputLabel}>{t('profile.identityDocument') || 'Documento de Identidade'} *</Text>
-                <TextInput style={styles.input} value={personalData.identity_document} onChangeText={v => setPersonalData(p => ({...p, identity_document: v}))} placeholder="CPF, RG, Passport, SSN..." placeholderTextColor="#666" />
+                <TextInput style={styles.input} value={personalData.identity_document} onChangeText={v => setPersonalData(p => ({...p, identity_document: v}))} placeholder={t('profile.identityDocPlaceholder') || 'CPF, RG, Passport, SSN...'} placeholderTextColor="#666" />
 
                 <Text style={styles.inputLabel}>{t('profile.country') || 'País'} *</Text>
-                <TextInput style={styles.input} value={personalData.country} onChangeText={v => setPersonalData(p => ({...p, country: v}))} placeholder="Brasil, USA, Portugal..." placeholderTextColor="#666" />
+                <TextInput style={styles.input} value={personalData.country} onChangeText={v => setPersonalData(p => ({...p, country: v}))} placeholder={t('profile.countryPlaceholder') || 'Brasil, USA, Portugal...'} placeholderTextColor="#666" />
 
                 <Text style={styles.inputLabel}>{t('profile.personalPhone') || 'Telefone Celular'} *</Text>
                 <TextInput style={styles.input} value={personalData.phone} onChangeText={v => setPersonalData(p => ({...p, phone: v}))} placeholder="(11) 99999-9999" placeholderTextColor="#666" keyboardType="phone-pad" />

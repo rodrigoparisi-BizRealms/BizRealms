@@ -46,6 +46,41 @@ async def seed_jobs():
     jobs = [
         {
             "id": str(uuid.uuid4()),
+            "title": "Auxiliar de Produção",
+            "company": "Fábrica Nacional",
+            "description": "Auxiliar nas atividades de produção e organização do setor",
+            "salary": 1500.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 0, "experience_months": 0, "skills": {}},
+            "status": "open",
+            "min_level": 0,
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Estagiário",
+            "company": "StartUp Hub",
+            "description": "Apoio em diversas áreas da empresa",
+            "salary": 1200.0,
+            "location": "São Paulo, Brazil",
+            "requirements": {"education_level": 0, "experience_months": 0, "skills": {}},
+            "status": "open",
+            "min_level": 0,
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": "Vendedor",
+            "company": "ComercioMax",
+            "description": "Vendas diretas e atendimento ao cliente",
+            "salary": 2000.0,
+            "location": "Rio de Janeiro, Brazil",
+            "requirements": {"education_level": 1, "experience_months": 0, "skills": {"comunicação": 2}},
+            "status": "open",
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
             "title": "Assistente Administrativo",
             "company": "Tech Solutions Ltda",
             "description": "Auxiliar nas atividades administrativas e de escritório",
@@ -68,28 +103,6 @@ async def seed_jobs():
         },
         {
             "id": str(uuid.uuid4()),
-            "title": "Gerente de Projetos",
-            "company": "Corporate Solutions",
-            "description": "Gerenciar equipes e projetos estratégicos",
-            "salary": 8000.0,
-            "location": "São Paulo, Brazil",
-            "requirements": {"education_level": 2, "experience_months": 24, "skills": {"liderança": 5, "comunicação": 4}},
-            "status": "open",
-            "created_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Vendedor",
-            "company": "ComercioMax",
-            "description": "Vendas diretas e atendimento ao cliente",
-            "salary": 2000.0,
-            "location": "Rio de Janeiro, Brazil",
-            "requirements": {"education_level": 1, "experience_months": 0, "skills": {"comunicação": 3, "negociação": 2}},
-            "status": "open",
-            "created_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
             "title": "Analista Financeiro",
             "company": "Invest Bank",
             "description": "Análise de investimentos e relatórios financeiros",
@@ -101,15 +114,15 @@ async def seed_jobs():
         },
         {
             "id": str(uuid.uuid4()),
-            "title": "Estagiário",
-            "company": "StartUp Hub",
-            "description": "Apoio em diversas áreas da empresa",
-            "salary": 1200.0,
+            "title": "Gerente de Projetos",
+            "company": "Corporate Solutions",
+            "description": "Gerenciar equipes e projetos estratégicos",
+            "salary": 8000.0,
             "location": "São Paulo, Brazil",
-            "requirements": {"education_level": 2, "experience_months": 0, "skills": {}},
+            "requirements": {"education_level": 2, "experience_months": 24, "skills": {"liderança": 5, "comunicação": 4}},
             "status": "open",
             "created_at": datetime.utcnow()
-        }
+        },
     ]
     await db.jobs.insert_many(jobs)
 
@@ -128,6 +141,11 @@ async def get_jobs_for_level(current_user: dict = Depends(get_current_user)):
     """Get jobs including higher-level ones based on user level"""
     user = await db.users.find_one({"id": current_user['id']})
     user_level = user.get('level', 1)
+    
+    # Seed jobs if empty
+    job_count = await db.jobs.count_documents({})
+    if job_count == 0:
+        await seed_jobs()
     
     # Get base jobs
     base_jobs = await db.jobs.find({}).to_list(100)
