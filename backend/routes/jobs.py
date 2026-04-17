@@ -416,13 +416,67 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
     
     # Check for promotion (every 30 days, 10% raise)
     promotion_message = None
+    career_opportunity = None
     if new_days_worked % 30 == 0 and new_days_worked > current_job.get('days_worked', 0):
-        new_salary = current_job['salary'] * 1.1
+        new_salary = round(current_job['salary'] * 1.10, 2)
         await db.work_experiences.update_one(
             {'_id': current_job['_id']},
-            {'$set': {'salary': new_salary}}
+            {'$set': {'salary': new_salary, 'promotions': current_job.get('promotions', 0) + 1}}
         )
         promotion_message = f"Promoção! Seu salário aumentou para $ {new_salary:.2f}/mês!"
+    
+    # Career progression: check courses & experience for new opportunities
+    user_courses = await db.user_courses.find({"user_id": current_user['id'], "completed": True}).to_list(50)
+    total_courses = len(user_courses)
+    total_exp_months = new_days_worked // 30
+    
+    # Generate career opportunity based on progression
+    CAREER_PATHS = [
+        {"trigger_courses": 1, "trigger_months": 2, "title": "Operador de Produção", "salary_mult": 1.4, "company": current_job.get('company', 'Empresa'), "desc": "Promoção interna para operador!"},
+        {"trigger_courses": 2, "trigger_months": 3, "title": "Supervisor de Equipe", "salary_mult": 1.8, "company": current_job.get('company', 'Empresa'), "desc": "Você foi promovido a supervisor!"},
+        {"trigger_courses": 3, "trigger_months": 5, "title": "Coordenador de Área", "salary_mult": 2.3, "company": current_job.get('company', 'Empresa'), "desc": "Nova posição: Coordenador!"},
+        {"trigger_courses": 4, "trigger_months": 8, "title": "Gerente de Departamento", "salary_mult": 3.0, "company": current_job.get('company', 'Empresa'), "desc": "Promoção a Gerente!"},
+        {"trigger_courses": 6, "trigger_months": 12, "title": "Diretor Executivo", "salary_mult": 4.0, "company": current_job.get('company', 'Empresa'), "desc": "Você chegou à Diretoria!"},
+    ]
+    
+    current_promotions = current_job.get('career_level', 0)
+    for i, path in enumerate(CAREER_PATHS):
+        if i <= current_promotions:
+            continue
+        if total_courses >= path['trigger_courses'] and total_exp_months >= path['trigger_months']:
+            # Offer this career opportunity
+            base_salary = current_job.get('original_salary', current_job['salary'])
+            new_opp_salary = round(base_salary * path['salary_mult'], 2)
+            career_opportunity = {
+                "level": i,
+                "title": path['title'],
+                "company": path['company'],
+                "description": path['desc'],
+                "new_salary": new_opp_salary,
+                "salary_increase": round(new_opp_salary - current_job['salary'], 2),
+                "required_courses": path['trigger_courses'],
+                "required_months": path['trigger_months'],
+            }
+            break
+    
+    # Also check if external offers are available (headhunter)
+    headhunter_offer = None
+    if total_courses >= 2 and total_exp_months >= 4 and random.random() < 0.3:
+        offer_titles = [
+            ("Analista Sênior", "Consultoria Global", 1.5),
+            ("Especialista de Mercado", "FinTech Solutions", 1.6),
+            ("Líder de Inovação", "StartUp Ventures", 1.7),
+            ("Head de Operações", "Grupo Industrial", 2.0),
+            ("Diretor Comercial", "MegaCorp", 2.5),
+        ]
+        offer = random.choice(offer_titles)
+        headhunter_salary = round(current_job['salary'] * offer[2], 2)
+        headhunter_offer = {
+            "title": offer[0],
+            "company": offer[1],
+            "salary": headhunter_salary,
+            "salary_increase": round(headhunter_salary - current_job['salary'], 2),
+        }
     
     return {
         "message": f"Você coletou seus ganhos de {game_days_elapsed:.1f} dias de trabalho!",
@@ -434,8 +488,123 @@ async def collect_earnings(current_user: dict = Depends(get_current_user)):
         "days_worked": new_days_worked,
         "boost_multiplier": boost_multiplier,
         "courses_boost": round(courses_boost, 2),
-        "promotion": promotion_message
+        "promotion": promotion_message,
+        "career_opportunity": career_opportunity,
+        "headhunter_offer": headhunter_offer,
     }
+
+@router.post("/jobs/accept-career-opportunity")
+async def accept_career_opportunity(request: dict, current_user: dict = Depends(get_current_user)):
+    """Accept an internal career opportunity (promotion within company)."""
+    level = request.get('level', 0)
+    new_title = request.get('title', '')
+    new_salary = request.get('new_salary', 0)
+    
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    if not current_job:
+        raise HTTPException(status_code=400, detail="Você não está empregado.")
+    
+    old_title = current_job.get('job_title', current_job.get('title', ''))
+    old_salary = current_job['salary']
+    
+    await db.work_experiences.update_one(
+        {'_id': current_job['_id']},
+        {'$set': {
+            'job_title': new_title,
+            'title': new_title,
+            'salary': new_salary,
+            'original_salary': current_job.get('original_salary', old_salary),
+            'career_level': level,
+            'promoted_at': datetime.utcnow(),
+        }}
+    )
+    
+    # Notification
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "type": "career",
+        "title": f"Promoção: {new_title}!",
+        "message": f"Parabéns! Você foi promovido de {old_title} para {new_title}. Novo salário: $ {new_salary:,.2f}/mês",
+        "read": False,
+        "created_at": datetime.utcnow(),
+    })
+    
+    return {
+        "success": True,
+        "message": f"Parabéns pela promoção! Você agora é {new_title} com salário de $ {new_salary:,.2f}/mês!",
+        "old_title": old_title,
+        "new_title": new_title,
+        "old_salary": old_salary,
+        "new_salary": new_salary,
+    }
+
+
+@router.post("/jobs/accept-headhunter")
+async def accept_headhunter_offer(request: dict, current_user: dict = Depends(get_current_user)):
+    """Accept a headhunter offer (switch to new company)."""
+    new_title = request.get('title', '')
+    new_company = request.get('company', '')
+    new_salary = request.get('salary', 0)
+    
+    current_job = await db.work_experiences.find_one({
+        "user_id": current_user['id'],
+        "is_current": True
+    })
+    if not current_job:
+        raise HTTPException(status_code=400, detail="Você não está empregado.")
+    
+    old_company = current_job.get('company', '')
+    old_title = current_job.get('job_title', current_job.get('title', ''))
+    
+    # End current job
+    await db.work_experiences.update_one(
+        {'_id': current_job['_id']},
+        {'$set': {'is_current': False, 'end_date': datetime.utcnow()}}
+    )
+    
+    # Create new job
+    await db.work_experiences.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "job_id": f"headhunter_{uuid.uuid4().hex[:8]}",
+        "job_title": new_title,
+        "title": new_title,
+        "company": new_company,
+        "salary": new_salary,
+        "original_salary": new_salary,
+        "start_date": datetime.utcnow(),
+        "last_collection_date": datetime.utcnow(),
+        "is_current": True,
+        "days_worked": 0,
+        "career_level": 0,
+        "promotions": 0,
+        "source": "headhunter",
+    })
+    
+    # Notification
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user['id'],
+        "type": "career",
+        "title": f"Novo emprego: {new_title}!",
+        "message": f"Você saiu de {old_company} e agora trabalha como {new_title} na {new_company}. Salário: $ {new_salary:,.2f}/mês",
+        "read": False,
+        "created_at": datetime.utcnow(),
+    })
+    
+    return {
+        "success": True,
+        "message": f"Parabéns! Você agora é {new_title} na {new_company}. Salário: $ {new_salary:,.2f}/mês!",
+        "old_company": old_company,
+        "new_company": new_company,
+        "new_title": new_title,
+        "new_salary": new_salary,
+    }
+
 
 @router.post("/jobs/resign")
 async def resign_from_job(current_user: dict = Depends(get_current_user)):
