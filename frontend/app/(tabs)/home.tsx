@@ -68,6 +68,10 @@ export default function Home() {
   const [crisisModalVisible, setCrisisModalVisible] = useState(false);
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [prestigeData, setPrestigeData] = useState<any>(null);
+  const [dailyDilemma, setDailyDilemma] = useState<any>(null);
+  const [dilemmaLoading, setDilemmaLoading] = useState(false);
+  const [tournament, setTournament] = useState<any>(null);
+  const [reputation, setReputation] = useState<any>(null);
 
   const GAME_TIPS = [
     { icon: 'briefcase', color: '#4CAF50', tip: 'Invista em cursos para desbloquear vagas com salários maiores!' },
@@ -89,6 +93,23 @@ export default function Home() {
   }, []);
 
   const { isOffline } = useNetwork();
+
+  const handleDilemmaChoice = async (choiceIndex: number) => {
+    if (!token) return;
+    setDilemmaLoading(true);
+    try {
+      const res = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/dilemmas/respond`, { choice_index: choiceIndex }, { headers: { Authorization: `Bearer ${token}` } });
+      setDailyDilemma((prev: any) => ({
+        ...prev,
+        already_responded: true,
+        response: { choice_index: choiceIndex, effects: res.data.effects, result_text: res.data.result_text },
+        streak: res.data.effects.streak,
+      }));
+      haptic('success');
+      refreshUser();
+    } catch (e: any) { console.log('Dilemma error:', e); }
+    setDilemmaLoading(false);
+  };
 
   const loadAllData = useCallback(async () => {
     if (!token) return;
@@ -122,6 +143,16 @@ export default function Home() {
       if (assetsRes) { setAssets(assetsRes.data); CacheService.set('home_assets', assetsRes.data); }
       if (rankingsRes) setRankings(rankingsRes.data);
       if (notifsRes) setUnreadNotifs(notifsRes.data.unread_count || 0);
+
+      // Load new features data
+      const [dilemmaRes, tournamentRes, reputationRes] = await Promise.all([
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/dilemmas/daily`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/tournaments/current`, { headers: h, timeout: 10000 }).catch(() => null),
+        axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/reputation/status`, { headers: h, timeout: 10000 }).catch(() => null),
+      ]);
+      if (dilemmaRes) setDailyDilemma(dilemmaRes.data);
+      if (tournamentRes) setTournament(tournamentRes.data);
+      if (reputationRes) setReputation(reputationRes.data);
     } catch (e) {
       console.log('Error loading dashboard (using cached data):', e);
     }
@@ -837,6 +868,120 @@ export default function Home() {
         </TouchableOpacity>
 
         {/* Investment Portfolio Panel */}
+
+        {/* ===== DAILY BUSINESS DILEMMA ===== */}
+        {dailyDilemma && !dailyDilemma.already_responded && (
+          <View style={[styles.panelCard, { borderWidth: 1, borderColor: '#FFD70050' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#FFD70025', justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name={(dailyDilemma.dilemma?.icon || 'help-circle') as any} size={18} color="#FFD700" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#FFD700', fontSize: 12, fontWeight: '700' }}>DILEMA DO DIA</Text>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{dailyDilemma.dilemma?.title}</Text>
+              </View>
+              {dailyDilemma.streak > 0 && (
+                <View style={{ backgroundColor: '#FF980025', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                  <Text style={{ color: '#FF9800', fontSize: 11, fontWeight: '700' }}>{dailyDilemma.streak} dias</Text>
+                </View>
+              )}
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 19, paddingHorizontal: 14, marginBottom: 12 }}>
+              {dailyDilemma.dilemma?.description}
+            </Text>
+            <View style={{ paddingHorizontal: 14, paddingBottom: 14, gap: 8 }}>
+              {dailyDilemma.dilemma?.choices?.map((choice: any, idx: number) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => handleDilemmaChoice(idx)}
+                  disabled={dilemmaLoading}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.inputBg, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.cardBorder }}
+                >
+                  <Ionicons name={(choice.icon || 'radio-button-on') as any} size={20} color={idx === 0 ? '#4CAF50' : '#2196F3'} />
+                  <Text style={{ color: colors.text, fontSize: 14, fontWeight: '500', flex: 1 }}>{choice.text}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Dilemma Result */}
+        {dailyDilemma?.already_responded && dailyDilemma?.response && (
+          <View style={[styles.panelCard, { borderWidth: 1, borderColor: '#4CAF5050' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 }}>
+              <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', flex: 1 }}>Dilema Respondido</Text>
+              {dailyDilemma.streak > 0 && <Text style={{ color: '#FF9800', fontSize: 12, fontWeight: '700' }}>Streak: {dailyDilemma.streak}</Text>}
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, paddingHorizontal: 14, paddingBottom: 6 }}>{dailyDilemma.response.result_text}</Text>
+            <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 14, paddingBottom: 14 }}>
+              <Text style={{ color: dailyDilemma.response.effects.money_change >= 0 ? '#4CAF50' : '#F44336', fontSize: 12, fontWeight: '600' }}>
+                {dailyDilemma.response.effects.money_change >= 0 ? '+' : ''}$ {safeFixed(dailyDilemma.response.effects.money_change, 0)}
+              </Text>
+              <Text style={{ color: dailyDilemma.response.effects.reputation_change >= 0 ? '#4CAF50' : '#F44336', fontSize: 12, fontWeight: '600' }}>
+                Rep: {dailyDilemma.response.effects.reputation_change >= 0 ? '+' : ''}{dailyDilemma.response.effects.reputation_change}
+              </Text>
+              <Text style={{ color: '#FFD700', fontSize: 12, fontWeight: '600' }}>+{dailyDilemma.response.effects.xp_gained} XP</Text>
+            </View>
+          </View>
+        )}
+
+        {/* ===== WEEKLY TOURNAMENT ===== */}
+        {tournament && (
+          <TouchableOpacity style={[styles.panelCard, { borderWidth: 1, borderColor: (tournament.color || '#2196F3') + '50' }]} onPress={() => router.push('/rankings')} activeOpacity={0.7}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: (tournament.color || '#2196F3') + '25', justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name={(tournament.icon || 'trophy') as any} size={18} color={tournament.color || '#2196F3'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: tournament.color || '#2196F3', fontSize: 11, fontWeight: '700' }}>TORNEIO SEMANAL</Text>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{tournament.name}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: colors.textMuted, fontSize: 11 }}>{tournament.days_remaining}d restantes</Text>
+                <Text style={{ color: '#FFD700', fontSize: 13, fontWeight: '700' }}>$ {tournament.prize_pool}</Text>
+              </View>
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, paddingHorizontal: 14, marginBottom: 10 }}>{tournament.description}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 14, paddingBottom: 14 }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Sua posicao: <Text style={{ color: colors.text, fontWeight: '700' }}>#{tournament.user_position || '-'}</Text></Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Score: <Text style={{ color: colors.text, fontWeight: '700' }}>{tournament.user_score || 0}</Text></Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{tournament.total_participants} jogadores</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* ===== REPUTATION / STARS ===== */}
+        {reputation && (
+          <View style={styles.panelCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 }}>
+              <View style={{ flexDirection: 'row', gap: 2 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Ionicons key={i} name={i < reputation.stars ? 'star' : 'star-outline'} size={18} color={i < reputation.stars ? reputation.color : colors.textMuted} />
+                ))}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: reputation.color, fontSize: 14, fontWeight: '700' }}>{reputation.tier}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 11 }}>Reputacao: {reputation.reputation}/100</Text>
+              </View>
+              {reputation.active_perks.length > 0 && (
+                <View style={{ backgroundColor: reputation.color + '20', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                  <Text style={{ color: reputation.color, fontSize: 11, fontWeight: '600' }}>{reputation.active_perks.length} perks</Text>
+                </View>
+              )}
+            </View>
+            {/* Progress bar */}
+            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+              <View style={{ height: 6, backgroundColor: colors.inputBg, borderRadius: 3, overflow: 'hidden' }}>
+                <View style={{ height: '100%', width: `${Math.min(reputation.progress_to_next, 100)}%`, backgroundColor: reputation.color, borderRadius: 3 }} />
+              </View>
+              {reputation.next_tier && <Text style={{ color: colors.textMuted, fontSize: 10, marginTop: 4 }}>Proximo: {reputation.next_tier}</Text>}
+            </View>
+          </View>
+        )}
+
+        {/* Original Investment Portfolio Panel */}
         <TouchableOpacity
           style={styles.panelCard}
           onPress={() => { play('click'); router.push('/(tabs)/investments'); }}
