@@ -124,7 +124,8 @@
         {
           "url": "https://sentry.io/",
           "organization": "bizrealms",
-          "project": "bizrealms"
+          "project": "bizrealms",
+          "enableAutoUpload": false
         }
       ]
     ],

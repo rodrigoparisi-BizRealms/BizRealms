@@ -1,0 +1,5 @@
+docs/
+testers.csv
+.metro-cache*
+dist/
+.ruff_cache/
