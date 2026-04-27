@@ -369,6 +369,7 @@ export default {
     paypalEmpty: 'Enter your PayPal email',
     paypalInvalid: 'Invalid email',
     paypalSaved: 'PayPal account saved successfully!',
+    dataSaved: 'Personal data saved successfully!',
     howPaymentWorks: 'How Payments Work',
     paypalInfoText1: '1. TOP-RANKED players in weekly and monthly rankings are eligible for REAL MONEY rewards paid via PayPal.',
     paypalInfoText2: '2. To receive rewards: register your verified PayPal email here and fill in your Personal Data (full name + identity document) for verification.',

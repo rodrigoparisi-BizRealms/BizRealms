@@ -377,6 +377,7 @@ export default {
     paypalEmpty: 'Informe seu e-mail PayPal',
     paypalInvalid: 'E-mail inválido',
     paypalSaved: 'Conta PayPal salva com sucesso!',
+    dataSaved: 'Dados pessoais salvos com sucesso!',
     howPaymentWorks: 'Como funcionam os pagamentos',
     paypalInfoText1: '1. Jogadores no TOPO do ranking semanal e mensal são elegíveis para receber DINHEIRO REAL via PayPal.',
     paypalInfoText2: '2. Para receber: cadastre seu e-mail PayPal verificado aqui e preencha seus Dados Pessoais (nome completo + documento de identidade) para verificação.',

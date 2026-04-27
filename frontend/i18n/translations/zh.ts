@@ -105,6 +105,7 @@ export default {
     paypalEmailLabel: 'PayPal邮箱', savePaypal: '保存PayPal账户',
     paypalConfigHint: '注册PayPal账户领取真实奖金！', paypalConfigured: 'PayPal账户已注册',
     paypalEmpty: '输入PayPal邮箱', paypalInvalid: '邮箱无效', paypalSaved: 'PayPal账户已保存！',
+    dataSaved: '个人数据保存成功！',
     paypalRemoved: 'PayPal账户已移除', paypalRemoveConfirm: '确认移除PayPal账户？', removePaypal: '移除PayPal',
     current: '当前', boost: '技能', permissionNeeded: '需要权限', permissionGallery: '需要访问相册权限',
     paypalHint: '配置PayPal账户以接收月度排名奖金。',

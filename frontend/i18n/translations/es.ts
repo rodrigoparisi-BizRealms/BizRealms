@@ -104,6 +104,7 @@ export default {
     paypalEmailLabel: 'E-mail PayPal', savePaypal: 'Guardar Cuenta PayPal',
     paypalConfigHint: '¡Registra tu cuenta PayPal para premios reales!', paypalConfigured: 'Cuenta PayPal registrada',
     paypalEmpty: 'Ingresa tu e-mail PayPal', paypalInvalid: 'E-mail inválido', paypalSaved: '¡Cuenta PayPal guardada!',
+    dataSaved: 'Datos personales guardados con éxito!',
     paypalRemoved: 'Cuenta PayPal eliminada', paypalRemoveConfirm: '¿Seguro que deseas eliminar tu cuenta PayPal?', removePaypal: 'Eliminar PayPal',
     current: 'Actual', boost: 'habilidades', permissionNeeded: 'Permiso Necesario',
     permissionGallery: 'Necesitamos permiso para acceder a tu galería',

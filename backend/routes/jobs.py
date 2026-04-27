@@ -241,6 +241,10 @@ def calculate_job_match(user: dict, requirements: dict) -> float:
             score += 30
         elif user_edu_level == req_edu - 1:
             score += 15
+    else:
+        # No education requirement = automatic match
+        max_score += 30
+        score += 30
     
     # Check experience
     user_exp_months = 0
@@ -262,6 +266,10 @@ def calculate_job_match(user: dict, requirements: dict) -> float:
             score += 20
         elif user_exp_months >= req_exp * 0.7:
             score += 10
+    else:
+        # No experience requirement = automatic match
+        max_score += 20
+        score += 20
     
     # Check skills
     req_skills = requirements.get('skills', {})
@@ -274,6 +282,10 @@ def calculate_job_match(user: dict, requirements: dict) -> float:
                 score += 50 / len(req_skills)
             elif user_level >= required_level * 0.7:
                 score += 25 / len(req_skills)
+    else:
+        # No skills requirement = automatic match
+        max_score += 50
+        score += 50
     
     # If no requirements, 100% match
     if max_score == 0:

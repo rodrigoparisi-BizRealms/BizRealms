@@ -41,4 +41,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return user
 
 def calculate_level(experience_points: int) -> int:
-    return max(1, experience_points // 1000 + 1)
+    """Calculate level from XP. Progressive curve - each level needs more XP.
+    Level 1: 0 XP, Level 2: 5000 XP, Level 3: 12000 XP, Level 4: 21000 XP, etc.
+    Formula: XP needed for level N = 5000 + (N-2) * 2000 (cumulative)
+    """
+    if experience_points < 5000:
+        return 1
+    xp = experience_points
+    level = 1
+    threshold = 5000  # XP to reach level 2
+    increment = 2000  # Each subsequent level needs 2000 more XP
+    while xp >= threshold:
+        xp -= threshold
+        level += 1
+        threshold += increment
+    return level

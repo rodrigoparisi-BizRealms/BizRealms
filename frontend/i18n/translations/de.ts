@@ -104,6 +104,7 @@ export default {
     paypalEmailLabel: 'PayPal E-Mail', savePaypal: 'PayPal-Konto speichern',
     paypalConfigHint: 'Registriere dein PayPal-Konto für Echtgeldpreise!', paypalConfigured: 'PayPal-Konto registriert',
     paypalEmpty: 'Gib deine PayPal E-Mail ein', paypalInvalid: 'Ungültige E-Mail', paypalSaved: 'PayPal-Konto gespeichert!',
+    dataSaved: 'Persönliche Daten gespeichert!',
     paypalRemoved: 'PayPal-Konto entfernt', paypalRemoveConfirm: 'Möchtest du dein PayPal-Konto entfernen?', removePaypal: 'PayPal entfernen',
     current: 'Aktuell', boost: 'Fähigkeiten', permissionNeeded: 'Berechtigung erforderlich',
     permissionGallery: 'Wir brauchen Zugriff auf deine Galerie',

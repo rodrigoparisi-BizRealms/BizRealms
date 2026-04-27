@@ -104,6 +104,7 @@ export default {
     paypalEmailLabel: 'E-mail PayPal', savePaypal: 'Enregistrer Compte PayPal',
     paypalConfigHint: 'Enregistrez votre compte PayPal pour des prix réels !', paypalConfigured: 'Compte PayPal enregistré',
     paypalEmpty: 'Entrez votre e-mail PayPal', paypalInvalid: 'E-mail invalide', paypalSaved: 'Compte PayPal enregistré !',
+    dataSaved: 'Données personnelles enregistrées!',
     paypalRemoved: 'Compte PayPal supprimé', paypalRemoveConfirm: 'Voulez-vous supprimer votre compte PayPal ?', removePaypal: 'Supprimer PayPal',
     current: 'Actuel', boost: 'compétences', permissionNeeded: 'Permission Requise',
     permissionGallery: 'Nous avons besoin d\'accéder à votre galerie',
