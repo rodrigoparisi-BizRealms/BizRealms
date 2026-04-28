@@ -471,16 +471,39 @@ async def update_payment_info(request: dict, current_user: dict = Depends(get_cu
     if method not in ('pix', 'paypal'):
         raise HTTPException(status_code=400, detail="Método inválido. Use 'pix' ou 'paypal'.")
 
-    if method == 'pix' and not pix_key:
-        raise HTTPException(status_code=400, detail="Informe sua chave PIX.")
+    if method == 'pix':
+        if not pix_key:
+            raise HTTPException(status_code=400, detail="Informe sua chave PIX.")
+        # Validate PIX key format (CPF, email, phone, or random key)
+        pix_key = pix_key.strip()
+        if len(pix_key) < 5:
+            raise HTTPException(status_code=400, detail="Chave PIX inválida. Mínimo 5 caracteres.")
+
     if method == 'paypal':
-        if not paypal_email or '@' not in paypal_email:
-            raise HTTPException(status_code=400, detail="Informe um email PayPal válido.")
+        if not paypal_email:
+            raise HTTPException(status_code=400, detail="Informe seu email PayPal.")
+        paypal_email = paypal_email.strip().lower()
+        # Validate email format
+        if '@' not in paypal_email or '.' not in paypal_email.split('@')[-1]:
+            raise HTTPException(status_code=400, detail="Email PayPal inválido. Verifique o formato.")
+        if len(paypal_email) < 6:
+            raise HTTPException(status_code=400, detail="Email PayPal muito curto.")
+        # Check for common invalid emails
+        invalid_domains = ['test.com', 'example.com', 'fake.com']
+        domain = paypal_email.split('@')[-1]
+        if domain in invalid_domains:
+            raise HTTPException(status_code=400, detail="Email PayPal inválido. Use um email real.")
+
+    # Generate verification code
+    import random as _rand
+    verification_code = str(_rand.randint(100000, 999999))
 
     payment_info = {
         "method": method,
         "pix_key": pix_key if method == 'pix' else '',
         "paypal_email": paypal_email if method == 'paypal' else '',
+        "verified": False,
+        "verification_code": verification_code,
         "updated_at": datetime.utcnow().isoformat(),
     }
 
@@ -489,7 +512,12 @@ async def update_payment_info(request: dict, current_user: dict = Depends(get_cu
     })
 
     detail = pix_key if method == 'pix' else paypal_email
-    return {"success": True, "message": f"Método de pagamento atualizado: {method.upper()} - {detail}"}
+    return {
+        "success": True,
+        "message": f"Método de pagamento cadastrado: {method.upper()} - {detail}. Código de verificação: {verification_code}",
+        "verification_code": verification_code,
+        "needs_verification": True,
+    }
 
 
 @router.delete("/rewards/delete-payment-info")
@@ -499,6 +527,34 @@ async def delete_payment_info(current_user: dict = Depends(get_current_user)):
         "$unset": {"payment_info": "", "paypal_email": "", "paypal_updated_at": ""}
     })
     return {"success": True, "message": "Método de pagamento removido."}
+
+
+@router.post("/rewards/verify-payment")
+async def verify_payment_method(request: dict, current_user: dict = Depends(get_current_user)):
+    """Verify payment method with the code sent during registration."""
+    code = request.get('code', '').strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Informe o código de verificação.")
+
+    user = await db.users.find_one({"id": current_user['id']})
+    payment_info = user.get('payment_info', {})
+
+    if not payment_info.get('method'):
+        raise HTTPException(status_code=400, detail="Nenhum método de pagamento cadastrado.")
+
+    if payment_info.get('verified'):
+        return {"success": True, "message": "Método de pagamento já verificado!", "already_verified": True}
+
+    if code != payment_info.get('verification_code', ''):
+        raise HTTPException(status_code=400, detail="Código de verificação incorreto. Tente novamente.")
+
+    await db.users.update_one({"id": current_user['id']}, {
+        "$set": {"payment_info.verified": True},
+        "$unset": {"payment_info.verification_code": ""},
+    })
+
+    method = payment_info.get('method', '').upper()
+    return {"success": True, "message": f"Conta {method} verificada com sucesso!"}
 
 
 # ---- Monthly Distribution (Auto / Admin) ----

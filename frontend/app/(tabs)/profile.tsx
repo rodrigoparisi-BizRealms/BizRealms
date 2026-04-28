@@ -132,16 +132,6 @@ export default function Profile() {
   const handleSavePaypal = async () => {
     if (!paypalEmail.trim()) { showAlert(t('general.error'), t('profile.paypalEmpty') || 'Enter your PayPal email'); return; }
     if (!paypalEmail.includes('@') || !paypalEmail.includes('.')) { showAlert(t('general.error'), t('profile.paypalInvalid') || 'Invalid email'); return; }
-    // Require personal data (name + identity document) before PayPal
-    const userName = (user as any)?.full_name || '';
-    const userDoc = (user as any)?.identity_document || '';
-    if (!userName.trim() || !userDoc.trim()) {
-      showAlert(
-        t('profile.paypalRequiresData') || 'Dados Pessoais Obrigatórios',
-        t('profile.paypalRequiresDataMsg') || 'Para cadastrar sua conta PayPal, preencha primeiro seus Dados Pessoais (Nome Completo e Documento de Identidade).'
-      );
-      return;
-    }
     setSavingPaypal(true);
     try {
       await axios.post(

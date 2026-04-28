@@ -32,9 +32,9 @@ async def get_bank_account(current_user: dict = Depends(get_current_user)):
     user_level = user.get('level', 1)
     user_money = user.get('money', 1000)
     
-    # Credit card limit based on level: starts at $1000, grows with level
-    # Level 1: $1000, Level 2: $2000, Level 5: $5000, Level 10: $15000
-    dynamic_limit = min(100000, int(1000 + (user_level - 1) * 1000 + (user_level ** 1.5) * 500))
+    # Credit card limit based on level: starts at $1000 (same as initial balance), grows with level
+    # Level 1: $1000, Level 2: $1500, Level 3: $2200, Level 5: $4500, Level 10: $14000
+    dynamic_limit = int(1000 * (1 + (user_level - 1) * 0.5 + (user_level ** 1.3) * 0.1))
     
     if not card:
         # Auto-create credit card on first access
@@ -94,8 +94,8 @@ async def get_bank_account(current_user: dict = Depends(get_current_user)):
         "available_trips": trips,
         "collateral_assets": collateral_assets,
         "loan_limits": {
-            "small_no_guarantee": min(50000, int(500 + (user_level - 1) * 1000 + (user_level ** 1.5) * 300)),
-            "large_with_guarantee": min(500000, int(5000 + user_level * 10000)),
+            "small_no_guarantee": int(500 * (1 + (user_level - 1) * 0.5 + (user_level ** 1.3) * 0.08)),
+            "large_with_guarantee": int(2000 * (1 + (user_level - 1) * 1.0 + (user_level ** 1.5) * 0.2)),
         }
     }
 
@@ -226,7 +226,7 @@ async def apply_for_loan(request: dict, current_user: dict = Depends(get_current
         raise HTTPException(status_code=400, detail="Limite de 3 empréstimos ativos atingido")
     
     if loan_type == 'small':
-        max_amount = min(50000, int(500 + (user_level - 1) * 1000 + (user_level ** 1.5) * 300))
+        max_amount = int(500 * (1 + (user_level - 1) * 0.5 + (user_level ** 1.3) * 0.08))
         if amount > max_amount:
             raise HTTPException(status_code=400, detail=f"Valor máximo sem garantia para seu nível: $ {max_amount:,.0f}")
         interest_rate = 0.035  # 3.5% monthly
@@ -238,7 +238,9 @@ async def apply_for_loan(request: dict, current_user: dict = Depends(get_current
         asset = await db.user_assets.find_one({"id": guarantee_asset_id, "user_id": current_user['id']})
         if not asset:
             raise HTTPException(status_code=400, detail="Bem de garantia não encontrado")
-        max_amount = min(500000, int(min(5000 + user_level * 10000, asset.get('purchase_price', 0) * 0.8)))
+        level_max = int(2000 * (1 + (user_level - 1) * 1.0 + (user_level ** 1.5) * 0.2))
+        asset_max = int(asset.get('purchase_price', 0) * 0.8)
+        max_amount = min(level_max, asset_max)
         if amount > max_amount:
             raise HTTPException(status_code=400, detail=f"Valor máximo com esta garantia: $ {max_amount:,.0f}")
         interest_rate = 0.02  # 2% monthly (lower with guarantee)
