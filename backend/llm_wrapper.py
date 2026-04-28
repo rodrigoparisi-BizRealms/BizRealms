@@ -2,6 +2,9 @@
 import os
 import json
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +21,12 @@ async def chat_completion(system_message: str, user_message: str, model: str = "
         if llm_key:
             chat = LlmChat(
                 api_key=llm_key,
-                session_id="bizrealms-production",
+                session_id="bizrealms-coach",
                 system_message=system_message,
             )
             chat.with_model("openai", model)
-            response = await chat.send_async(UserMessage(content=user_message))
-            return response.content
+            response = await chat.send_message(UserMessage(text=user_message))
+            return response
     except ImportError:
         logger.info("emergentintegrations not available, trying OpenAI SDK")
     except Exception as e:
