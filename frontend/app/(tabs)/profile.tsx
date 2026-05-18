@@ -67,11 +67,10 @@ export default function Profile() {
   });
   const [savingPersonal, setSavingPersonal] = useState(false);
 
-  // PayPal account form
+  // Stripe Connect payment account
   const [showPaypalModal, setShowPaypalModal] = useState(false);
-  const [paypalEmail, setPaypalEmail] = useState('');
-  const [savingPaypal, setSavingPaypal] = useState(false);
-  const [showPaypalInfo, setShowPaypalInfo] = useState(false);
+  const [stripeConnectStatus, setStripeConnectStatus] = useState<any>(null);
+  const [loadingStripe, setLoadingStripe] = useState(false);
 
   const showAlert = (title: string, msg: string) => {
     if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
@@ -125,26 +124,36 @@ export default function Profile() {
   };
 
   const openPaypalModal = () => {
-    setPaypalEmail((user as any)?.paypal_email || '');
+    // Load Stripe Connect status
+    if (token) {
+      axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/payments/connect-status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => setStripeConnectStatus(res.data)).catch(() => {});
+    }
     setShowPaypalModal(true);
   };
 
   const handleSavePaypal = async () => {
-    if (!paypalEmail.trim()) { showAlert(t('general.error'), t('profile.paypalEmpty') || 'Enter your PayPal email'); return; }
-    if (!paypalEmail.includes('@') || !paypalEmail.includes('.')) { showAlert(t('general.error'), t('profile.paypalInvalid') || 'Invalid email'); return; }
-    setSavingPaypal(true);
+    // Now opens Stripe Connect onboarding
+    setLoadingStripe(true);
     try {
-      await axios.post(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/rewards/update-payment-info`,
-        { method: 'paypal', paypal_email: paypalEmail },
+      const res = await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/payments/create-connect-account`,
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      showAlert(t('general.success'), t('profile.paypalSaved') || 'PayPal account saved!');
-      await refreshUser();
+      if (res.data.already_onboarded) {
+        showAlert(t('general.success'), 'Conta de pagamento já configurada e ativa!');
+      } else if (res.data.onboarding_url) {
+        // Open Stripe onboarding in browser
+        const { Linking } = require('react-native');
+        await Linking.openURL(res.data.onboarding_url);
+        showAlert('Configurar Conta', 'Complete o cadastro no navegador para receber pagamentos automaticamente.');
+      }
       setShowPaypalModal(false);
     } catch (e: any) {
-      showAlert(t('general.error'), e.response?.data?.detail || t('general.error'));
-    } finally { setSavingPaypal(false); }
+      showAlert(t('general.error'), e.response?.data?.detail || 'Erro ao configurar conta de pagamento.');
+    } finally { setLoadingStripe(false); }
   };
 
   const handleDeletePaypal = async () => {
@@ -799,77 +808,50 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
-        {/* PayPal Account Section */}
+        {/* Stripe Connect Payment Account Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="logo-paypal" size={22} color="#0070BA" />
-            <Text style={styles.sectionTitle}>{t('profile.paypalAccount')}</Text>
-            <TouchableOpacity
-              style={{ marginLeft: 4, padding: 4 }}
-              onPress={() => setShowPaypalInfo(true)}
-            >
-              <Ionicons name="help-circle" size={20} color="#0070BA" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.addButton, { backgroundColor: '#0070BA' }]} onPress={openPaypalModal}>
-              <Ionicons name="create" size={20} color="#fff" />
-              <Text style={[styles.addButtonText, { color: colors.text }]}>{(user as any)?.paypal_email ? t('profile.edit') || 'Editar' : t('profile.register') || 'Cadastrar'}</Text>
-            </TouchableOpacity>
+            <Ionicons name="card" size={22} color="#635BFF" />
+            <Text style={styles.sectionTitle}>Conta de Pagamento</Text>
           </View>
-          
-          {/* PayPal Info Tooltip */}
-          {showPaypalInfo && (
-            <View style={{ backgroundColor: '#0d2137', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#0070BA33' }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="information-circle" size={18} color="#0070BA" />
-                  <Text style={{ color: '#0070BA', fontSize: 15, fontWeight: 'bold' }}>{t('profile.howPaymentWorks')}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setShowPaypalInfo(false)}>
-                  <Ionicons name="close-circle" size={22} color="#666" />
-                </TouchableOpacity>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
-                {t('profile.paypalInfoText1')}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
-                {t('profile.paypalInfoText2')}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginBottom: 8 }}>
-                {t('profile.paypalInfoText3')}
-              </Text>
-              <Text style={{ color: '#FF9800', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>
-                {t('profile.paypalInfoNote')}
-              </Text>
-            </View>
-          )}
           <View style={styles.card}>
             <View style={styles.cardContent}>
-              {(user as any)?.paypal_email ? (
+              {stripeConnectStatus?.ready ? (
                 <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                     <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
-                    <Text style={{ color: '#4CAF50', fontSize: 14, fontWeight: '600' }}>{t('profile.paypalConfigured') || 'Conta PayPal cadastrada'}</Text>
+                    <Text style={{ color: '#4CAF50', fontSize: 14, fontWeight: '600' }}>Conta ativa - pronta para receber!</Text>
                   </View>
                   <View style={{ backgroundColor: colors.card, borderRadius: 10, padding: 12, gap: 6 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>E-mail</Text>
-                      <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600' }}>{(user as any).paypal_email}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: colors.textMuted, fontSize: 12 }}>Status</Text>
+                      <Text style={{ color: '#4CAF50', fontSize: 13, fontWeight: '600' }}>Verificada</Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, backgroundColor: colors.card, borderRadius: 10, marginTop: 4 }}
-                    onPress={handleDeletePaypal}
-                  >
-                    <Ionicons name="trash" size={16} color="#F44336" />
-                    <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>{t('profile.removePaypal') || 'Remover conta PayPal'}</Text>
-                  </TouchableOpacity>
                 </View>
               ) : (
-                <View style={{ gap: 6, alignItems: 'center' }}>
-                  <Ionicons name="alert-circle" size={24} color="#FF9800" />
-                  <Text style={{ color: '#FF9800', fontSize: 13, textAlign: 'center' }}>
-                    {t('profile.paypalConfigHint') || 'Cadastre sua conta PayPal para receber premiação em dinheiro real!'}
+                <View style={{ gap: 10, alignItems: 'center' }}>
+                  <Ionicons name="wallet-outline" size={32} color="#635BFF" />
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>
+                    Configure sua conta para receber premios!
                   </Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
+                    Receba automaticamente na sua conta bancaria quando ganhar premiacoes no ranking.
+                  </Text>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#635BFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginTop: 4 }}
+                    onPress={handleSavePaypal}
+                    disabled={loadingStripe}
+                  >
+                    {loadingStripe ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="card" size={18} color="#fff" />
+                        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Configurar Conta</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -1159,43 +1141,7 @@ export default function Profile() {
       </Modal>
 
       {/* PayPal Modal */}
-      <Modal visible={showPaypalModal} animationType="slide" transparent onRequestClose={() => setShowPaypalModal(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t('profile.paypalAccount') || 'Conta PayPal'}</Text>
-                <TouchableOpacity onPress={() => setShowPaypalModal(false)}>
-                  <Ionicons name="close" size={28} color="#fff" />
-                </TouchableOpacity>
-              </View>
-              <Text style={{ color: '#0070BA', fontSize: 13, marginBottom: 16 }}>
-                {t('profile.paypalHint') || 'Configure sua conta PayPal para receber premiações em dinheiro real dos rankings mensais.'}
-              </Text>
-
-              <Text style={styles.inputLabel}>{t('profile.paypalEmailLabel') || 'E-mail PayPal'}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="seuemail@exemplo.com"
-                placeholderTextColor="#555"
-                value={paypalEmail}
-                onChangeText={setPaypalEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: '#0070BA' }, savingPaypal && { opacity: 0.5 }]}
-                onPress={handleSavePaypal}
-                disabled={savingPaypal}
-              >
-                <Text style={[styles.saveButtonText, { color: colors.text }]}>{savingPaypal ? 'Salvando...' : t('profile.savePaypal') || 'Salvar Conta PayPal'}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      {/* PayPal Modal - replaced by Stripe Connect inline button */}
     </SafeAreaView>
   );
 }
