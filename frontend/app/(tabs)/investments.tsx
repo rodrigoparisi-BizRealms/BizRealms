@@ -546,6 +546,16 @@ export default function Investments() {
                 {holdings.map(holding => {
                   const isProfit = holding.profit >= 0;
                   const asset = assets.find(a => a.id === holding.asset_id);
+                  // Create a minimal asset object for selling if market data not loaded
+                  const sellAsset = asset || {
+                    id: holding.asset_id,
+                    name: holding.name,
+                    ticker: holding.ticker,
+                    price: holding.current_price,
+                    category: holding.category || 'stocks',
+                    change_24h: 0,
+                    icon: 'trending-up',
+                  } as Asset;
 
                   return (
                     <View key={holding.id} style={styles.holdingCard}>
@@ -586,22 +596,18 @@ export default function Investments() {
                       </View>
 
                       <View style={styles.holdingActions}>
-                        {asset && (
-                          <>
-                            <TouchableOpacity
-                              style={styles.buyBtn}
-                              onPress={() => openTradeModal(asset, 'buy')}
-                            >
-                              <Text style={styles.buyBtnText}>{t('investments.buy')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={styles.sellBtn}
-                              onPress={() => openTradeModal(asset, 'sell')}
-                            >
-                              <Text style={styles.sellBtnText}>{t('investments.sell')}</Text>
-                            </TouchableOpacity>
-                          </>
-                        )}
+                        <TouchableOpacity
+                          style={styles.buyBtn}
+                          onPress={() => openTradeModal(sellAsset, 'buy')}
+                        >
+                          <Text style={styles.buyBtnText}>{t('investments.buy')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.sellBtn}
+                          onPress={() => openTradeModal(sellAsset, 'sell')}
+                        >
+                          <Text style={styles.sellBtnText}>{t('investments.sell')}</Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
                   );
